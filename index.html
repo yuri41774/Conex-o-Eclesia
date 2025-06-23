@@ -72,7 +72,7 @@
         }
 
         // Componente para a tela de Login
-        function LoginScreen({ onSwitchToRegister, onShowModal }) {
+        function LoginScreen({ onSwitchToRegister, onShowModal, onLoginSuccess }) {
           const [email, setEmail] = React.useState('');
           const [password, setPassword] = React.useState('');
 
@@ -84,6 +84,7 @@
             if (email === 'teste@conexaoeclesia.com' && password === 'senha123') {
               onShowModal('Login bem-sucedido!', 'success'); // Exibe modal de sucesso
               // Em um aplicativo real, você redirecionaria o usuário
+              onLoginSuccess(); // Chama a função de sucesso no login que fará o redirecionamento
             } else {
               onShowModal('Email ou senha incorretos. Tente novamente.', 'error'); // Exibe modal de erro
             }
@@ -300,7 +301,6 @@
                   />
                 </div>
 
-                {/* Campo Email de Registro com label e ARIA-LABEL */}
                 <div className="mb-6">
                   <label htmlFor="registerEmail" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
                     Email
@@ -317,7 +317,6 @@
                   />
                 </div>
 
-                {/* Campo Senha de Registro com label e ARIA-LABEL */}
                 <div className="mb-6">
                   <label htmlFor="registerPassword" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
                     Senha
@@ -334,7 +333,6 @@
                   />
                 </div>
 
-                {/* Campo Confirmar Senha com label e ARIA-LABEL */}
                 <div className="mb-8">
                   <label htmlFor="confirmPassword" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
                     Confirmar Senha
@@ -351,7 +349,6 @@
                   />
                 </div>
 
-                {/* Botão de Registrar com ARIA-LABEL */}
                 <button
                   type="submit"
                   className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 transform hover:scale-100 active:scale-95 shadow-md font-inter"
@@ -364,7 +361,6 @@
               <div className="mt-8 text-center">
                 <p className="text-gray-600 font-inter">
                   Já tem uma conta?{' '}
-                  {/* Link para alternar para a tela de login com ARIA-LABEL */}
                   <a href="#" onClick={onSwitchToLogin} className="font-bold text-blue-600 hover:text-blue-800 font-inter"
                      aria-label="Clique para fazer login em sua conta existente"
                   >
@@ -383,41 +379,45 @@
           const [modalMessage, setModalMessage] = React.useState('');
           const [modalType, setModalType] = React.useState('info');
 
-          // Variáveis Supabase (placeholders - substitua pelos seus valores reais)
-          // Estas são as variáveis que seu FRONTEND pode usar
-          const SUPABASE_URL = "YOUR_SUPABASE_URL"; // Substitua pela sua URL real do Supabase
-          const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJhaHBobHBoZWd2dmRlaHJ1bXlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3MDk2NDMsImV4cCI6MjA2NjI4NTY0M30.EDM-RotlChTCWiisI4o5okQ6Llee1ZaQEAcLaphBqTs";
+          // Variáveis Supabase - SUBSTITUA PELOS SEUS VALORES REAIS!
+          // Obtenha a URL do seu projeto Supabase no Dashboard > Settings > API
+          const SUPABASE_URL = "https://rahhplphegvvdehrumyp.supabase.co"; // Substitua pela sua URL real do Supabase
+          const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJhaGhwbHBoZWd2dmRlaHJ1bXlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3MDk2NDMsImV4cCI6MjA2NjI4NTY0M30.EDM-RotlChTCWiisI4o5okQ6Llee1ZaQEAcLaphBqTs";
 
-          // Função para exibir o modal com uma mensagem e um tipo
           const showModal = (message, type) => {
             setModalMessage(message);
             setModalType(type);
             setIsModalOpen(true);
           };
 
-          // Função para fechar o modal
           const closeModal = () => {
             setIsModalOpen(false);
             setModalMessage('');
             setModalType('info');
           };
 
-          // Função que renderiza o componente de login ou registro com base na visualização atual
+          // Função responsável por redirecionar para o feed após o login bem-sucedido
+          const handleLoginSuccess = () => {
+            // Redireciona para o arquivo do feed após o login
+            window.location.href = 'conexao-eclesia-feed.html'; // Nome do novo arquivo HTML para o feed
+          };
+
           const renderView = () => {
             if (currentView === 'login') {
               return (
                 <LoginScreen
                   onSwitchToRegister={() => setCurrentView('register')}
-                  onShowModal={showModal} // Passa a função showModal para LoginScreen
+                  onShowModal={showModal}
+                  onLoginSuccess={handleLoginSuccess} // Passando a função de redirecionamento
                   supabaseUrl={SUPABASE_URL}
                   supabaseAnonKey={SUPABASE_ANON_KEY}
                 />
               );
-            } else {
+            } else if (currentView === 'register') {
               return (
                 <RegisterScreen
                   onSwitchToLogin={() => setCurrentView('login')}
-                  onShowModal={showModal} // Passa a função showModal para RegisterScreen
+                  onShowModal={showModal}
                   supabaseUrl={SUPABASE_URL}
                   supabaseAnonKey={SUPABASE_ANON_KEY}
                 />
@@ -426,15 +426,11 @@
           };
 
           return (
-            // Contêiner principal da aplicação: fundo gradiente, centraliza conteúdo
             <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex flex-col items-center justify-center p-4">
-              {renderView()} {/* Renderiza a tela de login ou registro */}
-              {/* Rodapé da página */}
+              {renderView()}
               <div className="mt-8 text-center text-white text-sm opacity-80 font-inter">
                 © {new Date().getFullYear()} CPN Serviços. Todos os direitos reservados.
               </div>
-
-              {/* Renderiza o componente Modal, controlando sua visibilidade e conteúdo */}
               <Modal
                 isOpen={isModalOpen}
                 message={modalMessage}
@@ -445,8 +441,6 @@
           );
         }
 
-        // Renderiza o componente principal 'App' no elemento HTML com id 'root'
-        // Isso inicia a aplicação React
         ReactDOM.render(<App />, document.getElementById('root'));
     </script>
 </body>
