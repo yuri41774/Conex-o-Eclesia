@@ -73,8 +73,8 @@
 
         // Componente para a tela de Login
         function LoginScreen({ onSwitchToRegister, onShowModal }) {
-          const [email, setEmail] = React.useState(''); // Corrigido: React.useState
-          const [password, setPassword] = React.useState(''); // Corrigido: React.useState
+          const [email, setEmail] = React.useState('');
+          const [password, setPassword] = React.useState('');
 
           // Função assíncrona para lidar com o login
           const handleLogin = async (e) => {
@@ -166,14 +166,14 @@
         // Componente para a tela de Registro com campos adicionais
         function RegisterScreen({ onSwitchToLogin, onShowModal }) {
           // Estados para os campos do formulário de registro
-          const [fullName, setFullName] = React.useState(''); // Corrigido: React.useState
-          const [dateOfBirth, setDateOfBirth] = React.useState(''); // Corrigido: React.useState
-          const [phoneNumber, setPhoneNumber] = React.useState(''); // Corrigido: React.useState
-          const [roleInChurch, setRoleInChurch] = React.useState(''); // Corrigido: React.useState
-          const [churchName, setChurchName] = React.useState(''); // Corrigido: React.useState
-          const [registerEmail, setRegisterEmail] = React.useState(''); // Corrigido: React.useState
-          const [registerPassword, setRegisterPassword] = React.useState(''); // Corrigido: React.useState
-          const [confirmPassword, setConfirmPassword] = React.useState(''); // Corrigido: React.useState
+          const [fullName, setFullName] = React.useState('');
+          const [dateOfBirth, setDateOfBirth] = React.useState('');
+          const [phoneNumber, setPhoneNumber] = React.useState('');
+          const [roleInChurch, setRoleInChurch] = React.useState('');
+          const [churchName, setChurchName] = React.useState('');
+          const [registerEmail, setRegisterEmail] = React.useState('');
+          const [registerPassword, setRegisterPassword] = React.useState('');
+          const [confirmPassword, setConfirmPassword] = React.useState('');
 
           // Função assíncrona para lidar com o registro
           const handleRegister = async (e) => {
@@ -378,15 +378,15 @@
 
         // Componente principal do aplicativo React que gerencia as visualizações e o modal
         function App() {
-          const [currentView, setCurrentView] = React.useState('login'); // Corrigido: React.useState
-          const [isModalOpen, setIsModalOpen] = React.useState(false); // Corrigido: React.useState
-          const [modalMessage, setModalMessage] = React.useState(''); // Corrigido: React.useState
-          const [modalType, setModalType] = React.useState('info'); // Corrigido: React.useState
+          const [currentView, setCurrentView] = React.useState('login');
+          const [isModalOpen, setIsModalOpen] = React.useState(false);
+          const [modalMessage, setModalMessage] = React.useState('');
+          const [modalType, setModalType] = React.useState('info');
 
           // Variáveis Supabase (placeholders - substitua pelos seus valores reais)
           // Estas são as variáveis que seu FRONTEND pode usar
           const SUPABASE_URL = "YOUR_SUPABASE_URL"; // Substitua pela sua URL real do Supabase
-          const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpbGh0cGdlbGN0bnliamVtemVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgyNzgzOTYsImV4cCI6MjA2Mzg1NDM5Nn0.yybV4HP0d9KAJGxMq7y8N_AHKgqPHNXoqu0oH_Waoh4";
+          const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJhaHBobHBoZWd2dmRlaHJ1bXlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3MDk2NDMsImV4cCI6MjA2NjI4NTY0M30.EDM-RotlChTCWiisI4o5okQ6Llee1ZaQEAcLaphBqTs";
 
           // Função para exibir o modal com uma mensagem e um tipo
           const showModal = (message, type) => {
