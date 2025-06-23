@@ -1,0 +1,392 @@
+import React, { useState } from 'react';
+
+// Componente Modal reutilizável para mensagens de sucesso/erro
+function Modal({ isOpen, message, type, onClose }) {
+  if (!isOpen) return null;
+
+  // Determina as cores com base no tipo (success ou error)
+  const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+  const headerText = type === 'success' ? 'Sucesso!' : 'Erro!';
+
+  return (
+    <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg shadow-xl overflow-hidden max-w-sm w-full transform transition-all duration-300 scale-100">
+        {/* Cabeçalho do Modal */}
+        <div className={`${bgColor} text-white px-6 py-4 flex justify-between items-center rounded-t-lg`}>
+          <h3 className="text-xl font-bold font-inter">{headerText}</h3>
+          <button
+            onClick={onClose}
+            className="text-white hover:text-gray-200 focus:outline-none text-2xl font-bold"
+            aria-label="Fechar modal de mensagem" // ARIA-LABEL adicionado
+          >
+            &times;
+          </button>
+        </div>
+        {/* Corpo do Modal */}
+        <div className="p-6">
+          <p className="text-gray-700 text-lg mb-4 font-inter">{message}</p>
+          <div className="flex justify-end">
+            <button
+              onClick={onClose}
+              className={`py-2 px-6 rounded-lg font-bold text-white transition duration-300 shadow-md ${bgColor} hover:${bgColor.replace('500', '600')} focus:outline-none focus:ring-2 focus:ring-opacity-75`}
+              aria-label="Entendido, fechar mensagem" // ARIA-LABEL adicionado
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Componente funcional LoginScreen
+function LoginScreen({ onSwitchToRegister, onShowModal }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+
+    // Lógica de autenticação simulada
+    if (email === 'teste@conexaoeclesia.com' && password === 'senha123') {
+      onShowModal('Login bem-sucedido!', 'success');
+      // Em um aplicativo real, você redirecionaria o usuário
+    } else {
+      onShowModal('Email ou senha incorretos. Tente novamente.', 'error');
+    }
+  };
+
+  return (
+    <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md mx-auto transform transition-all duration-300 hover:scale-105">
+      <div className="text-center mb-8">
+        <h1 className="text-4xl font-extrabold text-gray-800 mb-2 font-inter">Conexão Eclesia</h1>
+        <p className="text-gray-600 text-lg">Faça login para continuar</p>
+      </div>
+
+      <form onSubmit={handleLogin}>
+        <div className="mb-6">
+          <label htmlFor="loginEmail" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+            Email ou Nome de Usuário
+          </label>
+          <input
+            type="text"
+            id="loginEmail"
+            className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+            placeholder="seuemail@exemplo.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            aria-label="Insira seu email ou nome de usuário" // ARIA-LABEL adicionado (exemplo)
+          />
+        </div>
+
+        <div className="mb-8">
+          <label htmlFor="loginPassword" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+            Senha
+          </label>
+          <input
+            type="password"
+            id="loginPassword"
+            className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 mb-3 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            aria-label="Insira sua senha" // ARIA-LABEL adicionado (exemplo)
+          />
+          <a href="#" className="inline-block align-baseline font-bold text-sm text-blue-600 hover:text-blue-800 font-inter"
+             aria-label="Clique para recuperar sua senha" // ARIA-LABEL adicionado
+          >
+            Esqueceu sua senha?
+          </a>
+        </div>
+
+        <button
+          type="submit"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 transform hover:scale-100 active:scale-95 shadow-md font-inter"
+          aria-label="Entrar na sua conta" // ARIA-LABEL adicionado
+        >
+          Entrar
+        </button>
+      </form>
+
+      <div className="mt-8 text-center">
+        <p className="text-gray-600 font-inter">
+          Não tem uma conta?{' '}
+          <a href="#" onClick={onSwitchToRegister} className="font-bold text-blue-600 hover:text-blue-800 font-inter"
+             aria-label="Clique para criar uma nova conta agora" // ARIA-LABEL adicionado
+          >
+            Crie uma agora!
+          </a>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// Componente funcional RegisterScreen com campos adicionais
+function RegisterScreen({ onSwitchToLogin, onShowModal }) {
+  const [fullName, setFullName] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [roleInChurch, setRoleInChurch] = useState('');
+  const [churchName, setChurchName] = useState('');
+  const [registerEmail, setRegisterEmail] = useState('');
+  const [registerPassword, setRegisterPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+
+    if (registerPassword !== confirmPassword) {
+      onShowModal('As senhas não coincidem. Por favor, verifique.', 'error');
+      return;
+    }
+
+    // Lógica de registro simulada
+    console.log('Dados de Registro (Simulados):', {
+      fullName,
+      dateOfBirth,
+      phoneNumber,
+      roleInChurch,
+      churchName,
+      registerEmail,
+      registerPassword
+    });
+
+    onShowModal('Registro bem-sucedido! Você pode fazer login agora.', 'success');
+
+    // Limpar formulário após o registro simulado
+    setFullName('');
+    setDateOfBirth('');
+    setPhoneNumber('');
+    setRoleInChurch('');
+    setChurchName('');
+    setRegisterEmail('');
+    setRegisterPassword('');
+    setConfirmPassword('');
+  };
+
+  return (
+    <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md mx-auto transform transition-all duration-300 hover:scale-105">
+      <div className="text-center mb-8">
+        <h1 className="text-4xl font-extrabold text-gray-800 mb-2 font-inter">Conexão Eclesia</h1>
+        <p className="text-gray-600 text-lg">Crie sua conta</p>
+      </div>
+
+      <form onSubmit={handleRegister}>
+        <div className="mb-6">
+          <label htmlFor="fullName" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+            Nome Completo
+          </label>
+          <input
+            type="text"
+            id="fullName"
+            className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+            placeholder="Seu nome completo"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            required
+            aria-label="Insira seu nome completo" // ARIA-LABEL adicionado (exemplo)
+          />
+        </div>
+
+        <div className="mb-6">
+          <label htmlFor="dateOfBirth" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+            Data de Nascimento
+          </label>
+          <input
+            type="date"
+            id="dateOfBirth"
+            className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+            value={dateOfBirth}
+            onChange={(e) => setDateOfBirth(e.target.value)}
+            required
+            aria-label="Insira sua data de nascimento" // ARIA-LABEL adicionado (exemplo)
+          />
+        </div>
+
+        <div className="mb-6">
+          <label htmlFor="phoneNumber" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+            Número de Telefone
+          </label>
+          <input
+            type="tel"
+            id="phoneNumber"
+            className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+            placeholder="(XX) XXXX-XXXX"
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            required
+            aria-label="Insira seu número de telefone" // ARIA-LABEL adicionado (exemplo)
+          />
+        </div>
+
+        <div className="mb-6">
+          <label htmlFor="roleInChurch" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+            Cargo/Função na Igreja
+          </label>
+          <input
+            type="text"
+            id="roleInChurch"
+            className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+            placeholder="Ex: Pastor, Membro, Voluntário"
+            value={roleInChurch}
+            onChange={(e) => setRoleInChurch(e.target.value)}
+            aria-label="Insira seu cargo ou função na igreja" // ARIA-LABEL adicionado (exemplo)
+          />
+        </div>
+
+        <div className="mb-6">
+          <label htmlFor="churchName" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+            Nome da Igreja/Comunidade
+          </label>
+          <input
+            type="text"
+            id="churchName"
+            className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+            placeholder="Nome da sua igreja"
+            value={churchName}
+            onChange={(e) => setChurchName(e.target.value)}
+            aria-label="Insira o nome da sua igreja ou comunidade" // ARIA-LABEL adicionado (exemplo)
+          />
+        </div>
+
+        <div className="mb-6">
+          <label htmlFor="registerEmail" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+            Email
+          </label>
+          <input
+            type="email"
+            id="registerEmail"
+            className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+            placeholder="seuemail@exemplo.com"
+            value={registerEmail}
+            onChange={(e) => setRegisterEmail(e.target.value)}
+            required
+            aria-label="Insira seu endereço de email para registro" // ARIA-LABEL adicionado (exemplo)
+          />
+        </div>
+
+        <div className="mb-6">
+          <label htmlFor="registerPassword" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+            Senha
+          </label>
+          <input
+            type="password"
+            id="registerPassword"
+            className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+            placeholder="••••••••"
+            value={registerPassword}
+            onChange={(e) => setRegisterPassword(e.target.value)}
+            required
+            aria-label="Insira sua senha de registro" // ARIA-LABEL adicionado (exemplo)
+          />
+        </div>
+
+        <div className="mb-8">
+          <label htmlFor="confirmPassword" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+            Confirmar Senha
+          </label>
+          <input
+            type="password"
+            id="confirmPassword"
+            className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+            placeholder="••••••••"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            aria-label="Confirme sua senha de registro" // ARIA-LABEL adicionado (exemplo)
+          />
+        </div>
+
+        <button
+          type="submit"
+          className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 transform hover:scale-100 active:scale-95 shadow-md font-inter"
+          aria-label="Finalizar registro da conta" // ARIA-LABEL adicionado
+        >
+          Registrar
+        </button>
+      </form>
+
+      <div className="mt-8 text-center">
+        <p className="text-gray-600 font-inter">
+          Já tem uma conta?{' '}
+          <a href="#" onClick={onSwitchToLogin} className="font-bold text-blue-600 hover:text-blue-800 font-inter"
+             aria-label="Clique para fazer login em sua conta existente" // ARIA-LABEL adicionado
+          >
+            Faça login
+          </a>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// Componente principal do aplicativo React que gerencia as visualizações
+export default function App() {
+  const [currentView, setCurrentView] = useState('login'); // 'login' ou 'register'
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
+  const [modalType, setModalType] = useState('info'); // 'success' ou 'error'
+
+  // Variáveis Supabase (placeholders - substitua pelos seus valores reais)
+  // Estas são as variáveis que seu FRONTEND pode usar
+  const SUPABASE_URL = "YOUR_SUPABASE_URL"; // Substitua pela sua URL real do Supabase
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpbGh0cGdlbGN0bnliamVtemVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgyNzgzOTYsImV4cCI6MjA2Mzg1NDM5Nn0.yybV4HP0d9KAJGxMq7y8N_AHKgqPHNXoqu0oH_Waoh4";
+
+  // Função para exibir o modal
+  const showModal = (message, type) => {
+    setModalMessage(message);
+    setModalType(type);
+    setIsModalOpen(true);
+  };
+
+  // Função para fechar o modal
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setModalMessage('');
+    setModalType('info');
+  };
+
+  const renderView = () => {
+    if (currentView === 'login') {
+      return (
+        <LoginScreen
+          onSwitchToRegister={() => setCurrentView('register')}
+          onShowModal={showModal} // Passa a função showModal para LoginScreen
+          supabaseUrl={SUPABASE_URL}
+          supabaseAnonKey={SUPABASE_ANON_KEY}
+        />
+      );
+    } else {
+      return (
+        <RegisterScreen
+          onSwitchToLogin={() => setCurrentView('login')}
+          onShowModal={showModal} // Passa a função showModal para RegisterScreen
+          supabaseUrl={SUPABASE_URL}
+          supabaseAnonKey={SUPABASE_ANON_KEY}
+        />
+      );
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex flex-col items-center justify-center p-4">
+      {renderView()}
+      {/* Rodapé da página */}
+      <div className="mt-8 text-center text-white text-sm opacity-80 font-inter">
+        © {new Date().getFullYear()} CPN Serviços. Todos os direitos reservados.
+      </div>
+
+      {/* Renderiza o componente Modal */}
+      <Modal
+        isOpen={isModalOpen}
+        message={modalMessage}
+        type={modalType}
+        onClose={closeModal}
+      />
+    </div>
+  );
+}
