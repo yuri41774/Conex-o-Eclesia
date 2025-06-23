@@ -326,16 +326,16 @@
                 <button className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" aria-label="Navegar para Igrejas"><span className="sidebar-item-text">Igrejas</span></button>
                 <button className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" aria-label="Navegar para Eventos"><span className="sidebar-item-text">Eventos</span></button>
                 {/* Botões de categorias na barra lateral */}
-                <button className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" aria-label="Ver posts de Estudo Bíblico"><span className="sidebar-item-text">Estudo Bíblico</span></button>
-                <button className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" aria-label="Ver posts de Ação Social"><span className="sidebar-item-text">Ação Social</span></button>
-                <button className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" aria-label="Ver posts de Noite de Louvor"><span className="sidebar-item-text">Noite de Louvor</span></button>
+                <button className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" aria-label="Ver posts de Estudo Bíblico">Estudo Bíblico</button>
+                <button className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" aria-label="Ver posts de Ação Social">Ação Social</button>
+                <button className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" aria-label="Ver posts de Noite de Louvor">Noite de Louvor</button>
 
                 <button
                     onClick={() => setIsCreatePostModalOpen(true)} // Abre o modal de criação de post
                     className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter bg-blue-500 hover:bg-blue-600"
                     aria-label="Criar uma nova publicação"
                 >
-                    <span className="sidebar-item-text">Criar Publicação</span>
+                    Criar Publicação
                 </button>
 
                 {/* Botão de Sair no rodapé da barra lateral */}
@@ -345,7 +345,7 @@
                     className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 transform hover:scale-100 active:scale-95 shadow-md font-inter"
                     aria-label="Sair da sua conta"
                   >
-                    <span className="sidebar-item-text">Sair</span>
+                    Sair
                   </button>
                 </div>
               </aside>
@@ -404,14 +404,36 @@
           const [isModalOpen, setIsModalOpen] = React.useState(false);
           const [modalMessage, setModalMessage] = React.useState('');
           const [modalType, setModalType] = React.useState('info');
+          const [isAuthChecking, setIsAuthChecking] = React.useState(true); // Novo estado para verificar autenticação
 
           // Variáveis Supabase - SUBSTITUA PELOS SEUS VALORES REAIS!
           // Obtenha a URL do seu projeto Supabase no Dashboard > Settings > API
-          const SUPABASE_URL = "https://rahhplphegvvdehrumyp.supabase.co"; 
+          const SUPABASE_URL = "https://rahphlphegvvdehrumyp.supabase.co"; 
           const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJhaGhwbHBoZWd2dmRlaHJ1bXlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3MDk2NDMsImV4cCI6MjA2NjI4NTY0M30.EDM-RotlChTCWiisI4o5okQ6Llee1ZaQEAcLaphBqTs";
 
           // Inicializa o cliente Supabase
           const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+          // Efeito para verificar a sessão do usuário ao carregar a página
+          React.useEffect(() => {
+            const checkUserSession = async () => {
+              try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) {
+                  // Se não houver sessão, redireciona para a página de login
+                  window.location.href = 'index.html';
+                } else {
+                  setIsAuthChecking(false); // Autenticado, então desativa o estado de checagem
+                }
+              } catch (error) {
+                console.error('Erro ao verificar sessão:', error);
+                // Em caso de erro, ainda redireciona para o login por segurança
+                window.location.href = 'index.html';
+              }
+            };
+
+            checkUserSession();
+          }, []); // Executa apenas uma vez ao montar
 
           const showModal = (message, type) => {
             setModalMessage(message);
@@ -434,13 +456,22 @@
               } else {
                 showModal('Logout realizado com sucesso!', 'success');
                 // Redireciona de volta para a página de login principal (index.html)
-                window.location.href = 'index.html'; // Redirecionamento para index.html
+                window.location.href = 'index.html';
               }
             } catch (error) {
               console.error('Erro inesperado ao fazer logout:', error);
               showModal('Ocorreu um erro inesperado ao fazer logout.', 'error');
             }
           };
+
+          // Mostra uma tela de carregamento enquanto verifica a autenticação
+          if (isAuthChecking) {
+            return (
+              <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
+                <div className="text-white text-2xl font-bold font-inter">Verificando autenticação...</div>
+              </div>
+            );
+          }
 
           return (
             // Contêiner principal da aplicação: fundo gradiente, ocupa toda a tela.
