@@ -1,1 +1,427 @@
 
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conexão Eclesia - Feed</title>
+    <!-- Incluindo Tailwind CSS para estilização (via CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Incluindo a fonte Inter do Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <!-- Importa React e ReactDOM a partir de um CDN (unpkg.com) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Importa Babel para transpilar JSX diretamente no navegador -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Importa o SDK do Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- O código React/JSX agora será processado por Babel -->
+    <script type="text/babel">
+        // Componente Modal reutilizável para exibir mensagens de sucesso ou erro
+        function Modal({ isOpen, message, type, onClose }) {
+          if (!isOpen) return null;
+
+          const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+          const headerText = type === 'success' ? 'Sucesso!' : 'Erro!';
+
+          return (
+            <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-lg shadow-xl overflow-hidden max-w-sm w-full transform transition-all duration-300 scale-100">
+                <div className={`${bgColor} text-white px-6 py-4 flex justify-between items-center rounded-t-lg`}>
+                  <h3 className="text-xl font-bold font-inter">{headerText}</h3>
+                  <button
+                    onClick={onClose}
+                    className="text-white hover:text-gray-200 focus:outline-none text-2xl font-bold"
+                    aria-label="Fechar modal de mensagem"
+                  >
+                    &times;
+                  </button>
+                </div>
+                <div className="p-6">
+                  <p className="text-gray-700 text-lg mb-4 font-inter">{message}</p>
+                  <div className="flex justify-end">
+                    <button
+                      onClick={onClose}
+                      className={`py-2 px-6 rounded-lg font-bold text-white transition duration-300 shadow-md ${bgColor} hover:${bgColor.replace('500', '600')} focus:outline-none focus:ring-2 focus:ring-opacity-75`}
+                      aria-label="Entendido, fechar mensagem"
+                    >
+                      OK
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        // Novo Componente: CreatePostModal para criar novas publicações
+        function CreatePostModal({ isOpen, onClose, onSavePost, onShowMessage, supabase }) {
+          const [title, setTitle] = React.useState('');
+          const [content, setContent] = React.useState('');
+          const [image, setImage] = React.useState(''); // Para URL da imagem
+          const [isLoading, setIsLoading] = React.useState(false); // Novo estado para carregamento
+
+          const handleSubmit = async (e) => {
+            e.preventDefault();
+            if (!title || !content) {
+              onShowMessage('Título e Conteúdo são obrigatórios.', 'error');
+              return;
+            }
+
+            setIsLoading(true); // Inicia o carregamento
+
+            try {
+              const { data: { user } } = await supabase.auth.getUser(); // Obtém o usuário logado
+              if (!user) {
+                onShowMessage('Você precisa estar logado para criar uma publicação.', 'error');
+                setIsLoading(false);
+                return;
+              }
+
+              const { data, error } = await supabase
+                .from('posts')
+                .insert([
+                  {
+                    title,
+                    content,
+                    image_url: image || null, // Usamos 'image_url' conforme a tabela Supabase
+                    author_id: user.id, // Associa o post ao usuário logado
+                    // church_id: 'seu_church_id_aqui' // Opcional: Se quiser associar a uma igreja específica
+                    is_published: true // Define como publicado por padrão
+                  }
+                ])
+                .select(); // Retorna o post inserido
+
+              if (error) {
+                console.error('Erro ao salvar no Supabase:', error);
+                onShowMessage(`Erro ao criar publicação: ${error.message}`, 'error');
+              } else {
+                onSavePost(data[0]); // Adiciona o post retornado pelo Supabase
+                onShowMessage('Publicação criada com sucesso!', 'success');
+                // Limpa o formulário
+                setTitle('');
+                setContent('');
+                setImage('');
+                onClose(); // Fecha o modal
+              }
+            } catch (error) {
+              console.error('Erro inesperado:', error);
+              onShowMessage('Ocorreu um erro inesperado ao criar a publicação.', 'error');
+            } finally {
+              setIsLoading(false); // Finaliza o carregamento
+            }
+          };
+
+          if (!isOpen) return null;
+
+          return (
+            <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-lg shadow-xl overflow-hidden max-w-md w-full transform transition-all duration-300 scale-100">
+                <div className="bg-blue-600 text-white px-6 py-4 flex justify-between items-center rounded-t-lg">
+                  <h3 className="text-xl font-bold font-inter">Criar Nova Publicação</h3>
+                  <button
+                    onClick={onClose}
+                    className="text-white hover:text-gray-200 focus:outline-none text-2xl font-bold"
+                    aria-label="Fechar modal de criação de publicação"
+                    disabled={isLoading} // Desabilita o botão ao carregar
+                  >
+                    &times;
+                  </button>
+                </div>
+                <div className="p-6">
+                  <form onSubmit={handleSubmit}>
+                    <div className="mb-4">
+                      <label htmlFor="postTitle" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Título</label>
+                      <input
+                        type="text"
+                        id="postTitle"
+                        className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+                        placeholder="Título da sua publicação"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        required
+                        aria-label="Campo para o título da publicação"
+                        disabled={isLoading} // Desabilita o input ao carregar
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <label htmlFor="postContent" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Conteúdo</label>
+                      <textarea
+                        id="postContent"
+                        className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter h-32 resize-none"
+                        placeholder="Escreva o conteúdo da sua publicação aqui..."
+                        value={content}
+                        onChange={(e) => setContent(e.target.value)}
+                        required
+                        aria-label="Campo para o conteúdo da publicação"
+                        disabled={isLoading} // Desabilita o textarea ao carregar
+                      ></textarea>
+                    </div>
+                    <div className="mb-6">
+                      <label htmlFor="postImage" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">URL da Imagem (Opcional)</label>
+                      <input
+                        type="url"
+                        id="postImage"
+                        className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+                        placeholder="https://exemplo.com/imagem.jpg"
+                        value={image}
+                        onChange={(e) => setImage(e.target.value)}
+                        aria-label="Campo para a URL da imagem da publicação"
+                        disabled={isLoading} // Desabilita o input ao carregar
+                      />
+                    </div>
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={onClose}
+                        className="mr-4 py-2 px-6 rounded-lg font-bold text-gray-700 bg-gray-200 hover:bg-gray-300 transition duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75 font-inter"
+                        aria-label="Cancelar criação da publicação"
+                        disabled={isLoading} // Desabilita o botão ao carregar
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="submit"
+                        className="py-2 px-6 rounded-lg font-bold text-white bg-green-600 hover:bg-green-700 transition duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75 font-inter"
+                        aria-label="Salvar nova publicação"
+                        disabled={isLoading} // Desabilita o botão ao carregar
+                      >
+                        {isLoading ? 'Publicando...' : 'Publicar'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        // Componente para a tela de Feed
+        function FeedScreen({ onShowModal, onLogout, supabase }) {
+          const [posts, setPosts] = React.useState([]); // Começa com posts vazios, serão carregados do Supabase
+          const [isCreatePostModalOpen, setIsCreatePostModalOpen] = React.useState(false);
+          const [isLoadingPosts, setIsLoadingPosts] = React.useState(true); // Novo estado para indicar carregamento dos posts
+
+          // Função para carregar posts do Supabase
+          const fetchPosts = async () => {
+            setIsLoadingPosts(true);
+            try {
+              const { data, error } = await supabase
+                .from('posts')
+                .select(`
+                  *,
+                  profiles (full_name)  // Pega o nome completo do autor do perfil
+                `)
+                .order('created_at', { ascending: false }); // Ordena pelos mais recentes
+
+              if (error) {
+                console.error('Erro ao carregar posts:', error);
+                // Exibe a mensagem de erro específica do Supabase
+                onShowModal(`Erro ao carregar publicações: ${error.message || 'Erro desconhecido'}`, 'error');
+                setPosts([]); // Limpa os posts em caso de erro
+              } else {
+                // Mapeia os dados para incluir o nome do autor e a igreja (se tiver)
+                const formattedPosts = data.map(post => ({
+                  id: post.id,
+                  author: post.profiles ? post.profiles.full_name : 'Autor Desconhecido', // Usa o nome do perfil, se disponível
+                  church: post.church_id ? 'Nome da Igreja Aqui (buscar)' : '', // Em um app real, buscaria o nome da igreja
+                  date: new Date(post.created_at).toLocaleDateString('pt-BR'),
+                  title: post.title,
+                  content: post.content,
+                  image: post.image_url // Assume que a coluna se chama image_url
+                }));
+                setPosts(formattedPosts);
+              }
+            } catch (error) {
+              console.error('Erro inesperado ao buscar posts:', error);
+              onShowModal('Ocorreu um erro inesperado ao carregar as publicações.', 'error');
+              setPosts([]);
+            } finally {
+              setIsLoadingPosts(false);
+            }
+          };
+
+          // Efeito para carregar os posts quando o componente é montado
+          React.useEffect(() => {
+            fetchPosts();
+          }, []); // Executa apenas uma vez ao montar
+
+          const handleNewPost = (newPost) => {
+            // Re-busca os posts para garantir que a lista esteja atualizada com o Supabase
+            // ou, para maior performance em apps pequenos, adicione o newPost diretamente no estado
+            fetchPosts();
+          };
+
+          return (
+            // Contêiner principal do layout do feed: barra lateral e conteúdo principal
+            // flex-col para mobile, md:flex-row para desktop
+            <div className="flex flex-col md:flex-row min-h-screen w-full bg-gradient-to-br from-blue-600 to-purple-700 p-4 sm:p-6 md:p-8">
+              {/* Barra Lateral */}
+              {/* Em telas pequenas: largura total, topo arredondado. Em md: largura fixa, sem arredondamento direito. */}
+              <aside className="w-full md:w-64 bg-gray-800 text-white p-4 flex flex-col items-center md:items-start space-y-4 rounded-xl shadow-lg mb-4 md:mb-0 md:rounded-r-none md:mr-4">
+                <div className="text-3xl font-extrabold mb-6 font-inter text-blue-300">Menu</div>
+                {/* Ícone de Perfil e Nome (Placeholder) */}
+                <div className="flex items-center space-x-2 text-xl cursor-pointer hover:text-blue-300 transition duration-200" aria-label="Acessar meu perfil">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                    </svg>
+                    <span className="font-inter">Meu Perfil</span>
+                </div>
+                {/* Botões de Navegação */}
+                <button className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" aria-label="Navegar para Minhas Igrejas">Minhas Igrejas</button>
+                <button className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" aria-label="Navegar para Eventos">Eventos</button>
+                {/* Botões de categorias na barra lateral */}
+                <button className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" aria-label="Ver posts de Estudo Bíblico">Estudo Bíblico</button>
+                <button className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" aria-label="Ver posts de Ação Social">Ação Social</button>
+                <button className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" aria-label="Ver posts de Noite de Louvor">Noite de Louvor</button>
+
+                <button
+                    onClick={() => setIsCreatePostModalOpen(true)} // Abre o modal de criação de post
+                    className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter bg-blue-500 hover:bg-blue-600"
+                    aria-label="Criar uma nova publicação"
+                >
+                    Criar Publicação
+                </button>
+
+                {/* Botão de Sair no rodapé da barra lateral */}
+                <div className="mt-auto pt-4 w-full border-t border-gray-700 md:border-none"> {/* Adicionado borda superior para mobile */}
+                  <button
+                    onClick={onLogout}
+                    className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 transform hover:scale-100 active:scale-95 shadow-md font-inter"
+                    aria-label="Sair da sua conta"
+                  >
+                    Sair
+                  </button>
+                </div>
+              </aside>
+
+              {/* Área de Conteúdo Principal (Feed de Publicações) */}
+              <main className="flex-1 p-6 bg-gray-100 rounded-xl shadow-xl max-w-2xl mx-auto"> {/* Ajustado para max-w-2xl e mx-auto para centralizar */}
+                <div className="text-center mb-8">
+                  <h1 className="text-4xl font-extrabold text-gray-800 mb-2 font-inter">Posts e Anúncios</h1>
+                  <p className="text-gray-600 text-lg">Últimas notícias e comunicados da comunidade.</p>
+                </div>
+
+                {isLoadingPosts ? (
+                  <div className="text-center text-gray-600 text-lg font-inter">Carregando publicações...</div>
+                ) : posts.length === 0 ? (
+                  <div className="text-center text-gray-600 text-lg font-inter">Nenhuma publicação encontrada.</div>
+                ) : (
+                  // Feed de posts em uma única coluna
+                  <div className="flex flex-col space-y-6"> {/* Mudado para flex-col e space-y para espaçamento vertical */}
+                    {posts.map(post => (
+                      <div key={post.id} className="bg-white p-6 rounded-lg shadow-lg border border-gray-200"> {/* bg-white e shadow-lg para um visual mais proeminente */}
+                        {post.image && (
+                          <img
+                            src={post.image}
+                            alt={`Imagem para o post: ${post.title}`}
+                            className="w-full h-48 object-cover rounded-lg mb-4"
+                            onError={(e) => { e.target.onerror = null; e.target.src = `https://placehold.co/400x200/cccccc/ffffff?text=Imagem+N%C3%A3o+Dispon%C3%ADvel`; }}
+                          />
+                        )}
+                        <h2 className="text-2xl font-bold text-gray-800 mb-2 font-inter">{post.title}</h2>
+                        <p className="text-sm text-gray-500 mb-3 font-inter">
+                          Por {post.author} {post.church && `da ${post.church}`} em {post.date}
+                        </p>
+                        <p className="text-gray-700 leading-relaxed font-inter">{post.content}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </main>
+
+              {/* Modal de Criação de Publicação */}
+              <CreatePostModal
+                isOpen={isCreatePostModalOpen}
+                onClose={() => setIsCreatePostModalOpen(false)}
+                onSavePost={handleNewPost}
+                onShowMessage={onShowModal}
+                supabase={supabase} // Passa a instância do Supabase
+              />
+            </div>
+          );
+        }
+
+        // Componente principal para a página de feed
+        function App() {
+          const [isModalOpen, setIsModalOpen] = React.useState(false);
+          const [modalMessage, setModalMessage] = React.useState('');
+          const [modalType, setModalType] = React.useState('info');
+
+          // Variáveis Supabase - SUBSTITUA PELOS SEUS VALORES REAIS!
+          // Obtenha a URL do seu projeto Supabase no Dashboard > Settings > API
+          const SUPABASE_URL = "https://rahhplphegvvdehrumyp.supabase.co"; 
+          const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJhaGhwbHBoZWd2dmRlaHJ1bXlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3MDk2NDMsImV4cCI6MjA2NjI4NTY0M30.EDM-RotlChTCWiisI4o5okQ6Llee1ZaQEAcLaphBqTs";
+
+          // Inicializa o cliente Supabase
+          const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+          const showModal = (message, type) => {
+            setModalMessage(message);
+            setModalType(type);
+            setIsModalOpen(true);
+          };
+
+          const closeModal = () => {
+            setIsModalOpen(false);
+            setModalMessage('');
+            setModalType('info');
+          };
+
+          const handleLogout = async () => {
+            try {
+              const { error } = await supabase.auth.signOut();
+              if (error) {
+                console.error('Erro ao fazer logout:', error);
+                showModal(`Erro ao fazer logout: ${error.message}`, 'error');
+              } else {
+                showModal('Logout realizado com sucesso!', 'success');
+                // Redireciona de volta para a página de login principal (index.html)
+                window.location.href = 'index.html'; // Redirecionamento para index.html
+              }
+            } catch (error) {
+              console.error('Erro inesperado ao fazer logout:', error);
+              showModal('Ocorreu um erro inesperado ao fazer logout.', 'error');
+            }
+          };
+
+          return (
+            // Contêiner principal da aplicação: fundo gradiente, ocupa toda a tela.
+            // Para mobile, os itens internos (sidebar e main) se empilham por padrão (flex-col).
+            // A barra lateral e o feed são os filhos diretos do div principal.
+            <div className="min-h-screen flex flex-col md:flex-row items-stretch justify-center p-0">
+              <FeedScreen
+                onShowModal={showModal}
+                onLogout={handleLogout}
+                supabase={supabase} // Passa a instância do Supabase para FeedScreen
+              />
+              {/* Rodapé da página (fixo na parte inferior da tela, ocupando a largura total) */}
+              <div className="text-center text-white text-sm opacity-80 font-inter py-4 bg-gray-800 w-full md:hidden">
+                 {/* Rodapé só aparece em telas menores que md, pois no desktop a sidebar já tem o botão sair no fim */}
+                © {new Date().getFullYear()} CPN Serviços. Todos os direitos reservados.
+              </div>
+              <Modal
+                isOpen={isModalOpen}
+                message={modalMessage}
+                type={modalType}
+                onClose={closeModal}
+              />
+            </div>
+          );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
