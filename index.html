@@ -23,6 +23,9 @@
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <!-- Importa Babel para transpilar JSX diretamente no navegador -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Importa o SDK do Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 
     <!-- O código React/JSX agora será processado por Babel -->
     <script type="text/babel">
@@ -72,21 +75,36 @@
         }
 
         // Componente para a tela de Login
-        function LoginScreen({ onSwitchToRegister, onShowModal, onLoginSuccess }) {
+        function LoginScreen({ onSwitchToRegister, onShowModal, onLoginSuccess, supabase }) {
           const [email, setEmail] = React.useState('');
           const [password, setPassword] = React.useState('');
+          const [isLoading, setIsLoading] = React.useState(false); // Adicionado para indicar estado de carregamento
 
           // Função assíncrona para lidar com o login
           const handleLogin = async (e) => {
             e.preventDefault(); // Previne o recarregamento da página
+            setIsLoading(true); // Inicia o carregamento
 
-            // Lógica de autenticação simulada
-            if (email === 'teste@conexaoeclesia.com' && password === 'senha123') {
-              onShowModal('Login bem-sucedido!', 'success'); // Exibe modal de sucesso
-              // Em um aplicativo real, você redirecionaria o usuário
-              onLoginSuccess(); // Chama a função de sucesso no login que fará o redirecionamento
-            } else {
-              onShowModal('Email ou senha incorretos. Tente novamente.', 'error'); // Exibe modal de erro
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password,
+                });
+
+                if (error) {
+                    console.error('Erro de login no Supabase:', error);
+                    onShowModal(`Erro no login: ${error.message}`, 'error');
+                } else if (data.user) {
+                    onShowModal('Login bem-sucedido!', 'success');
+                    onLoginSuccess(); // Redireciona para o feed
+                } else {
+                    onShowModal('Credenciais inválidas. Tente novamente.', 'error');
+                }
+            } catch (error) {
+                console.error('Erro inesperado ao tentar fazer login:', error);
+                onShowModal('Ocorreu um erro inesperado ao fazer login.', 'error');
+            } finally {
+                setIsLoading(false); // Finaliza o carregamento
             }
           };
 
@@ -113,6 +131,7 @@
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     aria-label="Insira seu email ou nome de usuário"
+                    disabled={isLoading}
                   />
                 </div>
 
@@ -130,6 +149,7 @@
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     aria-label="Insira sua senha"
+                    disabled={isLoading}
                   />
                   {/* Link "Esqueceu sua senha?" com ARIA-LABEL */}
                   <a href="#" className="inline-block align-baseline font-bold text-sm text-blue-600 hover:text-blue-800 font-inter"
@@ -144,8 +164,9 @@
                   type="submit"
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 transform hover:scale-100 active:scale-95 shadow-md font-inter"
                   aria-label="Entrar na sua conta"
+                  disabled={isLoading}
                 >
-                  Entrar
+                  {isLoading ? 'Entrando...' : 'Entrar'}
                 </button>
               </form>
 
@@ -165,7 +186,7 @@
         }
 
         // Componente para a tela de Registro com campos adicionais
-        function RegisterScreen({ onSwitchToLogin, onShowModal }) {
+        function RegisterScreen({ onSwitchToLogin, onShowModal, supabase }) {
           // Estados para os campos do formulário de registro
           const [fullName, setFullName] = React.useState('');
           const [dateOfBirth, setDateOfBirth] = React.useState('');
@@ -175,39 +196,75 @@
           const [registerEmail, setRegisterEmail] = React.useState('');
           const [registerPassword, setRegisterPassword] = React.useState('');
           const [confirmPassword, setConfirmPassword] = React.useState('');
+          const [isLoading, setIsLoading] = React.useState(false); // Adicionado para indicar estado de carregamento
 
           // Função assíncrona para lidar com o registro
           const handleRegister = async (e) => {
             e.preventDefault(); // Previne o recarregamento da página
 
-            // Verifica se as senhas coincidem
             if (registerPassword !== confirmPassword) {
               onShowModal('As senhas não coincidem. Por favor, verifique.', 'error');
               return;
             }
+            setIsLoading(true); // Inicia o carregamento
 
-            // Simulação de envio dos dados de registro para o console
-            console.log('Dados de Registro (Simulados):', {
-              fullName,
-              dateOfBirth,
-              phoneNumber,
-              roleInChurch,
-              churchName,
-              registerEmail,
-              registerPassword
-            });
+            try {
+                // 1. Registrar o usuário no Auth do Supabase
+                const { data: authData, error: authError } = await supabase.auth.signUp({
+                    email: registerEmail,
+                    password: registerPassword,
+                    options: {
+                        data: {
+                            full_name_from_signup: fullName, // Exemplo de metadados para o usuário auth
+                        },
+                    },
+                });
 
-            onShowModal('Registro bem-sucedido! Você pode fazer login agora.', 'success');
+                if (authError) {
+                    console.error('Erro de registro no Supabase Auth:', authError);
+                    onShowModal(`Erro ao registrar: ${authError.message}`, 'error');
+                } else if (authData.user) {
+                    // 2. Criar um perfil correspondente na tabela 'public.profiles'
+                    const { error: profileError } = await supabase
+                        .from('profiles')
+                        .insert([
+                            {
+                                id: authData.user.id, // ID do usuário do Auth
+                                full_name: fullName,
+                                phone_number: phoneNumber,
+                                date_of_birth: dateOfBirth,
+                                role_in_church: roleInChurch,
+                                // avatar_url: 'URL_PADRAO_OU_VAZIO' // Adicionar se tiver uma URL padrão ou se for preenchido depois
+                            }
+                        ]);
 
-            // Limpa o formulário após o registro simulado
-            setFullName('');
-            setDateOfBirth('');
-            setPhoneNumber('');
-            setRoleInChurch('');
-            setChurchName('');
-            setRegisterEmail('');
-            setRegisterPassword('');
-            setConfirmPassword('');
+                    if (profileError) {
+                        console.error('Erro ao criar perfil:', profileError);
+                        onShowModal(`Registro de usuário OK, mas erro ao criar perfil: ${profileError.message}. Por favor, tente novamente.`, 'error');
+                        // Opcional: Você pode querer deletar o usuário recém-criado no Auth se o perfil falhar.
+                        // await supabase.auth.admin.deleteUser(authData.user.id);
+                    } else {
+                        onShowModal('Registro bem-sucedido! Por favor, verifique seu e-mail para confirmar a conta.', 'success');
+                        // Limpa o formulário e retorna para a tela de login
+                        setFullName('');
+                        setDateOfBirth('');
+                        setPhoneNumber('');
+                        setRoleInChurch('');
+                        setChurchName('');
+                        setRegisterEmail('');
+                        setRegisterPassword('');
+                        setConfirmPassword('');
+                        onSwitchToLogin();
+                    }
+                } else {
+                    onShowModal('Registro falhou. Por favor, tente novamente.', 'error');
+                }
+            } catch (error) {
+                console.error('Erro inesperado ao tentar registrar:', error);
+                onShowModal('Ocorreu um erro inesperado ao registrar.', 'error');
+            } finally {
+                setIsLoading(false); // Finaliza o carregamento
+            }
           };
 
           return (
@@ -233,6 +290,7 @@
                     onChange={(e) => setFullName(e.target.value)}
                     required
                     aria-label="Insira seu nome completo"
+                    disabled={isLoading}
                   />
                 </div>
 
@@ -249,6 +307,7 @@
                     onChange={(e) => setDateOfBirth(e.target.value)}
                     required
                     aria-label="Insira sua data de nascimento"
+                    disabled={isLoading}
                   />
                 </div>
 
@@ -266,6 +325,7 @@
                     onChange={(e) => setPhoneNumber(e.target.value)}
                     required
                     aria-label="Insira seu número de telefone"
+                    disabled={isLoading}
                   />
                 </div>
 
@@ -282,6 +342,7 @@
                     value={roleInChurch}
                     onChange={(e) => setRoleInChurch(e.target.value)}
                     aria-label="Insira seu cargo ou função na igreja"
+                    disabled={isLoading}
                   />
                 </div>
 
@@ -298,6 +359,7 @@
                     value={churchName}
                     onChange={(e) => setChurchName(e.target.value)}
                     aria-label="Insira o nome da sua igreja ou comunidade"
+                    disabled={isLoading}
                   />
                 </div>
 
@@ -314,6 +376,7 @@
                     onChange={(e) => setRegisterEmail(e.target.value)}
                     required
                     aria-label="Insira seu endereço de email para registro"
+                    disabled={isLoading}
                   />
                 </div>
 
@@ -330,6 +393,7 @@
                     onChange={(e) => setRegisterPassword(e.target.value)}
                     required
                     aria-label="Insira sua senha de registro"
+                    disabled={isLoading}
                   />
                 </div>
 
@@ -346,6 +410,7 @@
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     aria-label="Confirme sua senha de registro"
+                    disabled={isLoading}
                   />
                 </div>
 
@@ -353,14 +418,16 @@
                   type="submit"
                   className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 transform hover:scale-100 active:scale-95 shadow-md font-inter"
                   aria-label="Finalizar registro da conta"
+                  disabled={isLoading}
                 >
-                  Registrar
+                  {isLoading ? 'Registrando...' : 'Registrar'}
                 </button>
               </form>
 
               <div className="mt-8 text-center">
                 <p className="text-gray-600 font-inter">
                   Já tem uma conta?{' '}
+                  {/* Link para alternar para a tela de registro com ARIA-LABEL */}
                   <a href="#" onClick={onSwitchToLogin} className="font-bold text-blue-600 hover:text-blue-800 font-inter"
                      aria-label="Clique para fazer login em sua conta existente"
                   >
@@ -383,6 +450,10 @@
           // Obtenha a URL do seu projeto Supabase no Dashboard > Settings > API
           const SUPABASE_URL = "https://rahhplphegvvdehrumyp.supabase.co"; // Substitua pela sua URL real do Supabase
           const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJhaGhwbHBoZWd2dmRlaHJ1bXlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3MDk2NDMsImV4cCI6MjA2NjI4NTY0M30.EDM-RotlChTCWiisI4o5okQ6Llee1ZaQEAcLaphBqTs";
+
+          // Inicializa o cliente Supabase aqui no componente App
+          const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 
           const showModal = (message, type) => {
             setModalMessage(message);
@@ -409,8 +480,7 @@
                   onSwitchToRegister={() => setCurrentView('register')}
                   onShowModal={showModal}
                   onLoginSuccess={handleLoginSuccess} // Passando a função de redirecionamento
-                  supabaseUrl={SUPABASE_URL}
-                  supabaseAnonKey={SUPABASE_ANON_KEY}
+                  supabase={supabase} // Passa a instância do Supabase para LoginScreen
                 />
               );
             } else if (currentView === 'register') {
@@ -418,8 +488,7 @@
                 <RegisterScreen
                   onSwitchToLogin={() => setCurrentView('login')}
                   onShowModal={showModal}
-                  supabaseUrl={SUPABASE_URL}
-                  supabaseAnonKey={SUPABASE_ANON_KEY}
+                  supabase={supabase} // Passa a instância do Supabase para RegisterScreen
                 />
               );
             }
@@ -441,6 +510,7 @@
           );
         }
 
+        // Renderiza o componente principal 'App' no elemento HTML com id 'root'
         ReactDOM.render(<App />, document.getElementById('root'));
     </script>
 </body>
