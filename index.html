@@ -35,37 +35,29 @@
 
     <!-- O código React/JSX agora será processado por Babel -->
     <script type="text/babel">
-        // Componente Modal reutilizável para exibir mensagens de sucesso ou erro
+        // Componente Modal (sem alterações)
         function Modal({ isOpen, message, type, onClose }) {
-          // Se o modal não estiver aberto, não renderiza nada
           if (!isOpen) return null;
 
-          // Define as classes de cor de fundo e o texto do cabeçalho com base no tipo da mensagem
           const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
           const headerText = type === 'success' ? 'Sucesso!' : 'Erro!';
 
           return (
-            // Overlay fixo que cobre toda a tela, com fundo escuro e opaco
             <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
-              {/* Contêiner do modal: fundo branco, arredondado, sombra e transição */}
               <div className="bg-white rounded-lg shadow-xl overflow-hidden max-w-sm w-full transform transition-all duration-300 scale-100">
-                {/* Cabeçalho do Modal: cor de fundo dinâmica, texto branco, alinhamento e botão de fechar */}
                 <div className={`${bgColor} text-white px-6 py-4 flex justify-between items-center rounded-t-lg`}>
                   <h3 className="text-xl font-bold font-inter">{headerText}</h3>
-                  {/* Botão para fechar o modal, com ARIA-LABEL para acessibilidade */}
                   <button
                     onClick={onClose}
                     className="text-white hover:text-gray-200 focus:outline-none text-2xl font-bold"
                     aria-label="Fechar modal de mensagem"
                   >
-                    &times; {/* Caractere 'X' para fechar */}
+                    &times;
                   </button>
                 </div>
-                {/* Corpo do Modal: padding, mensagem e botão OK */}
                 <div className="p-6">
                   <p className="text-gray-700 text-lg mb-4 font-inter">{message}</p>
                   <div className="flex justify-end">
-                    {/* Botão OK para fechar o modal, com ARIA-LABEL para acessibilidade */}
                     <button
                       onClick={onClose}
                       className={`py-2 px-6 rounded-lg font-bold text-white transition duration-300 shadow-md ${bgColor} hover:${bgColor.replace('500', '600')} focus:outline-none focus:ring-2 focus:ring-opacity-75`}
@@ -80,16 +72,15 @@
           );
         }
 
-        // Componente para a tela de Login
+        // Componente para a tela de Login (sem alterações)
         function LoginScreen({ onSwitchToRegister, onShowModal, onLoginSuccess, supabase }) {
           const [email, setEmail] = React.useState('');
           const [password, setPassword] = React.useState('');
-          const [isLoading, setIsLoading] = React.useState(false); // Adicionado para indicar estado de carregamento
+          const [isLoading, setIsLoading] = React.useState(false);
 
-          // Função assíncrona para lidar com o login
           const handleLogin = async (e) => {
-            e.preventDefault(); // Previne o recarregamento da página
-            setIsLoading(true); // Inicia o carregamento
+            e.preventDefault();
+            setIsLoading(true);
 
             try {
                 const { data, error } = await supabase.auth.signInWithPassword({
@@ -102,7 +93,7 @@
                     onShowModal(`Erro no login: ${error.message}`, 'error');
                 } else if (data.user) {
                     onShowModal('Login bem-sucedido!', 'success');
-                    onLoginSuccess(); // Redireciona para o feed
+                    onLoginSuccess();
                 } else {
                     onShowModal('Credenciais inválidas. Tente novamente.', 'error');
                 }
@@ -110,12 +101,11 @@
                 console.error('Erro inesperado ao tentar fazer login:', error);
                 onShowModal('Ocorreu um erro inesperado ao fazer login.', 'error');
             } finally {
-                setIsLoading(false); // Finaliza o carregamento
+                setIsLoading(false);
             }
           };
 
           return (
-            // Contêiner do formulário de login: card branco, arredondado, sombra e transição
             <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md mx-auto transform transition-all duration-300 hover:scale-105">
               <div className="text-center mb-8">
                 <h1 className="text-4xl font-extrabold text-gray-800 mb-2 font-inter">Conexão Eclesia</h1>
@@ -124,7 +114,6 @@
 
               <form onSubmit={handleLogin}>
                 <div className="mb-6">
-                  {/* Campo de Email/Nome de Usuário com label e ARIA-LABEL */}
                   <label htmlFor="loginEmail" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
                     Email ou Nome de Usuário
                   </label>
@@ -142,7 +131,6 @@
                 </div>
 
                 <div className="mb-8">
-                  {/* Campo de Senha com label e ARIA-LABEL */}
                   <label htmlFor="loginPassword" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
                     Senha
                   </label>
@@ -157,7 +145,6 @@
                     aria-label="Insira sua senha"
                     disabled={isLoading}
                   />
-                  {/* Link "Esqueceu sua senha?" com ARIA-LABEL */}
                   <a href="#" className="inline-block align-baseline font-bold text-sm text-blue-600 hover:text-blue-800 font-inter"
                      aria-label="Clique para recuperar sua senha"
                   >
@@ -165,7 +152,6 @@
                   </a>
                 </div>
 
-                {/* Botão de Entrar com ARIA-LABEL */}
                 <button
                   type="submit"
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 transform hover:scale-100 active:scale-95 shadow-md font-inter"
@@ -179,7 +165,6 @@
               <div className="mt-8 text-center">
                 <p className="text-gray-600 font-inter">
                   Não tem uma conta?{' '}
-                  {/* Link para alternar para a tela de registro com ARIA-LABEL */}
                   <a href="#" onClick={onSwitchToRegister} className="font-bold text-blue-600 hover:text-blue-800 font-inter"
                      aria-label="Clique para criar uma nova conta agora"
                   >
@@ -191,9 +176,8 @@
           );
         }
 
-        // Componente para a tela de Registro com campos adicionais
+        // Componente para a tela de Registro (sem alterações)
         function RegisterScreen({ onSwitchToLogin, onShowModal, supabase }) {
-          // Estados para os campos do formulário de registro
           const [fullName, setFullName] = React.useState('');
           const [dateOfBirth, setDateOfBirth] = React.useState('');
           const [phoneNumber, setPhoneNumber] = React.useState('');
@@ -202,26 +186,24 @@
           const [registerEmail, setRegisterEmail] = React.useState('');
           const [registerPassword, setRegisterPassword] = React.useState('');
           const [confirmPassword, setConfirmPassword] = React.useState('');
-          const [isLoading, setIsLoading] = React.useState(false); // Adicionado para indicar estado de carregamento
+          const [isLoading, setIsLoading] = React.useState(false);
 
-          // Função assíncrona para lidar com o registro
           const handleRegister = async (e) => {
-            e.preventDefault(); // Previne o recarregamento da página
+            e.preventDefault();
 
             if (registerPassword !== confirmPassword) {
               onShowModal('As senhas não coincidem. Por favor, verifique.', 'error');
               return;
             }
-            setIsLoading(true); // Inicia o carregamento
+            setIsLoading(true);
 
             try {
-                // 1. Registrar o usuário no Auth do Supabase
                 const { data: authData, error: authError } = await supabase.auth.signUp({
                     email: registerEmail,
                     password: registerPassword,
                     options: {
                         data: {
-                            full_name_from_signup: fullName, // Exemplo de metadados para o usuário auth
+                            full_name_from_signup: fullName,
                         },
                     },
                 });
@@ -230,28 +212,23 @@
                     console.error('Erro de registro no Supabase Auth:', authError);
                     onShowModal(`Erro ao registrar: ${authError.message}`, 'error');
                 } else if (authData.user) {
-                    // 2. Criar um perfil correspondente na tabela 'public.profiles'
                     const { error: profileError } = await supabase
                         .from('profiles')
                         .insert([
                             {
-                                id: authData.user.id, // ID do usuário do Auth
+                                id: authData.user.id,
                                 full_name: fullName,
                                 phone_number: phoneNumber,
                                 date_of_birth: dateOfBirth,
                                 role_in_church: roleInChurch,
-                                // avatar_url: 'URL_PADRAO_OU_VAZIO' // Adicionar se tiver uma URL padrão ou se for preenchido depois
                             }
                         ]);
 
                     if (profileError) {
                         console.error('Erro ao criar perfil:', profileError);
                         onShowModal(`Registro de usuário OK, mas erro ao criar perfil: ${profileError.message}. Por favor, tente novamente.`, 'error');
-                        // Opcional: Você pode querer deletar o usuário recém-criado no Auth se o perfil falhar.
-                        // await supabase.auth.admin.deleteUser(authData.user.id);
                     } else {
                         onShowModal('Registro bem-sucedido! Por favor, verifique seu e-mail para confirmar a conta.', 'success');
-                        // Limpa o formulário e retorna para a tela de login
                         setFullName('');
                         setDateOfBirth('');
                         setPhoneNumber('');
@@ -269,12 +246,11 @@
                 console.error('Erro inesperado ao tentar registrar:', error);
                 onShowModal('Ocorreu um erro inesperado ao registrar.', 'error');
             } finally {
-                setIsLoading(false); // Finaliza o carregamento
+                setIsLoading(false);
             }
           };
 
           return (
-            // Contêiner do formulário de registro: card branco, arredondado, sombra e transição
             <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md mx-auto transform transition-all duration-300 hover:scale-105">
               <div className="text-center mb-8">
                 <h1 className="text-4xl font-extrabold text-gray-800 mb-2 font-inter">Conexão Eclesia</h1>
@@ -282,7 +258,6 @@
               </div>
 
               <form onSubmit={handleRegister}>
-                {/* Campo Nome Completo com label e ARIA-LABEL */}
                 <div className="mb-6">
                   <label htmlFor="fullName" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
                     Nome Completo
@@ -300,7 +275,6 @@
                   />
                 </div>
 
-                {/* Campo Data de Nascimento com label e ARIA-LABEL */}
                 <div className="mb-6">
                   <label htmlFor="dateOfBirth" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
                     Data de Nascimento
@@ -317,7 +291,6 @@
                   />
                 </div>
 
-                {/* Campo Número de Telefone com label e ARIA-LABEL */}
                 <div className="mb-6">
                   <label htmlFor="phoneNumber" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
                     Número de Telefone
@@ -335,7 +308,6 @@
                   />
                 </div>
 
-                {/* Campo Cargo/Função na Igreja com label e ARIA-LABEL */}
                 <div className="mb-6">
                   <label htmlFor="roleInChurch" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
                     Cargo/Função na Igreja
@@ -352,7 +324,6 @@
                   />
                 </div>
 
-                {/* Campo Nome da Igreja/Comunidade com label e ARIA-LABEL */}
                 <div className="mb-6">
                   <label htmlFor="churchName" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
                     Nome da Igreja/Comunidade
@@ -433,7 +404,6 @@
               <div className="mt-8 text-center">
                 <p className="text-gray-600 font-inter">
                   Já tem uma conta?{' '}
-                  {/* Link para alternar para a tela de registro com ARIA-LABEL */}
                   <a href="#" onClick={onSwitchToLogin} className="font-bold text-blue-600 hover:text-blue-800 font-inter"
                      aria-label="Clique para fazer login em sua conta existente"
                   >
@@ -452,9 +422,13 @@
           const [modalMessage, setModalMessage] = React.useState('');
           const [modalType, setModalType] = React.useState('info');
 
-          // AGORA, ACESSE A INSTÂNCIA GLOBALMENTE
-          const supabase = window.supabaseClientInstance;
-
+          // Inicializa a instância do Supabase globalmente se ainda não foi inicializada
+          // Isso garante que window.supabase.createClient esteja disponível
+          if (!window.globalSupabaseClient && window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+              window.globalSupabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+          }
+          // Acessa a instância global do Supabase (agora garantida)
+          const supabase = window.globalSupabaseClient;
 
           const showModal = (message, type) => {
             setModalMessage(message);
