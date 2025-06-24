@@ -644,7 +644,7 @@
           const [isModalOpen, setIsModalOpen] = React.useState(false);
           const [modalMessage, setModalMessage] = React.useState('');
           const [modalType, setModalType] = React.useState('info');
-          const [isSupabaseClientReady, setIsSupabaseClientReady] = React.useState(false); // Novo estado
+          const [isSupabaseClientReady, setIsSupabaseClientReady] = React.useState(false);
 
           // Adicionado para o novo modal de login após registo
           const [showLoginAfterRegisterModal, setShowLoginAfterRegisterModal] = React.useState(false);
@@ -670,7 +670,7 @@
                 // No index.html, queremos verificar se já está logado para redirecionar
                 const checkUserSession = async () => {
                     try {
-                        const { data: { session } = {} } = await supabase.auth.getSession(); // Desestruturar com fallback
+                        const { data: { session } = {} } = await supabase.auth.getSession();
                         if (session) {
                             window.location.href = 'conexao-eclesia-feed.html'; // Redireciona se já logado
                         }
