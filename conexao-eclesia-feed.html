@@ -222,7 +222,7 @@
 
         // Componente para a tela de Feed
         function FeedScreen({ onShowModal, onLogout, supabase }) {
-          const [posts, setPosts] = React.useState([]); // Corrigido: = ao invés de =>
+          const [posts, setPosts] = React.useState([]);
           const [isCreatePostModalOpen, setIsCreatePostModalOpen] = React.useState(false);
           const [isLoadingPosts, setIsLoadingPosts] = React.useState(true);
           const [isSidebarOpen, setIsSidebarOpen] = React.useState(window.innerWidth >= 768);
@@ -291,9 +291,19 @@
             window.location.href = `igreja.html?churchId=${exampleChurchId}`;
           };
 
+          const handleComingSoon = (featureName) => { // Nova função para aviso de "Em desenvolvimento"
+            onShowModal(`${featureName} está em desenvolvimento e estará disponível em breve!`, 'info');
+          };
+
+          const handleNavigateToAdmin = () => { // Nova função para navegar para o admin
+            onShowModal('A secção de Administrador está em desenvolvimento e estará disponível em breve!', 'info');
+            // Futuramente: window.location.href = 'admin.html';
+          };
+
 
           return (
             <div className="flex flex-col md:flex-row min-h-screen w-full bg-gradient-to-br from-blue-600 to-purple-700 p-4 sm:p-6 md:p-8">
+              {/* Botão de hambúrguer para mobile */}
               <button
                 onClick={toggleSidebar}
                 className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-300"
@@ -304,12 +314,14 @@
                 </svg>
               </button>
 
+              {/* Barra Lateral */}
               <aside className={`fixed md:static top-0 left-0 h-full z-40
                                 w-64 md:w-64 sidebar-transition
                                 bg-gray-800 text-white p-4 flex flex-col items-center md:items-start space-y-4 rounded-xl shadow-lg
                                 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
                                 md:mb-0 md:rounded-r-none md:mr-4`}>
                 
+                {/* Botão de fechar para mobile dentro do sidebar, quando aberto */}
                 <button
                     onClick={toggleSidebar}
                     className="md:hidden absolute top-4 right-4 p-2 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-300"
@@ -339,10 +351,38 @@
                 >
                     <span className="sidebar-item-text">Igrejas</span>
                 </button>
-                <button className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" aria-label="Navegar para Eventos"><span className="sidebar-item-text">Eventos</span></button>
-                <button className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" aria-label="Ver posts de Estudo Bíblico">Estudo Bíblico</button>
-                <button className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" aria-label="Ver posts de Ação Social">Ação Social</button>
-                <button className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" aria-label="Ver posts de Noite de Louvor">Noite de Louvor</button>
+                <button 
+                    className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" 
+                    aria-label="Navegar para Eventos"
+                    onClick={() => handleComingSoon('Eventos')} // Aviso de em desenvolvimento
+                    title="Funcionalidade em desenvolvimento"
+                >
+                    <span className="sidebar-item-text">Eventos</span>
+                </button>
+                <button 
+                    className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" 
+                    aria-label="Ver posts de Estudo Bíblico"
+                    onClick={() => handleComingSoon('Estudo Bíblico')} // Aviso de em desenvolvimento
+                    title="Funcionalidade em desenvolvimento"
+                >
+                    Estudo Bíblico
+                </button>
+                <button 
+                    className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" 
+                    aria-label="Ver posts de Ação Social"
+                    onClick={() => handleComingSoon('Ação Social')} // Aviso de em desenvolvimento
+                    title="Funcionalidade em desenvolvimento"
+                >
+                    Ação Social
+                </button>
+                <button 
+                    className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" 
+                    aria-label="Ver posts de Noite de Louvor"
+                    onClick={() => handleComingSoon('Noite de Louvor')} // Aviso de em desenvolvimento
+                    title="Funcionalidade em desenvolvimento"
+                >
+                    Noite de Louvor
+                </button>
 
                 <button
                     onClick={() => setIsCreatePostModalOpen(true)}
@@ -359,6 +399,16 @@
                     aria-label="Abrir chat global"
                 >
                     Chat
+                </button>
+
+                {/* NOVO BOTÃO DE ADMINISTRADOR */}
+                <button 
+                    className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter bg-gray-600 hover:bg-gray-700" 
+                    aria-label="Aceder painel de administrador"
+                    onClick={() => handleComingSoon('Administrador')} // Aviso de em desenvolvimento
+                    title="Funcionalidade em desenvolvimento"
+                >
+                    <span className="sidebar-item-text">Administrador</span>
                 </button>
 
                 <div className="mt-auto pt-4 w-full border-t border-gray-700 md:border-none">
@@ -508,7 +558,7 @@
                 supabase={supabase}
               />
               <div className="text-center text-white text-sm opacity-80 font-inter py-4 bg-gray-800 w-full md:hidden">
-                © {new Date().getFullYear()} CPN Serviços. Todos os direitos reservados. <span className="text-xs ml-2 opacity-70">v1.0.0</span>
+                © {new Date().getFullYear()} CPN Serviços. Todos os direitos reservados. <span className="text-xs ml-2 opacity-70">v1.0.2025.01.4</span>
               </div>
               <Modal
                 isOpen={isModalOpen}
