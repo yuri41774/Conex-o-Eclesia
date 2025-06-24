@@ -296,8 +296,7 @@
           };
 
           const handleNavigateToAdmin = () => { // Nova função para navegar para o admin
-            onShowModal('A secção de Administrador está em desenvolvimento e estará disponível em breve!', 'info');
-            // Futuramente: window.location.href = 'admin.html';
+            window.location.href = 'admin.html'; // Direciona para a página admin.html
           };
 
 
@@ -401,12 +400,11 @@
                     Chat
                 </button>
 
-                {/* NOVO BOTÃO DE ADMINISTRADOR */}
+                {/* BOTÃO DE ADMINISTRADOR */}
                 <button 
                     className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter bg-gray-600 hover:bg-gray-700" 
                     aria-label="Aceder painel de administrador"
-                    onClick={() => handleComingSoon('Administrador')} // Aviso de em desenvolvimento
-                    title="Funcionalidade em desenvolvimento"
+                    onClick={handleNavigateToAdmin} // Direciona para a página admin.html
                 >
                     <span className="sidebar-item-text">Administrador</span>
                 </button>
