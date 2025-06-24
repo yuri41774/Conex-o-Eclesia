@@ -166,6 +166,7 @@
                     if (publicUrlData && publicUrlData.publicUrl) {
                         setAvatarUrl(publicUrlData.publicUrl); // Atualiza o estado com a nova URL
                         onShowModal('Imagem de perfil enviada com sucesso! Lembre-se de clicar em "Salvar" para aplicar as alterações.', 'success');
+                        console.log('URL pública do avatar após upload:', publicUrlData.publicUrl); // LOG DA URL PÚBLICA
                     } else {
                         onShowModal('Erro ao obter URL da imagem. Por favor, tente novamente.', 'error');
                     }
@@ -257,7 +258,9 @@
 
               {/* Seção de Avatar */}
               <div className="flex flex-col items-center mb-6">
+                {console.log('URL do Avatar sendo usada:', avatarUrl)} {/* Adicionado log para depuração */}
                 <img
+                  key={avatarUrl} {/* Adicionado key para forçar re-renderização */}
                   src={avatarUrl || "https://placehold.co/150x150/cccccc/ffffff?text=Avatar"}
                   alt="Avatar do Usuário"
                   className="w-32 h-32 rounded-full object-cover border-4 border-blue-500 shadow-md"
@@ -497,3 +500,27 @@
     </script>
 </body>
 </html>
+```
+
+### O que foi adicionado para depuração:
+
+1.  **`console.log('URL do Avatar sendo usada:', avatarUrl);`**
+    * Esta linha foi adicionada logo antes da tag `<img>` no `ProfileScreen`. Ela imprimirá no console do navegador a URL exata que o componente está tentando usar para exibir a imagem.
+2.  **`key={avatarUrl}` na tag `<img>`**
+    * Isso força o React a "re-montar" o elemento `<img>` cada vez que a `avatarUrl` muda, o que pode ser útil se o navegador estiver cacheando a imagem de forma agressiva.
+3.  **`console.log('URL pública do avatar após upload:', publicUrlData.publicUrl);`**
+    * Esta linha foi adicionada dentro da função `handleAvatarUpload` após o sucesso do upload, para que você possa ver a URL retornada pelo Supabase Storage.
+
+### Próximos Passos para Depuração:
+
+1.  **Cole a URL no navegador:** Copie a URL que aparece nos `console.log`s (tanto da renderização quanto do upload) e cole-a diretamente em uma nova aba do seu navegador.
+    * **Se a imagem carregar:** O problema não é com o Supabase Storage ou as políticas de RLS. O problema está na forma como a imagem é carregada ou exibida na sua página HTML.
+    * **Se a imagem não carregar:**
+        * **403 Forbidden:** Indica um problema com as políticas de RLS do seu bucket `avatars`. O navegador está sendo explicitamente negado a acessar a imagem. **Revise as políticas RLS do Storage com urgência.**
+        * **404 Not Found:** Significa que o arquivo não foi encontrado no caminho especificado ou não foi enviado corretamente. Verifique o bucket no dashboard do Supabase para confirmar se o arquivo está lá e se o caminho (`user.id/avatar.ext`) está correto.
+        * **Erro de CORS no console:** Mesmo que não tenha sido o `TypeError` principal, um erro de CORS na aba "Console" (não "Network") pode indicar que a origem do seu site não está permitida nas configurações de CORS do Supabase.
+
+2.  **Aba "Network" no navegador (F12):** Recarregue a página com as Ferramentas do Desenvolvedor abertas na aba "Network". Filtre por "Img" ou "Image".
+    * Veja qual é o **Status Code** da requisição da imagem (200 OK, 404, 403, etc.). Isso é a informação mais valiosa.
+
+Com essas informações, poderemos identificar a causa raiz do problema e corrigi-
