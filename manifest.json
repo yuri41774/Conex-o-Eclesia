@@ -1,22 +1,61 @@
-
 {
   "name": "Conexão Eclesia",
   "short_name": "Eclesia",
-  "description": "Conectando a comunidade eclesiástica.",
+  "description": "Conectando a comunidade eclesiástica. Acompanhe eventos, posts e se conecte com outros membros.",
   "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2563eb",
   "icons": [
     {
-      "src": "/icons/icon-192x192.png",
+      "src": "/icons/logo-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/logo-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/logo-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/logo-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/logo-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/logo-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/icons/icon-512x512.png",
+      "src": "/icons/logo-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/logo-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
   ]
 }
+
+Este manifest.json foi atualizado com a lista de ícones, incluindo vários tamanhos comuns para PWA, todos referenciando a pasta icons e o prefixo logo-.
+
+Para que funcione corretamente:
+
+Salve o conteúdo acima em um arquivo chamado manifest.json na raiz do seu projeto.
+
+Certifique-se de que você tem arquivos de imagem (PNG é o recomendado) com os nomes exatos (ex: logo-192x192.png, logo-512x512.png, etc.) dentro da pasta icons/ na raiz do seu projeto.
+
+Com isso, seu navegador poderá detectar e oferecer a instalação do seu aplicativo na tela inicial do smartphone.
