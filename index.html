@@ -29,6 +29,8 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <!-- Importa o SDK do Supabase Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Carrega o script verificador de instância Supabase -->
+    <script src="supabaseClientInstance.js"></script>
 
 
     <!-- O código React/JSX agora será processado por Babel -->
@@ -450,13 +452,8 @@
           const [modalMessage, setModalMessage] = React.useState('');
           const [modalType, setModalType] = React.useState('info');
 
-          // Variáveis Supabase - SUBSTITUA PELOS SEUS VALORES REAIS!
-          // Obtenha a URL do seu projeto Supabase no Dashboard > Settings > API
-          const SUPABASE_URL = "https://rahhplphegvvdehrumyp.supabase.co"; // Substitua pela sua URL real do Supabase
-          const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJhaGhwbHBoZWd2dmRlaHJ1bXlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3MDk2NDMsImV4cCI6MjA2NjI4NTY0M30.EDM-RotlChTCWiisI4o5okQ6Llee1ZaQEAcLaphBqTs";
-
-          // Inicializa o cliente Supabase aqui no componente App
-          const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          // AGORA, ACESSE A INSTÂNCIA GLOBALMENTE
+          const supabase = window.supabaseClientInstance;
 
 
           const showModal = (message, type) => {
