@@ -260,7 +260,7 @@
               <div className="flex flex-col items-center mb-6">
                 {console.log('URL do Avatar sendo usada:', avatarUrl)} {/* Adicionado log para depuração */}
                 <img
-                  key={avatarUrl} {/* Adicionado key para forçar re-renderização */}
+                  key={avatarUrl}
                   src={avatarUrl || "https://placehold.co/150x150/cccccc/ffffff?text=Avatar"}
                   alt="Avatar do Usuário"
                   className="w-32 h-32 rounded-full object-cover border-4 border-blue-500 shadow-md"
@@ -283,7 +283,6 @@
                         {isUploadingImage && (
                             <p className="text-blue-600 text-sm mt-2 font-inter">Aguarde o envio da imagem...</p>
                         )}
-                         {/* Removido o input de URL manual direta, agora só via upload */}
                     </div>
                 )}
               </div>
