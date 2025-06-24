@@ -11,7 +11,6 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            /* Adicionado para resolver o aviso de text-size-adjust */
             text-size-adjust: none;
             -webkit-text-size-adjust: none;
         }
@@ -32,7 +31,7 @@
 
     <!-- O código React/JSX agora será processado por Babel -->
     <script type="text/babel">
-        // Componente Modal reutilizável para exibir mensagens de sucesso ou erro
+        // Componente Modal (sem alterações)
         function Modal({ isOpen, message, type, onClose }) {
           if (!isOpen) return null;
 
@@ -69,23 +68,20 @@
           );
         }
 
-        // Componente da tela de Perfil
+        // Componente da tela de Perfil (sem alterações significativas na lógica, apenas ARIA-label otimizado)
         function ProfileScreen({ onShowModal, onBackToFeed, supabase }) {
           const [profile, setProfile] = React.useState(null);
           const [isLoading, setIsLoading] = React.useState(true);
           const [isSaving, setIsSaving] = React.useState(false);
           const [isEditing, setIsEditing] = React.useState(false);
 
-          // Estados para os campos editáveis, inicializados com valores vazios ou do perfil
           const [fullName, setFullName] = React.useState('');
           const [phoneNumber, setPhoneNumber] = React.useState('');
           const [dateOfBirth, setDateOfBirth] = React.useState('');
           const [roleInChurch, setRoleInChurch] = React.useState('');
-          const [avatarUrl, setAvatarUrl] = React.useState(''); // Adicionado para avatar_url
-          const [isUploadingImage, setIsUploadingImage] = React.useState(false); // Novo estado para upload da imagem
+          const [avatarUrl, setAvatarUrl] = React.useState('');
+          const [isUploadingImage, setIsUploadingImage] = React.useState(false);
 
-
-          // Carrega os dados do perfil quando o componente é montado
           React.useEffect(() => {
             const fetchProfile = async () => {
               setIsLoading(true);
@@ -93,7 +89,7 @@
                 const { data: { user } } = await supabase.auth.getUser();
                 if (!user) {
                   onShowModal('Sessão expirada. Por favor, faça login novamente.', 'error');
-                  window.location.href = 'index.html'; // Redireciona para o login
+                  window.location.href = 'index.html';
                   return;
                 }
 
@@ -108,16 +104,13 @@
                   onShowModal(`Erro ao carregar perfil: ${error.message}`, 'error');
                 } else if (data) {
                   setProfile(data);
-                  // Popula os estados dos campos editáveis com os dados do perfil
                   setFullName(data.full_name || '');
                   setPhoneNumber(data.phone_number || '');
-                  setDateOfBirth(data.date_of_birth || ''); // Assumindo formatoYYYY-MM-DD
+                  setDateOfBirth(data.date_of_birth || '');
                   setRoleInChurch(data.role_in_church || '');
                   setAvatarUrl(data.avatar_url || '');
                 } else {
-                    // Se não encontrar perfil, mas o usuário está logado
                     onShowModal('Perfil não encontrado. Você pode criar um novo perfil ou atualizar um existente.', 'info');
-                    // Aqui você poderia adicionar lógica para criar um perfil automaticamente ou exibir um formulário de criação.
                 }
               } catch (error) {
                 console.error('Erro inesperado ao buscar perfil:', error);
@@ -130,14 +123,13 @@
             fetchProfile();
           }, [supabase, onShowModal]);
 
-          // Função para upload do avatar
           const handleAvatarUpload = async (event) => {
             const file = event.target.files[0];
             if (!file) {
                 return;
             }
 
-            setIsUploadingImage(true); // Inicia o estado de upload
+            setIsUploadingImage(true);
             try {
                 const { data: { user } } = await supabase.auth.getUser();
                 if (!user) {
@@ -147,29 +139,27 @@
                 }
 
                 const fileExtension = file.name.split('.').pop();
-                const filePath = `${user.id}/avatar.${fileExtension}`; // user_id/avatar.ext
+                const filePath = `${user.id}/avatar.${fileExtension}`;
                 
-                // Faz o upload da imagem para o bucket 'avatars'
                 const { data, error } = await supabase.storage
                     .from('avatars')
                     .upload(filePath, file, {
                         cacheControl: '3600',
-                        upsert: true // Sobrescreve se o arquivo já existir
+                        upsert: true
                     });
 
                 if (error) {
                     console.error('Erro ao enviar imagem:', error);
                     onShowModal(`Erro ao enviar imagem: ${error.message}`, 'error');
                 } else {
-                    // Obtém a URL pública da imagem recém-enviada
                     const { data: publicUrlData } = supabase.storage
                         .from('avatars')
                         .getPublicUrl(filePath);
 
                     if (publicUrlData && publicUrlData.publicUrl) {
-                        setAvatarUrl(publicUrlData.publicUrl); // Atualiza o estado com a nova URL
+                        setAvatarUrl(publicUrlData.publicUrl);
                         onShowModal('Imagem de perfil enviada com sucesso! Lembre-se de clicar em "Salvar" para aplicar as alterações.', 'success');
-                        console.log('URL pública do avatar após upload:', publicUrlData.publicUrl); // LOG DA URL PÚBLICA
+                        console.log('URL pública do avatar após upload:', publicUrlData.publicUrl);
                     } else {
                         onShowModal('Erro ao obter URL da imagem. Por favor, tente novamente.', 'error');
                     }
@@ -178,45 +168,42 @@
                 console.error('Erro inesperado no upload:', error);
                 onShowModal('Ocorreu um erro inesperado ao enviar a imagem.', 'error');
             } finally {
-                setIsUploadingImage(false); // Finaliza o estado de upload
+                setIsUploadingImage(false);
             }
           };
 
-
-          // Função para salvar as alterações do perfil no Supabase
           const handleSaveProfile = async () => {
-            setIsSaving(true); // Inicia o estado de salvamento
+            setIsSaving(true);
             try {
-              const { data: { user } = {} } = await supabase.auth.getUser(); // Desestrutura com fallback
+              const { data: { user } = {} } = await supabase.auth.getUser();
               if (!user) {
                 onShowModal('Sessão expirada. Por favor, faça login novamente para salvar.', 'error');
                 window.location.href = 'index.html';
                 return;
               }
 
-              // Dados a serem atualizados
               const updatedProfileData = {
                 full_name: fullName,
                 phone_number: phoneNumber,
                 date_of_birth: dateOfBirth,
                 role_in_church: roleInChurch,
-                avatar_url: avatarUrl, // O avatarUrl já deve ter sido atualizado por handleAvatarUpload
+                avatar_url: avatarUrl,
               };
 
               const { data, error } = await supabase
                 .from('profiles')
-                .update(updatedProfileData) // Atualiza os dados
-                .eq('id', user.id) // Onde o ID do perfil corresponde ao ID do usuário logado
-                .select() // Retorna os dados atualizados
-                .single(); // Espera um único resultado
+                .update(updatedProfileData)
+                .eq('id', user.id)
+                .select()
+                .single();
 
               if (error) {
                 console.error('Erro ao salvar perfil:', error);
                 onShowModal(`Erro ao salvar perfil: ${error.message}`, 'error');
               } else if (data) {
-                setProfile(data); // Atualiza o estado do perfil com os novos dados
+                setProfile(data);
                 onShowModal('Perfil atualizado com sucesso!', 'success');
-                setIsEditing(false); // Sai do modo de edição após salvar
+                setIsEditing(false);
               }
             } catch (error) {
               console.error('Erro inesperado ao salvar perfil:', error);
@@ -226,7 +213,6 @@
             }
           };
 
-          // Renderiza um estado de carregamento inicial
           if (isLoading) {
             return (
               <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 to-purple-700">
@@ -235,7 +221,6 @@
             );
           }
 
-          // Renderiza uma mensagem se o perfil não for encontrado após o carregamento
           if (!profile && !isLoading) {
             return (
                 <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md mx-auto text-center">
@@ -259,9 +244,8 @@
                 <p className="text-gray-600 text-lg">Gerencie suas informações pessoais.</p>
               </div>
 
-              {/* Seção de Avatar */}
               <div className="flex flex-col items-center mb-6">
-                {console.log('URL do Avatar sendo usada:', avatarUrl)} {/* Adicionado log para depuração */}
+                {console.log('URL do Avatar sendo usada:', avatarUrl)}
                 <img
                   key={avatarUrl}
                   src={avatarUrl || "https://placehold.co/150x150/cccccc/ffffff?text=Avatar"}
@@ -269,7 +253,7 @@
                   className="w-32 h-32 rounded-full object-cover border-4 border-blue-500 shadow-md"
                   aria-label="Imagem de perfil do usuário"
                 />
-                {isEditing && ( // Mostra o campo de input para URL do avatar apenas em modo de edição
+                {isEditing && (
                     <div className="mt-4 flex flex-col items-center">
                         <label htmlFor="avatarUpload" className="block text-gray-700 text-sm font-semibold mb-2 font-inter cursor-pointer p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition">
                             {isUploadingImage ? 'Enviando...' : 'Alterar Foto'}
@@ -290,9 +274,7 @@
                 )}
               </div>
 
-              {/* Grid de Informações do Perfil */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                {/* Campo Nome Completo */}
                 <div>
                   <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter" htmlFor="fullNameInput">Nome Completo</label>
                   {isEditing ? (
@@ -310,13 +292,11 @@
                   )}
                 </div>
 
-                {/* Campo Email (Somente Leitura) - Vem de auth.users */}
                 <div>
                   <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Email</label>
                   <p className="text-gray-800 text-lg font-inter p-2 border border-gray-200 rounded-lg bg-gray-50">{profile.email || 'N/A'}</p>
                 </div>
 
-                {/* Campo Telefone */}
                 <div>
                   <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter" htmlFor="phoneNumberInput">Telefone</label>
                   {isEditing ? (
@@ -334,7 +314,6 @@
                   )}
                 </div>
 
-                {/* Campo Data de Nascimento */}
                 <div>
                   <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter" htmlFor="dateOfBirthInput">Data de Nascimento</label>
                   {isEditing ? (
@@ -352,7 +331,6 @@
                   )}
                 </div>
 
-                {/* Campo Cargo/Função na Igreja */}
                 <div>
                   <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter" htmlFor="roleInChurchInput">Cargo/Função na Igreja</label>
                   {isEditing ? (
@@ -370,7 +348,6 @@
                   )}
                 </div>
 
-                {/* Nome da Igreja (Placeholder ou viria de memberships) */}
                 <div>
                   <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Nome da Igreja</label>
                   <p className="text-gray-800 text-lg font-inter p-2 border border-gray-200 rounded-lg bg-gray-50">Igreja Conectada (Placeholder)</p>
@@ -378,7 +355,6 @@
 
               </div>
 
-              {/* Botões de Ação */}
               <div className="flex justify-end space-x-4">
                 {isEditing ? (
                   <>
@@ -434,8 +410,12 @@
           const [modalType, setModalType] = React.useState('info');
           const [isAuthChecking, setIsAuthChecking] = React.useState(true);
 
-          // AGORA, ACESSE A INSTÂNCIA GLOBALMENTE
-          const supabase = window.supabaseClientInstance;
+          // Inicializa a instância do Supabase globalmente se ainda não foi inicializada
+          if (!window.globalSupabaseClient && window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+              window.globalSupabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+          }
+          // Acessa a instância global do Supabase (agora garantida)
+          const supabase = window.globalSupabaseClient;
 
           React.useEffect(() => {
             const checkUserSession = async () => {
@@ -452,7 +432,7 @@
               }
             };
             checkUserSession();
-          }, []);
+          }, [supabase]); // Adicionado supabase às dependências
 
           const showModal = (message, type) => {
             setModalMessage(message);
