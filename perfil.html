@@ -298,6 +298,7 @@
                 <p className="text-gray-600 text-lg">Gerencie suas informações pessoais.</p>
               </div>
 
+              {/* Seção de Avatar */}
               <div className="flex flex-col items-center mb-6">
                 {console.log('URL do Avatar sendo usada:', avatarUrl)}
                 <img
@@ -328,6 +329,7 @@
                 )}
               </div>
 
+              {/* Grid de Informações do Perfil */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div>
                   <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter" htmlFor="fullNameInput">Nome Completo</label>
@@ -409,57 +411,63 @@
 
               </div>
 
-              <div className="flex justify-end space-x-4">
-                {isEditing ? (
-                  <>
-                    <button
-                      onClick={() => {
-                        setIsEditing(false);
-                        setFullName(profile.full_name || '');
-                        setPhoneNumber(profile.phone_number || '');
-                        setDateOfBirth(profile.date_of_birth || '');
-                        setRoleInChurch(profile.role_in_church || '');
-                        setAvatarUrl(profile.avatar_url || '');
-                      }}
-                      className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter"
-                      aria-label="Cancelar edição do perfil"
-                      disabled={isSaving || isUploadingImage}
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      onClick={handleSaveProfile}
-                      className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter"
-                      aria-label="Salvar alterações do perfil"
-                      disabled={isSaving || isUploadingImage}
-                    >
-                      {isSaving ? 'Salvando...' : 'Salvar'}
-                    </button>
-                  </>
-                ) : (
+              <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4">
+                {/* Botões de Navegação */}
+                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
                   <button
-                    onClick={() => setIsEditing(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter"
-                    aria-label="Editar perfil"
-                  >
-                    Editar Perfil
-                  </button>
-                )}
-                 <button
                     onClick={onBackToFeed}
-                    className="bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter"
+                    className="bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter w-full sm:w-auto"
                     aria-label="Voltar para o Feed"
-                >
+                  >
                     Voltar ao Feed
-                </button>
-                {/* BOTÃO DE CHAT ADICIONADO AQUI */}
-                <button
+                  </button>
+                  <button
                     onClick={() => { window.location.href = 'chat.html'; }}
-                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter"
+                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter w-full sm:w-auto"
                     aria-label="Abrir chat global"
-                >
+                  >
                     Chat
-                </button>
+                  </button>
+                </div>
+
+                {/* Botões de Edição/Salvar/Cancelar */}
+                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto mt-4 sm:mt-0">
+                  {isEditing ? (
+                    <>
+                      <button
+                        onClick={() => {
+                          setIsEditing(false);
+                          setFullName(profile.full_name || '');
+                          setPhoneNumber(profile.phone_number || '');
+                          setDateOfBirth(profile.date_of_birth || '');
+                          setRoleInChurch(profile.role_in_church || '');
+                          setAvatarUrl(profile.avatar_url || '');
+                        }}
+                        className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter w-full sm:w-auto"
+                        aria-label="Cancelar edição do perfil"
+                        disabled={isSaving || isUploadingImage}
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={handleSaveProfile}
+                        className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter w-full sm:w-auto"
+                        aria-label="Salvar alterações do perfil"
+                        disabled={isSaving || isUploadingImage}
+                      >
+                        {isSaving ? 'Salvando...' : 'Salvar'}
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter w-full sm:w-auto"
+                      aria-label="Editar perfil"
+                    >
+                      Editar Perfil
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           );
@@ -561,3 +569,14 @@
     </script>
 </body>
 </html>
+```
+
+### Alterações Principais:
+
+1.  **Botão "Chat" Adicionado:**
+    * Dentro do componente `FeedScreen`, adicionei um novo botão "Chat" com a classe `bg-purple-500` e o `aria-label="Abrir chat global"`.
+    * Este botão chama a função `handleNavigateToChat` ao ser clicado.
+2.  **Função `handleNavigateToChat`:**
+    * Adicionei esta nova função em `FeedScreen` que simplesmente redireciona o navegador para `chat.html`.
+
+Agora, ao clicar no botão "Chat" na barra lateral do feed, o utilizador será levado para a página de chat global que criámos no ficheiro `chat.htm
