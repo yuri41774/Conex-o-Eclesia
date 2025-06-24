@@ -117,13 +117,11 @@
                     setIsLoadingUsers(true);
                     try {
                         // Para listar *todos* os utilizadores (profiles), as políticas de RLS devem permitir isso para admins.
-                        // Atualmente, a política de profiles só permite ver o próprio perfil.
-                        // Você precisaria de uma política específica:
-                        // CREATE POLICY "Admins can view all profiles." ON public.profiles FOR SELECT USING (is_admin = true); (se você tiver uma coluna is_admin no perfil)
-                        // ou uma política baseada em role customizada.
+                        // Você precisaria de uma política específica para admins para SELECT ALL on profiles
+                        // Ex: CREATE POLICY "Admins can view all profiles." ON public.profiles FOR SELECT USING (EXISTS (SELECT 1 FROM public.memberships WHERE profile_id = auth.uid() AND role = 'admin') OR EXISTS (SELECT 1 FROM public.churches WHERE owner_id = auth.uid()));
                         const { data, error } = await supabase
                             .from('profiles')
-                            .select('id, full_name, email, role_in_church, created_at'); // Assumindo 'email' está acessível ou join com auth.users
+                            .select('id, full_name, phone_number, date_of_birth, role_in_church, created_at'); 
 
                         if (error) {
                             console.error("Erro ao carregar utilizadores:", error);
@@ -153,21 +151,23 @@
                             <table className="min-w-full bg-white">
                                 <thead className="bg-gray-200">
                                     <tr>
-                                        <th className="py-2 px-4 border-b">Nome Completo</th>
-                                        <th className="py-2 px-4 border-b">Email</th>
-                                        <th className="py-2 px-4 border-b">Função na Igreja</th>
-                                        <th className="py-2 px-4 border-b">Ações</th>
+                                        <th className="py-2 px-4 border-b text-left">Nome Completo</th>
+                                        <th className="py-2 px-4 border-b text-left">Telefone</th>
+                                        <th className="py-2 px-4 border-b text-left">Função na Igreja</th>
+                                        <th className="py-2 px-4 border-b text-left">Criado em</th>
+                                        <th className="py-2 px-4 border-b text-left">Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {users.map(user => (
                                         <tr key={user.id} className="hover:bg-gray-50">
                                             <td className="py-2 px-4 border-b">{user.full_name}</td>
-                                            <td className="py-2 px-4 border-b">{user.email || 'N/A'}</td> {/* Email precisa de join ou ser exposto */}
+                                            <td className="py-2 px-4 border-b">{user.phone_number || 'N/A'}</td>
                                             <td className="py-2 px-4 border-b">{user.role_in_church || 'Membro'}</td>
+                                            <td className="py-2 px-4 border-b">{new Date(user.created_at).toLocaleDateString()}</td>
                                             <td className="py-2 px-4 border-b">
-                                                <button onClick={() => onShowModal(`Editar utilizador ${user.full_name}`, 'info')} className="bg-blue-500 text-white px-3 py-1 rounded mr-2">Editar</button>
-                                                <button onClick={() => onShowModal(`Eliminar utilizador ${user.full_name}`, 'error')} className="bg-red-500 text-white px-3 py-1 rounded">Eliminar</button>
+                                                <button onClick={() => onShowModal(`Editar utilizador ${user.full_name}`, 'info')} className="bg-blue-500 text-white px-3 py-1 rounded mr-2" aria-label="Editar utilizador">Editar</button>
+                                                <button onClick={() => onShowModal(`Eliminar utilizador ${user.full_name}`, 'error')} className="bg-red-500 text-white px-3 py-1 rounded" aria-label="Eliminar utilizador">Eliminar</button>
                                             </td>
                                         </tr>
                                     ))}
@@ -188,10 +188,9 @@
                 const fetchChurches = async () => {
                     setIsLoadingChurches(true);
                     try {
-                        // Admins podem ver todas as igrejas
                         const { data, error } = await supabase
                             .from('churches')
-                            .select('id, name, city, state, owner_id');
+                            .select('id, name, city, state, country, email, phone, created_at, owner_id'); // Seleciona mais campos
 
                         if (error) {
                             console.error("Erro ao carregar igrejas:", error);
@@ -221,9 +220,11 @@
                             <table className="min-w-full bg-white">
                                 <thead className="bg-gray-200">
                                     <tr>
-                                        <th className="py-2 px-4 border-b">Nome</th>
-                                        <th className="py-2 px-4 border-b">Localização</th>
-                                        <th className="py-2 px-4 border-b">Ações</th>
+                                        <th className="py-2 px-4 border-b text-left">Nome</th>
+                                        <th className="py-2 px-4 border-b text-left">Localização</th>
+                                        <th className="py-2 px-4 border-b text-left">Email</th>
+                                        <th className="py-2 px-4 border-b text-left">Telefone</th>
+                                        <th className="py-2 px-4 border-b text-left">Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -231,9 +232,11 @@
                                         <tr key={church.id} className="hover:bg-gray-50">
                                             <td className="py-2 px-4 border-b">{church.name}</td>
                                             <td className="py-2 px-4 border-b">{church.city}, {church.state}</td>
+                                            <td className="py-2 px-4 border-b">{church.email || 'N/A'}</td>
+                                            <td className="py-2 px-4 border-b">{church.phone || 'N/A'}</td>
                                             <td className="py-2 px-4 border-b">
-                                                <button onClick={() => onShowModal(`Editar igreja ${church.name}`, 'info')} className="bg-blue-500 text-white px-3 py-1 rounded mr-2">Editar</button>
-                                                <button onClick={() => onShowModal(`Eliminar igreja ${church.name}`, 'error')} className="bg-red-500 text-white px-3 py-1 rounded">Eliminar</button>
+                                                <button onClick={() => onShowModal(`Editar igreja ${church.name}`, 'info')} className="bg-blue-500 text-white px-3 py-1 rounded mr-2" aria-label="Editar igreja">Editar</button>
+                                                <button onClick={() => onShowModal(`Eliminar igreja ${church.name}`, 'error')} className="bg-red-500 text-white px-3 py-1 rounded" aria-label="Eliminar igreja">Eliminar</button>
                                             </td>
                                         </tr>
                                     ))}
@@ -256,7 +259,7 @@
                     try {
                         const { data, error } = await supabase
                             .from('posts')
-                            .select('id, title, author_id, is_published, created_at, profiles(full_name)')
+                            .select('id, title, content, author_id, is_published, created_at, profiles(full_name), churches(name)') // Adicionado churches(name)
                             .order('created_at', { ascending: false });
 
                         if (error) {
@@ -287,11 +290,12 @@
                             <table className="min-w-full bg-white">
                                 <thead className="bg-gray-200">
                                     <tr>
-                                        <th className="py-2 px-4 border-b">Título</th>
-                                        <th className="py-2 px-4 border-b">Autor</th>
-                                        <th className="py-2 px-4 border-b">Publicado</th>
-                                        <th className="py-2 px-4 border-b">Data</th>
-                                        <th className="py-2 px-4 border-b">Ações</th>
+                                        <th className="py-2 px-4 border-b text-left">Título</th>
+                                        <th className="py-2 px-4 border-b text-left">Autor</th>
+                                        <th className="py-2 px-4 border-b text-left">Igreja (se houver)</th>
+                                        <th className="py-2 px-4 border-b text-left">Publicado</th>
+                                        <th className="py-2 px-4 border-b text-left">Data</th>
+                                        <th className="py-2 px-4 border-b text-left">Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -299,11 +303,12 @@
                                         <tr key={post.id} className="hover:bg-gray-50">
                                             <td className="py-2 px-4 border-b">{post.title}</td>
                                             <td className="py-2 px-4 border-b">{post.profiles ? post.profiles.full_name : 'Desconhecido'}</td>
+                                            <td className="py-2 px-4 border-b">{post.churches ? post.churches.name : 'N/A'}</td> {/* Exibe o nome da igreja */}
                                             <td className="py-2 px-4 border-b">{post.is_published ? 'Sim' : 'Não'}</td>
                                             <td className="py-2 px-4 border-b">{new Date(post.created_at).toLocaleDateString()}</td>
                                             <td className="py-2 px-4 border-b">
-                                                <button onClick={() => onShowModal(`Editar publicação ${post.title}`, 'info')} className="bg-blue-500 text-white px-3 py-1 rounded mr-2">Editar</button>
-                                                <button onClick={() => onShowModal(`Eliminar publicação ${post.title}`, 'error')} className="bg-red-500 text-white px-3 py-1 rounded">Eliminar</button>
+                                                <button onClick={() => onShowModal(`Editar publicação ${post.title}`, 'info')} className="bg-blue-500 text-white px-3 py-1 rounded mr-2" aria-label="Editar publicação">Editar</button>
+                                                <button onClick={() => onShowModal(`Eliminar publicação ${post.title}`, 'error')} className="bg-red-500 text-white px-3 py-1 rounded" aria-label="Eliminar publicação">Eliminar</button>
                                             </td>
                                         </tr>
                                     ))}
@@ -326,7 +331,7 @@
                     try {
                         const { data, error } = await supabase
                             .from('events')
-                            .select('id, title, event_date, created_by, churches(name)')
+                            .select('id, title, event_date, event_time, location, created_by, churches(name)') // Adicionado churches(name)
                             .order('event_date', { ascending: false });
 
                         if (error) {
@@ -357,10 +362,11 @@
                             <table className="min-w-full bg-white">
                                 <thead className="bg-gray-200">
                                     <tr>
-                                        <th className="py-2 px-4 border-b">Título</th>
-                                        <th className="py-2 px-4 border-b">Igreja</th>
-                                        <th className="py-2 px-4 border-b">Data</th>
-                                        <th className="py-2 px-4 border-b">Ações</th>
+                                        <th className="py-2 px-4 border-b text-left">Título</th>
+                                        <th className="py-2 px-4 border-b text-left">Igreja</th>
+                                        <th className="py-2 px-4 border-b text-left">Data</th>
+                                        <th className="py-2 px-4 border-b text-left">Local</th>
+                                        <th className="py-2 px-4 border-b text-left">Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -369,9 +375,10 @@
                                             <td className="py-2 px-4 border-b">{event.title}</td>
                                             <td className="py-2 px-4 border-b">{event.churches ? event.churches.name : 'N/A'}</td>
                                             <td className="py-2 px-4 border-b">{new Date(event.event_date).toLocaleDateString()}</td>
+                                            <td className="py-2 px-4 border-b">{event.location || 'N/A'}</td>
                                             <td className="py-2 px-4 border-b">
-                                                <button onClick={() => onShowModal(`Editar evento ${event.title}`, 'info')} className="bg-blue-500 text-white px-3 py-1 rounded mr-2">Editar</button>
-                                                <button onClick={() => onShowModal(`Eliminar evento ${event.title}`, 'error')} className="bg-red-500 text-white px-3 py-1 rounded">Eliminar</button>
+                                                <button onClick={() => onShowModal(`Editar evento ${event.title}`, 'info')} className="bg-blue-500 text-white px-3 py-1 rounded mr-2" aria-label="Editar evento">Editar</button>
+                                                <button onClick={() => onShowModal(`Eliminar evento ${event.title}`, 'error')} className="bg-red-500 text-white px-3 py-1 rounded" aria-label="Eliminar evento">Eliminar</button>
                                             </td>
                                         </tr>
                                     ))}
@@ -397,6 +404,7 @@
 
             const supabase = window.globalSupabaseClient;
 
+            // Efeito para inicializar o Supabase e verificar a sessão/carregar dados da igreja
             React.useEffect(() => {
                 if (!supabase && window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
                     window.globalSupabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
@@ -422,13 +430,13 @@
 
                             if (profileError || !profileData) {
                                 console.error('Erro ao carregar perfil do utilizador admin:', profileError);
-                                showModal('Erro ao carregar perfil ou perfil não encontrado. Não pode aceder ao painel de administração.', 'error');
-                                window.location.href = 'conexao-eclesia-feed.html'; // Redireciona para o feed
+                                showModal(`Erro ao carregar o seu perfil: ${profileError?.message || 'Perfil não encontrado.'}`, 'error');
+                                window.location.href = 'index.html'; // Redireciona para o login
                                 return;
                             }
                             setUserProfile(profileData);
 
-                            // Verificar se o utilizador é proprietário de alguma igreja (admin implícito)
+                            // 1. Verificar se o utilizador é proprietário de alguma igreja (admin implícito)
                             const { data: churchOwnerData, error: churchOwnerError } = await supabase
                                 .from('churches')
                                 .select('id')
@@ -438,7 +446,7 @@
                                 console.error('Erro ao verificar propriedade da igreja:', churchOwnerError);
                             }
 
-                            // Verificar associações de membro para a role 'admin'
+                            // 2. Verificar associações de membro para a role 'admin'
                             const { data: membershipData, error: membershipError } = await supabase
                                 .from('memberships')
                                 .select('role')
@@ -449,15 +457,19 @@
                                 console.error('Erro ao verificar associação de membro:', membershipError);
                             }
 
-                            // Define o papel do utilizador: 'admin' se for proprietário de igreja OU se tiver a role 'admin'
+                            // Define o papel do utilizador: 'owner' > 'admin' > 'member'
+                            let determinedRole = 'member';
                             if (churchOwnerData && churchOwnerData.length > 0) {
-                                setUserRole('owner'); // Define como owner para ter mais privilégios
-                            } else if (profileData.role_in_church === 'admin' || (membershipData && membershipData.length > 0)) {
-                                setUserRole('admin');
-                            } else {
-                                // Não é admin, nem owner
+                                determinedRole = 'owner'; // É o proprietário, tem os mais altos privilégios
+                            } else if (profileData.role_in_church === 'admin' || (membershipData && membershipData.length > 0 && membershipData[0].role === 'admin')) {
+                                determinedRole = 'admin'; // É admin pelo perfil ou pela associação
+                            }
+                            setUserRole(determinedRole);
+                            
+                            // Apenas admins ou owners podem aceder
+                            if (determinedRole !== 'admin' && determinedRole !== 'owner') {
                                 showModal('Acesso negado. Apenas administradores e proprietários de igreja podem aceder a esta página.', 'error');
-                                window.location.href = 'conexao-eclesia-feed.html';
+                                window.location.href = 'conexao-eclesia-feed.html'; // Redireciona para o feed
                                 return;
                             }
                             
@@ -469,6 +481,7 @@
                             window.location.href = 'index.html';
                         }
                     };
+
                     checkAuthAndRole();
                 } else {
                     console.log("Aguardando Supabase client ficar pronto na página de administração...");
@@ -480,7 +493,7 @@
                         }
                     }, 500);
                 }
-            }, [supabase]);
+            }, [supabase]); // Depende da instância do supabase
 
             const showModal = (message, type) => {
                 setModalMessage(message);
@@ -541,6 +554,7 @@
             // Aqui, garantimos que isAdmin seja true para renderizar o painel
             if (userRole !== 'admin' && userRole !== 'owner') {
                 // Este caso só deve ser atingido se o redirecionamento acima falhou por algum motivo
+                // ou se o utilizador manipular a URL após uma verificação inicial falhar.
                 return (
                     <div className="min-h-screen bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center">
                         <div className="text-white text-2xl font-bold font-inter">ACESSO NEGADO.</div>
@@ -594,914 +608,6 @@
         }
 
         ReactDOM.render(<AdminPanelApp />, document.getElementById('root'));
-    </script>
-</body>
-</html>
-```
-
-### **Passo 2: Atualizar `conexao-eclesia-feed.html` para Redirecionar para `admin.html`**
-
-No seu ficheiro `conexao-eclesia-feed.html`, altere a função `handleNavigateToAdmin` para direcionar diretamente para `admin.html`.
-
-
-```html
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Conexão Eclesia - Feed</title>
-    <!-- Incluindo Tailwind CSS para estilização (via CDN) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Incluindo a fonte Inter do Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            text-size-adjust: none; /* Adicionado para resolver o aviso de text-size-adjust */
-            -webkit-text-size-adjust: none; /* Adicionado para resolver o aviso de text-size-adjust */
-        }
-        /* Transição para a largura da barra lateral */
-        .sidebar-transition {
-            transition: width 0.3s ease-in-out;
-        }
-        /* Esconder elementos quando a barra lateral está recolhida em desktop */
-        .sidebar-collapsed .sidebar-item-text {
-            display: none;
-        }
-        /* Ajuste do flex-grow para o conteúdo principal quando a sidebar está colapsada */
-        .main-content-expanded {
-            flex-grow: 1; /* Permite que o conteúdo principal ocupe o espaço restante */
-        }
-    </style>
-</head>
-<body>
-    <div id="root"></div>
-
-    <!-- Importa React e ReactDOM a partir de um CDN (unpkg.com) -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Importa Babel para transpilar JSX diretamente no navegador -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Importa o SDK do Supabase Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Carrega o script verificador de instância Supabase -->
-    <script src="supabaseClientInstance.js"></script>
-
-    <!-- O código React/JSX agora será processado por Babel -->
-    <script type="text/babel">
-        // Componente Modal (sem alterações)
-        function Modal({ isOpen, message, type, onClose }) {
-          if (!isOpen) return null;
-
-          const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
-          const headerText = type === 'success' ? 'Sucesso!' : 'Erro!';
-
-          return (
-            <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
-              <div className="bg-white rounded-lg shadow-xl overflow-hidden max-w-sm w-full transform transition-all duration-300 scale-100">
-                <div className={`${bgColor} text-white px-6 py-4 flex justify-between items-center rounded-t-lg`}>
-                  <h3 className="text-xl font-bold font-inter">{headerText}</h3>
-                  <button
-                    onClick={onClose}
-                    className="text-white hover:text-gray-200 focus:outline-none text-2xl font-bold"
-                    aria-label="Fechar modal de mensagem"
-                  >
-                    &times;
-                  </button>
-                </div>
-                <div className="p-6">
-                  <p className="text-gray-700 text-lg mb-4 font-inter">{message}</p>
-                  <div className="flex justify-end">
-                    <button
-                      onClick={onClose}
-                      className={`py-2 px-6 rounded-lg font-bold text-white transition duration-300 shadow-md ${bgColor} hover:${bgColor.replace('500', '600')} focus:outline-none focus:ring-2 focus:ring-opacity-75`}
-                      aria-label="Entendido, fechar mensagem"
-                    >
-                      OK
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        }
-
-        // Novo Componente: CreatePostModal (sem alterações)
-        function CreatePostModal({ isOpen, onClose, onSavePost, onShowMessage, supabase }) {
-          const [title, setTitle] = React.useState('');
-          const [content, setContent] = React.useState('');
-          const [image, setImage] = React.useState('');
-          const [isLoading, setIsLoading] = React.useState(false);
-
-          const handleSubmit = async (e) => {
-            e.preventDefault();
-            if (!title || !content) {
-              onShowMessage('Título e Conteúdo são obrigatórios.', 'error');
-              return;
-            }
-
-            setIsLoading(true);
-
-            try {
-              const { data: { user } } = await supabase.auth.getUser();
-              if (!user) {
-                onShowMessage('Você precisa estar logado para criar uma publicação.', 'error');
-                setIsLoading(false);
-                return;
-              }
-
-              const { data, error } = await supabase
-                .from('posts')
-                .insert([
-                  {
-                    title,
-                    content,
-                    image_url: image || null,
-                    author_id: user.id,
-                    is_published: true
-                  }
-                ])
-                .select();
-
-              if (error) {
-                console.error('Erro ao salvar no Supabase:', error);
-                onShowModal(`Erro ao criar publicação: ${error.message}`, 'error');
-              } else {
-                onSavePost(data[0]);
-                onShowMessage('Publicação criada com sucesso!', 'success');
-                setTitle('');
-                setContent('');
-                setImage('');
-                onClose();
-              }
-            } catch (error) {
-              console.error('Erro inesperado:', error);
-              onShowModal('Ocorreu um erro inesperado ao criar a publicação.', 'error');
-            } finally {
-              setIsLoading(false);
-            }
-          };
-
-          if (!isOpen) return null;
-
-          return (
-            <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
-              <div className="bg-white rounded-lg shadow-xl overflow-hidden max-w-md w-full transform transition-all duration-300 scale-100">
-                <div className="bg-blue-600 text-white px-6 py-4 flex justify-between items-center rounded-t-lg">
-                  <h3 className="text-xl font-bold font-inter">Criar Nova Publicação</h3>
-                  <button
-                    onClick={onClose}
-                    className="text-white hover:text-gray-200 focus:outline-none text-2xl font-bold"
-                    aria-label="Fechar modal de criação de publicação"
-                    disabled={isLoading}
-                  >
-                    &times;
-                  </button>
-                </div>
-                <div className="p-6">
-                  <form onSubmit={handleSubmit}>
-                    <div className="mb-4">
-                      <label htmlFor="postTitle" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Título</label>
-                      <input
-                        type="text"
-                        id="postTitle"
-                        className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
-                        placeholder="Título da sua publicação"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        required
-                        aria-label="Campo para o título da publicação"
-                        disabled={isLoading}
-                      />
-                    </div>
-                    <div className="mb-4">
-                      <label htmlFor="postContent" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Conteúdo</label>
-                      <textarea
-                        id="postContent"
-                        className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter h-32 resize-none"
-                        placeholder="Escreva o conteúdo da sua publicação aqui..."
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                        required
-                        aria-label="Campo para o conteúdo da publicação"
-                        disabled={isLoading}
-                      ></textarea>
-                    </div>
-                    <div className="mb-6">
-                      <label htmlFor="postImage" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">URL da Imagem (Opcional)</label>
-                      <input
-                        type="url"
-                        id="postImage"
-                        className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
-                        placeholder="https://exemplo.com/imagem.jpg"
-                        value={image}
-                        onChange={(e) => setImage(e.target.value)}
-                        aria-label="Campo para a URL da imagem da publicação"
-                        disabled={isLoading}
-                      />
-                    </div>
-                    <div className="flex justify-end">
-                      <button
-                        type="button"
-                        onClick={onClose}
-                        className="mr-4 py-2 px-6 rounded-lg font-bold text-gray-700 bg-gray-200 hover:bg-gray-300 transition duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75 font-inter"
-                        aria-label="Cancelar criação da publicação"
-                        disabled={isLoading}
-                      >
-                        Cancelar
-                      </button>
-                      <button
-                        type="submit"
-                        className="py-2 px-6 rounded-lg font-bold text-white bg-green-600 hover:bg-green-700 transition duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75 font-inter"
-                        aria-label="Salvar nova publicação"
-                        disabled={isLoading}
-                      >
-                        {isLoading ? 'Publicando...' : 'Publicar'}
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            </div>
-          );
-        }
-
-        // Componente para a tela de Feed
-        function FeedScreen({ onShowModal, onLogout, supabase }) {
-          const [posts, setPosts] = React.useState([]);
-          const [isCreatePostModalOpen, setIsCreatePostModalOpen] = React.useState(false);
-          const [isLoadingPosts, setIsLoadingPosts] = React.useState(true);
-          const [isSidebarOpen, setIsSidebarOpen] = React.useState(window.innerWidth >= 768);
-
-          const fetchPosts = async () => {
-            setIsLoadingPosts(true);
-            try {
-              const { data, error } = await supabase
-                .from('posts')
-                .select(`
-                  *,
-                  profiles (full_name)
-                `)
-                .order('created_at', { ascending: false });
-
-              if (error) {
-                console.error('Erro ao carregar posts:', error);
-                onShowModal(`Erro ao carregar publicações: ${error.message || 'Erro desconhecido'}`, 'error');
-                setPosts([]);
-              } else {
-                const formattedPosts = data.map(post => ({
-                  id: post.id,
-                  author: post.profiles ? post.profiles.full_name : 'Autor Desconhecido',
-                  church: post.church_id ? 'Nome da Igreja Aqui (buscar)' : '',
-                  date: new Date(post.created_at).toLocaleDateString('pt-BR'),
-                  title: post.title,
-                  content: post.content,
-                  image: post.image_url
-                }));
-                setPosts(formattedPosts);
-              }
-            } catch (error) {
-              console.error('Erro inesperado ao buscar posts:', error);
-              onShowModal('Ocorreu um erro inesperado ao carregar as publicações.', 'error');
-              setPosts([]);
-            } finally {
-              setIsLoadingPosts(false);
-            }
-          };
-
-          React.useEffect(() => {
-            fetchPosts();
-          }, []);
-
-          const handleNewPost = (newPost) => {
-            fetchPosts();
-          };
-
-          const toggleSidebar = () => {
-            setIsSidebarOpen(!isSidebarOpen);
-          };
-
-          const handleNavigateToProfile = () => {
-            window.location.href = 'perfil.html';
-          };
-
-          const handleNavigateToChat = () => {
-            window.location.href = 'chat.html';
-          };
-
-          // Função para navegar para a página da igreja
-          const handleNavigateToChurch = () => {
-            // Este é um ID de igreja de exemplo.
-            // Em uma aplicação real, você teria uma lista de igrejas e passaria o ID da igreja clicada.
-            const exampleChurchId = 'd2c0b1a0-e3f4-5678-90ab-cdef12345678'; // Substitua por um ID real da sua base de dados
-            window.location.href = `igreja.html?churchId=${exampleChurchId}`;
-          };
-
-          const handleComingSoon = (featureName) => { // Nova função para aviso de "Em desenvolvimento"
-            onShowModal(`${featureName} está em desenvolvimento e estará disponível em breve!`, 'info');
-          };
-
-          const handleNavigateToAdmin = () => { // Nova função para navegar para o admin
-            // onShowModal('A secção de Administrador está em desenvolvimento e estará disponível em breve!', 'info');
-            window.location.href = 'admin.html'; // Direciona para a página admin.html
-          };
-
-
-          return (
-            <div className="flex flex-col md:flex-row min-h-screen w-full bg-gradient-to-br from-blue-600 to-purple-700 p-4 sm:p-6 md:p-8">
-              {/* Botão de hambúrguer para mobile */}
-              <button
-                onClick={toggleSidebar}
-                className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-300"
-                aria-label={isSidebarOpen ? "Fechar menu lateral" : "Abrir menu lateral"}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                </svg>
-              </button>
-
-              {/* Barra Lateral */}
-              <aside className={`fixed md:static top-0 left-0 h-full z-40
-                                w-64 md:w-64 sidebar-transition
-                                bg-gray-800 text-white p-4 flex flex-col items-center md:items-start space-y-4 rounded-xl shadow-lg
-                                ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-                                md:mb-0 md:rounded-r-none md:mr-4`}>
-                
-                {/* Botão de fechar para mobile dentro do sidebar, quando aberto */}
-                <button
-                    onClick={toggleSidebar}
-                    className="md:hidden absolute top-4 right-4 p-2 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-300"
-                    aria-label="Fechar menu lateral"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-
-                <div className="text-3xl font-extrabold mb-6 font-inter text-blue-300 sidebar-item-text">Menu</div>
-                <div 
-                    className="flex items-center space-x-2 text-xl cursor-pointer hover:text-blue-300 transition duration-200" 
-                    aria-label="Acessar meu perfil"
-                    onClick={handleNavigateToProfile}
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                    </svg>
-                    <span className="font-inter sidebar-item-text">Meu Perfil</span>
-                </div>
-                {/* BOTÃO DE IGREJAS AGORA NAVEGA */}
-                <button 
-                    className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" 
-                    aria-label="Navegar para Igrejas"
-                    onClick={handleNavigateToChurch}
-                >
-                    <span className="sidebar-item-text">Igrejas</span>
-                </button>
-                <button 
-                    className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" 
-                    aria-label="Navegar para Eventos"
-                    onClick={() => handleComingSoon('Eventos')} // Aviso de em desenvolvimento
-                    title="Funcionalidade em desenvolvimento"
-                >
-                    <span className="sidebar-item-text">Eventos</span>
-                </button>
-                <button 
-                    className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" 
-                    aria-label="Ver posts de Estudo Bíblico"
-                    onClick={() => handleComingSoon('Estudo Bíblico')} // Aviso de em desenvolvimento
-                    title="Funcionalidade em desenvolvimento"
-                >
-                    Estudo Bíblico
-                </button>
-                <button 
-                    className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" 
-                    aria-label="Ver posts de Ação Social"
-                    onClick={() => handleComingSoon('Ação Social')} // Aviso de em desenvolvimento
-                    title="Funcionalidade em desenvolvimento"
-                >
-                    Ação Social
-                </button>
-                <button 
-                    className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" 
-                    aria-label="Ver posts de Noite de Louvor"
-                    onClick={() => handleComingSoon('Noite de Louvor')} // Aviso de em desenvolvimento
-                    title="Funcionalidade em desenvolvimento"
-                >
-                    Noite de Louvor
-                </button>
-
-                <button
-                    onClick={() => setIsCreatePostModalOpen(true)}
-                    className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter bg-blue-500 hover:bg-blue-600"
-                    aria-label="Criar uma nova publicação"
-                >
-                    Criar Publicação
-                </button>
-                
-                {/* BOTÃO DE CHAT */}
-                <button
-                    onClick={handleNavigateToChat}
-                    className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter bg-purple-500 hover:bg-purple-600"
-                    aria-label="Abrir chat global"
-                >
-                    Chat
-                </button>
-
-                {/* BOTÃO DE ADMINISTRADOR */}
-                <button 
-                    className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter bg-gray-600 hover:bg-gray-700" 
-                    aria-label="Aceder painel de administrador"
-                    onClick={handleNavigateToAdmin} // Direciona para a página admin.html
-                >
-                    <span className="sidebar-item-text">Administrador</span>
-                </button>
-
-                <div className="mt-auto pt-4 w-full border-t border-gray-700 md:border-none">
-                  <button
-                    onClick={onLogout}
-                    className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 transform hover:scale-100 active:scale-95 shadow-md font-inter"
-                    aria-label="Sair da sua conta"
-                  >
-                    Sair
-                  </button>
-                </div>
-              </aside>
-
-              <main className={`flex-1 p-6 bg-gray-100 rounded-xl shadow-xl max-w-2xl mx-auto
-                                md:ml-0 ${isSidebarOpen ? 'md:ml-64' : 'md:ml-20'} sidebar-transition`}>
-                <div className="text-center mb-8">
-                  <h1 className="text-4xl font-extrabold text-gray-800 mb-2 font-inter">Posts e Anúncios</h1>
-                  <p className="text-gray-600 text-lg">Últimas notícias e comunicados da comunidade.</p>
-                </div>
-
-                {isLoadingPosts ? (
-                  <div className="text-center text-gray-600 text-lg font-inter">Carregando publicações...</div>
-                ) : posts.length === 0 ? (
-                  <div className="text-center text-gray-600 text-lg font-inter">Nenhuma publicação encontrada.</div>
-                ) : (
-                  <div className="flex flex-col space-y-6">
-                    {posts.map(post => (
-                      <div key={post.id} className="bg-white p-6 rounded-lg shadow-lg border border-gray-200">
-                        {post.image && (
-                          <img
-                            src={post.image}
-                            alt={`Imagem para o post: ${post.title}`}
-                            className="w-full h-48 object-cover rounded-lg mb-4"
-                            onError={(e) => { e.target.onerror = null; e.target.src = `https://placehold.co/400x200/cccccc/ffffff?text=Imagem+N%C3%A3o+Dispon%C3%ADvel`; }}
-                          />
-                        )}
-                        <h2 className="text-2xl font-bold text-gray-800 mb-2 font-inter">{post.title}</h2>
-                        <p className="text-sm text-gray-500 mb-3 font-inter">
-                          Por {post.author} {post.church && `da ${post.church}`} em {post.date}
-                        </p>
-                        <p className="text-gray-700 leading-relaxed font-inter">{post.content}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </main>
-
-              <CreatePostModal
-                isOpen={isCreatePostModalOpen}
-                onClose={() => setIsCreatePostModalOpen(false)}
-                onSavePost={handleNewPost}
-                onShowMessage={onShowModal}
-                supabase={supabase}
-              />
-            </div>
-          );
-        }
-
-        // Componente principal para a página de feed
-        function App() {
-          const [isModalOpen, setIsModalOpen] = React.useState(false);
-          const [modalMessage, setModalMessage] = React.useState('');
-          const [modalType, setModalType] = React.useState('info');
-          const [isAuthChecking, setIsAuthChecking] = React.useState(true);
-          const [isSupabaseClientReady, setIsSupabaseClientReady] = React.useState(false);
-
-          // AGORA, ACESSE A INSTÂNCIA GLOBALMENTE
-          const supabase = window.globalSupabaseClient;
-
-          React.useEffect(() => {
-            // Inicializa o cliente Supabase globalmente se ainda não foi inicializado e o SDK está disponível
-            if (!supabase && window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
-                window.globalSupabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-                console.log("Supabase client initialized globally within App component.");
-            }
-            
-            // Agora, usa a instância garantida para a verificação de sessão
-            if (window.globalSupabaseClient) {
-                setIsSupabaseClientReady(true);
-                const checkUserSession = async () => {
-                    try {
-                        const { data: { session } } = await window.globalSupabaseClient.auth.getSession();
-                        if (!session) {
-                            window.location.href = 'index.html';
-                        } else {
-                            setIsAuthChecking(false);
-                        }
-                    } catch (error) {
-                        console.error('Erro ao verificar sessão:', error);
-                        window.location.href = 'index.html';
-                    }
-                };
-                checkUserSession();
-            } else {
-                console.log("Aguardando Supabase client ficar pronto...");
-                setTimeout(() => {
-                    if (!window.globalSupabaseClient && window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
-                         window.globalSupabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-                         setIsSupabaseClientReady(true);
-                         console.log("Supabase client initialized after timeout.");
-                    }
-                }, 500);
-            }
-          }, [supabase]);
-
-          const showModal = (message, type) => {
-            setModalMessage(message);
-            setModalType(type);
-            setIsModalOpen(true);
-          };
-
-          const closeModal = () => {
-            setIsModalOpen(false);
-            setModalMessage('');
-            setModalType('info');
-          };
-
-          const handleLogout = async () => {
-            try {
-              const { error } = await supabase.auth.signOut();
-              if (error) {
-                console.error('Erro ao fazer logout:', error);
-                showModal(`Erro ao fazer logout: ${error.message}`, 'error');
-              } else {
-                showModal('Logout realizado com sucesso!', 'success');
-                window.location.href = 'index.html';
-              }
-            } catch (error) {
-              console.error('Erro inesperado ao fazer logout:', error);
-              showModal('Ocorreu um erro inesperado ao fazer logout.', 'error');
-            }
-          };
-
-          if (!isSupabaseClientReady || isAuthChecking) {
-            return (
-              <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
-                <div className="text-white text-2xl font-bold font-inter">A carregar...</div>
-              </div>
-            );
-          }
-
-          return (
-            <div className="min-h-screen flex flex-col md:flex-row items-stretch justify-center p-0">
-              <FeedScreen
-                onShowModal={showModal}
-                onLogout={handleLogout}
-                supabase={supabase}
-              />
-              <div className="text-center text-white text-sm opacity-80 font-inter py-4 bg-gray-800 w-full md:hidden">
-                © {new Date().getFullYear()} CPN Serviços. Todos os direitos reservados. <span className="text-xs ml-2 opacity-70">v1.0.2025.01.4</span>
-              </div>
-              <Modal
-                isOpen={isModalOpen}
-                message={modalMessage}
-                type={modalType}
-                onClose={closeModal}
-              />
-            </div>
-          );
-        }
-
-        ReactDOM.render(<App />, document.getElementById('root'));
-    </script>
-</body>
-</html>
-```
-
----
-
-E, finalmente, o conteúdo atualizado para o seu `perfil.html`:
-
-
-```html
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Conexão Eclesia - Meu Perfil</title>
-    <!-- Incluindo Tailwind CSS para estilização (via CDN) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Incluindo a fonte Inter do Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            text-size-adjust: none;
-            -webkit-text-size-adjust: none;
-        }
-    </style>
-</head>
-<body>
-    <div id="root"></div>
-
-    <!-- Importa React e ReactDOM a partir de um CDN (unpkg.com) -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Importa Babel para transpilar JSX diretamente no navegador -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Importa o SDK do Supabase Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Carrega o script verificador de instância Supabase -->
-    <script src="supabaseClientInstance.js"></script>
-
-    <!-- O código React/JSX agora será processado por Babel -->
-    <script type="text/babel">
-        // Componente Modal (sem alterações)
-        function Modal({ isOpen, message, type, onClose }) {
-          if (!isOpen) return null;
-
-          const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
-          const headerText = type === 'success' ? 'Sucesso!' : 'Erro!';
-
-          return (
-            <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
-              <div className="bg-white rounded-lg shadow-xl overflow-hidden max-w-sm w-full transform transition-all duration-300 scale-100">
-                <div className={`${bgColor} text-white px-6 py-4 flex justify-between items-center rounded-t-lg`}>
-                  <h3 className="text-xl font-bold font-inter">{headerText}</h3>
-                  <button
-                    onClick={onClose}
-                    className="text-white hover:text-gray-200 focus:outline-none text-2xl font-bold"
-                    aria-label="Fechar modal de mensagem"
-                  >
-                    &times;
-                  </button>
-                </div>
-                <div className="p-6">
-                  <p className="text-gray-700 text-lg mb-4 font-inter">{message}</p>
-                  <div className="flex justify-end">
-                    <button
-                      onClick={onClose}
-                      className={`py-2 px-6 rounded-lg font-bold text-white transition duration-300 shadow-md ${bgColor} hover:${bgColor.replace('500', '600')} focus:outline-none focus:ring-2 focus:ring-opacity-75`}
-                      aria-label="Entendido, fechar mensagem"
-                    >
-                      OK
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        }
-
-        // Componente da tela de Perfil
-        function ProfileScreen({ onShowModal, onBackToFeed, supabase }) {
-          const [profile, setProfile] = React.useState(null);
-          const [isLoading, setIsLoading] = React.useState(true);
-          const [isSaving, setIsSaving] = React.useState(false);
-          const [isEditing, setIsEditing] = React.useState(false);
-
-          const [fullName, setFullName] = React.useState('');
-          const [phoneNumber, setPhoneNumber] = React.useState('');
-          const [dateOfBirth, setDateOfBirth] = React.useState('');
-          const [roleInChurch, setRoleInChurch] = React.useState('');
-          const [avatarUrl, setAvatarUrl] = React.useState('');
-          const [isUploadingImage, setIsUploadingImage] = React.useState(false);
-
-
-          // Carrega os dados do perfil quando o componente é montado
-          React.useEffect(() => {
-            const fetchProfile = async () => {
-              setIsLoading(true);
-              try {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (!user) {
-                  onShowModal('Sessão expirada. Por favor, faça login novamente.', 'error');
-                  window.location.href = 'index.html'; // Redireciona para o login
-                  return;
-                }
-
-                const { data, error } = await supabase
-                  .from('profiles')
-                  .select('*')
-                  .eq('id', user.id)
-                  .single();
-
-                if (error) {
-                  console.error('Erro ao carregar perfil:', error);
-                  onShowModal(`Erro ao carregar perfil: ${error.message}`, 'error');
-                } else if (data) {
-                  setProfile(data);
-                  setFullName(data.full_name || '');
-                  setPhoneNumber(data.phone_number || '');
-                  setDateOfBirth(data.date_of_birth || '');
-                  setRoleInChurch(data.role_in_church || '');
-                  setAvatarUrl(data.avatar_url || '');
-                } else {
-                    onShowModal('Perfil não encontrado. Você pode criar um novo perfil ou atualizar um existente.', 'info');
-                }
-              } catch (error) {
-                console.error('Erro inesperado ao buscar perfil:', error);
-                onShowModal('Ocorreu um erro inesperado ao carregar o perfil.', 'error');
-              } finally {
-                setIsLoading(false);
-              }
-            };
-
-            if (supabase) {
-                fetchProfile();
-            }
-          }, [supabase, onShowModal]);
-
-          const handleAvatarUpload = async (event) => {
-            const file = event.target.files[0];
-            if (!file) {
-                return;
-            }
-
-            setIsUploadingImage(true);
-            try {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (!user) {
-                    onShowModal('Sessão expirada. Por favor, faça login novamente para enviar a imagem.', 'error');
-                    window.location.href = 'index.html';
-                    return;
-                }
-
-                const fileExtension = file.name.split('.').pop();
-                const filePath = `${user.id}/avatar.${fileExtension}`;
-                
-                const { data, error } = await supabase.storage
-                    .from('avatars')
-                    .upload(filePath, file, {
-                        cacheControl: '3600',
-                        upsert: true
-                    });
-
-                if (error) {
-                    console.error('Erro ao enviar imagem:', error);
-                    onShowModal(`Erro ao enviar imagem: ${error.message}`, 'error');
-                } else {
-                    const { data: publicUrlData } = supabase.storage
-                        .from('avatars')
-                        .getPublicUrl(filePath);
-
-                    if (publicUrlData && publicUrlData.publicUrl) {
-                        setAvatarUrl(publicUrlData.publicUrl);
-                        onShowModal('Imagem de perfil enviada com sucesso! Lembre-se de clicar em "Salvar" para aplicar as alterações.', 'success');
-                        console.log('URL pública do avatar após upload:', publicUrlData.publicUrl);
-                    } else {
-                        onShowModal('Erro ao obter URL da imagem. Por favor, tente novamente.', 'error');
-                    }
-                }
-            } catch (error) {
-                console.error('Erro inesperado no upload:', error);
-                onShowModal('Ocorreu um erro inesperado ao enviar a imagem.', 'error');
-            } finally {
-                setIsUploadingImage(false);
-            }
-          };
-
-          const handleSaveProfile = async () => {
-            setIsSaving(true);
-            try {
-              const { data: { user } = {} } = await supabase.auth.getUser();
-              if (!user) {
-                onShowModal('Sessão expirada. Por favor, faça login novamente para salvar.', 'error');
-                window.location.href = 'index.html';
-                return;
-              }
-
-              const updatedProfileData = {
-                full_name: fullName,
-                phone_number: phoneNumber,
-                date_of_birth: dateOfBirth,
-                role_in_church: roleInChurch,
-                avatar_url: avatarUrl,
-              };
-
-              const { data, error } = await supabase
-                .from('profiles')
-                .update(updatedProfileData)
-                .eq('id', user.id)
-                .select()
-                .single();
-
-              if (error) {
-                  if (error.code === 'PGRST116' || error.message.includes('0 rows in a single() query')) {
-                      console.log('Perfil não encontrado ao tentar atualizar, tentando inserir...');
-                      const { error: insertError } = await supabase
-                          .from('profiles')
-                          .insert({ id: user.id, full_name: 'Novo Usuário', created_at: new Date().toISOString(), ...updatedProfileData });
-                      
-                      if (insertError) {
-                          console.error('Erro ao inserir novo perfil:', insertError);
-                          onShowModal(`Erro ao salvar perfil: ${insertError.message}.`, 'error');
-                      } else {
-                          onShowModal('Perfil criado e salvo com sucesso!', 'success');
-                          setIsEditing(false);
-                          fetchProfile();
-                      }
-                  } else {
-                      console.error('Erro ao salvar perfil:', error);
-                      onShowModal(`Erro ao salvar perfil: ${error.message}`, 'error');
-                  }
-              } else if (data) {
-                setProfile(data);
-                onShowModal('Perfil atualizado com sucesso!', 'success');
-                setIsEditing(false);
-              }
-            } catch (error) {
-              console.error('Erro inesperado ao salvar perfil:', error);
-              onShowModal('Ocorreu um erro inesperado ao salvar o perfil.', 'error');
-            } finally {
-              setIsSaving(false);
-            }
-          };
-
-          if (isLoading) {
-            return (
-              <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 to-purple-700">
-                <div className="text-white text-2xl font-bold font-inter">A carregar...</div>
-              </div>
-            );
-          }
-
-          if (!profile && !isLoading) {
-            return (
-                <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md mx-auto text-center">
-                    <h2 className="text-2xl font-bold text-gray-800 mb-4 font-inter">O seu Perfil</h2>
-                    <p className="text-gray-600 mb-6 font-inter">Não foi possível carregar o seu perfil. Certifique-se de que ele foi criado após o registo.</p>
-                    <button
-                        onClick={async () => {
-                            setIsSaving(true);
-                            try {
-                                const { data: { user } } = await supabase.auth.getUser();
-                                if (!user) {
-                                    onShowModal('Sessão expirada. Por favor, faça login novamente.', 'error');
-                                    window.location.href = 'index.html';
-                                    return;
-                                }
-                                const { error: insertError } = await supabase
-                                    .from('profiles')
-                                    .insert({ id: user.id, full_name: 'Novo Utilizador', created_at: new Date().toISOString() });
-                                
-                                if (insertError) {
-                                    console.error('Erro ao criar perfil inicial:', insertError);
-                                    onShowModal(`Erro ao criar perfil inicial: ${insertError.message}`, 'error');
-                                } else {
-                                    onShowModal('Perfil inicial criado! Agora pode editá-lo.', 'success');
-                                    fetchProfile();
-                                }
-                            } catch (err) {
-                                console.error('Erro inesperado ao tentar criar perfil inicial:', err);
-                                onShowModal('Ocorreu um erro inesperado ao criar o perfil.', 'error');
-                            } finally {
-                                setIsSaving(false);
-                            }
-                        }}
-                        className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter mb-4"
-                        aria-label="Criar um novo perfil agora"
-                        disabled={isSaving}
-                    >
-                        {isSaving ? 'A criar Perfil...' : 'Criar Perfil Agora'}
-                    </button>
-                    <button
-                        onClick={onBackToFeed}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter"
-                        aria-label="Voltar para o Feed"
-                    >
-                        Voltar ao Feed
-                    </button>
-                </div>
-            );
-          }
-
-          return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex flex-col items-center p-4">
-              <ProfileScreen
-                onShowModal={showModal}
-                onBackToFeed={handleBackToFeed}
-                supabase={supabase}
-              />
-              <div className="mt-auto text-center text-white text-sm opacity-80 font-inter py-4">
-                © {new Date().getFullYear()} CPN Serviços. Todos os direitos reservados. <span className="text-xs ml-2 opacity-70">v1.0.2025.01.4</span>
-              </div>
-              <Modal
-                isOpen={isModalOpen}
-                message={modalMessage}
-                type={modalType}
-                onClose={closeModal}
-              />
-            </div>
-          );
-        }
-
-        ReactDOM.render(<App />, document.getElementById('root'));
     </script>
 </body>
 </html>
