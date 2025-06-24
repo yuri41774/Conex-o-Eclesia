@@ -207,7 +207,7 @@
                   className="w-32 h-32 rounded-full object-cover border-4 border-blue-500 shadow-md"
                   aria-label="Imagem de perfil do usuário"
                 />
-                {isEditing && (
+                {isEditing && ( // Mostra o campo de input para URL do avatar apenas em modo de edição
                     <input
                       type="url"
                       placeholder="URL do Avatar"
@@ -232,7 +232,7 @@
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       className="shadow-sm appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter"
-                      aria-label="Campo de texto para nome completo" // ARIA-LABEL otimizado
+                      aria-label="Campo de texto para nome completo"
                       disabled={isSaving}
                     />
                   ) : (
@@ -256,7 +256,7 @@
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
                       className="shadow-sm appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter"
-                      aria-label="Campo de texto para número de telefone" // ARIA-LABEL otimizado
+                      aria-label="Campo de texto para número de telefone"
                       disabled={isSaving}
                     />
                   ) : (
@@ -274,7 +274,7 @@
                       value={dateOfBirth}
                       onChange={(e) => setDateOfBirth(e.target.value)}
                       className="shadow-sm appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter"
-                      aria-label="Campo de entrada para data de nascimento" // ARIA-LABEL otimizado
+                      aria-label="Campo de entrada para data de nascimento"
                       disabled={isSaving}
                     />
                   ) : (
@@ -292,7 +292,7 @@
                       value={roleInChurch}
                       onChange={(e) => setRoleInChurch(e.target.value)}
                       className="shadow-sm appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter"
-                      aria-label="Campo de texto para cargo ou função na igreja" // ARIA-LABEL otimizado
+                      aria-label="Campo de texto para cargo ou função na igreja"
                       disabled={isSaving}
                     />
                   ) : (
@@ -322,7 +322,7 @@
                         setAvatarUrl(profile.avatar_url || '');
                       }}
                       className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter"
-                      aria-label="Cancelar edição do perfil" // ARIA-LABEL mais conciso
+                      aria-label="Cancelar edição do perfil"
                       disabled={isSaving}
                     >
                       Cancelar
@@ -330,7 +330,7 @@
                     <button
                       onClick={handleSaveProfile}
                       className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter"
-                      aria-label="Salvar alterações do perfil" // ARIA-LABEL mais conciso
+                      aria-label="Salvar alterações do perfil"
                       disabled={isSaving}
                     >
                       {isSaving ? 'Salvando...' : 'Salvar'}
@@ -340,7 +340,7 @@
                   <button
                     onClick={() => setIsEditing(true)}
                     className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter"
-                    aria-label="Editar perfil" // ARIA-LABEL mais conciso
+                    aria-label="Editar perfil"
                   >
                     Editar Perfil
                   </button>
@@ -348,7 +348,7 @@
                  <button
                     onClick={onBackToFeed}
                     className="bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter"
-                    aria-label="Voltar para o Feed" // ARIA-LABEL mais conciso
+                    aria-label="Voltar para o Feed"
                 >
                     Voltar ao Feed
                 </button>
@@ -413,13 +413,14 @@
           }
 
           return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center p-4">
+            <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex flex-col items-center p-4"> {/* Alterado para flex-col e items-center, removido justify-center */}
               <ProfileScreen
                 onShowModal={showModal}
                 onBackToFeed={handleBackToFeed}
                 supabase={supabase}
               />
-              <div className="mt-8 text-center text-white text-sm opacity-80 font-inter absolute bottom-4">
+              {/* Rodapé da página */}
+              <div className="mt-auto text-center text-white text-sm opacity-80 font-inter py-4"> {/* Adicionado mt-auto, removido absolute bottom-4 */}
                 © {new Date().getFullYear()} CPN Serviços. Todos os direitos reservados.
               </div>
               <Modal
