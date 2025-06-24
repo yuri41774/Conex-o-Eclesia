@@ -1,66 +1,102 @@
 Conexão Eclesia
-Licença MIT
-
-Build Status <!-- Altere para o status real do seu projeto -->
 📚 Descrição do Projeto
 O "Conexão Eclesia" é uma aplicação web desenvolvida para fortalecer a comunidade eclesiástica. Ela oferece um ponto central para membros de igrejas se conectarem, acompanharem eventos, compartilharem publicações (posts e anúncios) e se registrarem, criando um ambiente digital que fomenta a comunicação e o engajamento.
+
 O projeto é construído como um Progressive Web App (PWA), permitindo que seja instalado na tela inicial de smartphones, proporcionando uma experiência de usuário semelhante a um aplicativo nativo.
+
 ✨ Funcionalidades
- * Autenticação de Usuários:
-   * Login: Permite que usuários existentes acessem a plataforma.
-   * Registro: Permite que novos membros criem suas contas com informações detalhadas (nome completo, data de nascimento, telefone, cargo/função na igreja, nome da igreja/comunidade).
-   * Redirecionamento: Após o login, o usuário é redirecionado para o feed principal.
-   * Logout: Botão para sair da sessão e retornar à tela de login.
- * Feed de Publicações:
-   * Exibe um feed centralizado com "Posts e Anúncios" da comunidade.
-   * Permite a criação de novas publicações através de um modal.
-   * Carrega publicações dinamicamente do Supabase, incluindo informações do autor (profiles).
- * Barra Lateral de Navegação (Sidebar):
-   * Design responsivo para mobile e desktop.
-   * Links para "Meu Perfil", "Minhas Igrejas", "Eventos", "Estudo Bíblico", "Ação Social", "Noite de Louvor" (botões de navegação/filtro).
-   * Botão "Criar Publicação" que abre um modal.
-   * Botão "Sair" para encerrar a sessão.
- * Modais de Mensagem: Notificações amigáveis para sucesso, erro e outras informações, substituindo alert() tradicionais.
- * Responsividade: Layout adaptável a diferentes tamanhos de tela e dispositivos (smartphones, tablets, desktops) utilizando Tailwind CSS.
- * Progressive Web App (PWA): Configurado para ser instalável na tela inicial de dispositivos móveis.
- * Integração com Supabase: Utiliza o Supabase como backend-as-a-service para:
-   * Autenticação (login e registro de usuários).
-   * Armazenamento de dados (perfis, posts, etc.).
-   * Row Level Security (RLS) para controle de acesso aos dados.
+Autenticação de Usuários:
+
+Login: Permite que usuários existentes acessem a plataforma.
+
+Registro: Permite que novos membros criem suas contas com informações detalhadas (nome completo, data de nascimento, telefone, cargo/função na igreja, nome da igreja/comunidade).
+
+Redirecionamento: Após o login, o usuário é redirecionado para o feed principal.
+
+Logout: Botão para sair da sessão e retornar à tela de login.
+
+Feed de Publicações:
+
+Exibe um feed centralizado com "Posts e Anúncios" da comunidade.
+
+Permite a criação de novas publicações através de um modal.
+
+Carrega publicações dinamicamente do Supabase, incluindo informações do autor (profiles).
+
+Barra Lateral de Navegação (Sidebar):
+
+Design responsivo para mobile e desktop.
+
+Links para "Meu Perfil", "Igrejas", "Eventos", "Estudo Bíblico", "Ação Social", "Noite de Louvor" (botões de navegação/filtro).
+
+Botão "Criar Publicação" que abre um modal.
+
+Botão "Sair" para encerrar a sessão.
+
+Modais de Mensagem: Notificações amigáveis para sucesso, erro e outras informações, substituindo alert() tradicionais.
+
+Responsividade: Layout adaptável a diferentes tamanhos de tela e dispositivos (smartphones, tablets, desktops) utilizando Tailwind CSS.
+
+Progressive Web App (PWA): Configurado para ser instalável na tela inicial de dispositivos móveis.
+
+Integração com Supabase: Utiliza o Supabase como backend-as-a-service para:
+
+Autenticação (login e registro de usuários).
+
+Armazenamento de dados (perfis, posts, etc.).
+
+Row Level Security (RLS) para controle de acesso aos dados.
+
 🚀 Tecnologias Utilizadas
- * Frontend:
-   * React (via CDN para simplicidade em arquivo único HTML)
-   * Babel Standalone (para transpilação de JSX no navegador)
-   * Tailwind CSS (via CDN para estilização)
- * Backend & Banco de Dados:
-   * Supabase (Autenticação, PostgreSQL Database, RLS)
+Frontend:
+
+React (via CDN para simplicidade em arquivo único HTML)
+
+Babel Standalone (para transpilação de JSX no navegador)
+
+Tailwind CSS (via CDN para estilização)
+
+Backend & Banco de Dados:
+
+Supabase (Autenticação, PostgreSQL Database, RLS)
+
 📁 Estrutura do Projeto
 O projeto é dividido em dois arquivos HTML principais para simular a navegação entre páginas, além de assets para PWA:
+
 conexao-eclesia/
 ├── index.html                  # Página de Login e Registro (Ponto de entrada do PWA)
 ├── conexao-eclesia-feed.html   # Página do Feed de Publicações
 ├── manifest.json               # Manifesto do Progressive Web App (PWA)
 └── icons/                      # Diretório para ícones do PWA
-    ├── icon-192x192.png        # Ícone PWA (192x192)
-    └── icon-512x512.png        # Ícone PWA (512x512)
+    ├── logo-192x192.png        # Ícone PWA (192x192 pixels)
+    └── logo-512x512.png        # Ícone PWA (512x512 pixels)
+    └── ...                     # Outros tamanhos de ícone (ex: 72x72, 96x96, 128x128, 144x144, 152x152, 384x384)
 
 ⚙️ Configuração e Instalação (Local)
 Para rodar este projeto localmente, siga os passos abaixo:
+
 1. Clonar o Repositório (Exemplo)
 git clone https://github.com/your-username/conexao-eclesia.git # Altere para o seu repositório
 cd conexao-eclesia
 
 2. Configurar o Supabase
 Se você ainda não tem um projeto Supabase, crie um em https://supabase.com/.
+
 a. Obter Credenciais do Supabase
 No seu Dashboard Supabase:
- * Vá em Settings > API.
- * Copie sua Project URL (ex: https://your-project-ref.supabase.co).
- * Copie sua Anon Key (chave pública, ex: eyJhbGci...).
+
+Vá em Settings > API.
+
+Copie sua Project URL (ex: https://your-project-ref.supabase.co).
+
+Copie sua Anon Key (chave pública, ex: eyJhbGci...).
+
 b. Configurar o Banco de Dados (PostgreSQL)
 Execute o seguinte script SQL no SQL Editor do seu Dashboard Supabase para criar as tabelas e configurar as políticas de Row Level Security (RLS).
+
 ATENÇÃO: Este script DROP TABLE primeiro, o que significa que ele APAGARÁ TODOS OS DADOS das tabelas existentes (profiles, churches, memberships, events, posts) e do tipo member_role. Use com cautela!
--- ATENÇÃO: ESTE SCRIPT IRÁ APAGAR TODOS OS DADOS DAS TABELAS ABAIXO!
+
+-- ATENÇÃO: ESTE SCRIPT IRÁ APAGAR TODOS OS DATOS DAS TABELAS ABAIXO!
 -- USE COM EXTREMA CAUTELA EM AMBIENTES DE PRODUÇÃO.
 
 -- Exclui tabelas em ordem de dependência reversa para evitar erros de chave estrangeira
@@ -182,12 +218,15 @@ CREATE INDEX IF NOT EXISTS posts_is_published_idx ON public.posts (is_published)
 
 c. Configurar Variáveis de Ambiente no Código
 Abra os arquivos index.html e conexao-eclesia-feed.html e substitua os placeholders pelas suas credenciais do Supabase:
- * index.html (e conexao-eclesia-feed.html):
-   const SUPABASE_URL = "https://rahhplphegvvdehrumyp.supabase.co"; // SUBSTITUA PELA SUA URL REAL DO PROJETO SUPABASE
+
+index.html (e conexao-eclesia-feed.html):
+
+const SUPABASE_URL = "https://rahhplphegvvdehrumyp.supabase.co"; // SUBSTITUA PELA SUA URL REAL DO PROJETO SUPABASE
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJhaGhwbHBoZWd2dmRlaHJ1bXlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3MDk2NDMsImV4cCI6MjA2NjI4NTY0M30.EDM-RotlChTCWiisI4o5okQ6Llee1ZaQEAcLaphBqTs"; // Sua chave anon
 
 d. Criar Usuário de Teste e Perfil (Opcional)
 Para testar o login, você pode registrar um usuário através do seu formulário de registro, ou criar um manualmente no dashboard do Supabase (Authentication > Users). Depois, use o UID desse usuário para criar um perfil de teste, executando este script no SQL Editor:
+
 INSERT INTO public.profiles (id, full_name, phone_number, date_of_birth, role_in_church, avatar_url)
 VALUES (
   'SEU_UUID_DO_USUARIO_AUTENTICADO', -- SUBSTITUA PELO UUID REAL DO USUÁRIO
@@ -200,6 +239,7 @@ VALUES (
 
 3. Progressive Web App (PWA) Setup
 Para que seu app seja instalável, crie um arquivo manifest.json na raiz do seu projeto (conexao-eclesia/manifest.json) e uma pasta icons com as imagens.
+
 manifest.json
 {
   "name": "Conexão Eclesia",
@@ -211,49 +251,96 @@ manifest.json
   "theme_color": "#2563eb",
   "icons": [
     {
-      "src": "/icons/icon-192x192.png",
+      "src": "/icons/logo-192x192.png",  <!-- NOME DO SEU ARQUIVO DE LOGO -->
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/icons/icon-512x512.png",
+      "src": "/icons/logo-512x512.png",  <!-- NOME DO SEU ARQUIVO DE LOGO -->
       "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/logo-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/logo-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/logo-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/logo-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/logo-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/logo-384x384.png",
+      "sizes": "384x384",
       "type": "image/png"
     }
   ]
 }
 
 Ícones
-Crie uma pasta icons na raiz do seu projeto e adicione imagens de ícone para o seu aplicativo (por exemplo, icon-192x192.png e icon-512x512.png).
+Crie uma pasta icons na raiz do seu projeto e adicione versões da sua imagem logo nos diferentes tamanhos especificados acima (ex: logo-192x192.png, logo-512x512.png, etc.). Certifique-se de que os nomes dos arquivos correspondem aos listados no manifest.json. 
+
+
+
+uxwing.com
 ▶️ Como Rodar o Projeto Localmente
 Como o projeto é composto por arquivos HTML estáticos com React via CDN e Babel, você pode simplesmente abri-los em um navegador. No entanto, para que o PWA e as chamadas de API funcionem corretamente (especialmente CORS), é recomendável usar um servidor web local simples.
- * Instale um servidor HTTP simples (se não tiver):
-   npm install -g http-server
 
- * Navegue até a pasta raiz do seu projeto no terminal:
-   cd conexao-eclesia
+Instale um servidor HTTP simples (se não tiver):
 
- * Inicie o servidor:
-   http-server
+npm install -g http-server
 
-   Isso iniciará um servidor em http://localhost:8080 (ou outra porta). Abra essa URL no seu navegador.
- * Para PWA e HTTPS (Recomendado): Para testar a funcionalidade de PWA completamente (o prompt de instalação), você precisará servir o app via HTTPS. Uma forma simples é usar o Vercel CLI localmente com um túnel, ou fazer o deploy em um serviço como o próprio Vercel.
+Navegue até a pasta raiz do seu projeto no terminal:
+
+cd conexao-eclesia
+
+Inicie o servidor:
+
+http-server
+
+Isso iniciará um servidor em http://localhost:8080 (ou outra porta). Abra essa URL no seu navegador.
+
+Para PWA e HTTPS (Recomendado): Para testar a funcionalidade de PWA completamente (o prompt de instalação), você precisará servir o app via HTTPS. Uma forma simples é usar o Vercel CLI localmente com um túnel, ou fazer o deploy em um serviço como o próprio Vercel.
+
 ☁️ Como Fazer o Deploy (Ex: Vercel)
- * Instale a Vercel CLI (se ainda não tiver):
-   npm install -g vercel
+Instale a Vercel CLI (se ainda não tiver):
 
- * Faça login na Vercel:
-   vercel login
+npm install -g vercel
 
-   Siga as instruções para autenticar sua conta.
- * Navegue até a pasta raiz do seu projeto no terminal:
-   cd conexao-eclesia
+Faça login na Vercel:
 
- * Implante seu projeto:
-   vercel
+vercel login
 
-   A Vercel detectará que é um projeto estático e fará o deploy. Siga as instruções no terminal. Após o deploy, a Vercel fornecerá uma URL HTTPS onde seu aplicativo estará disponível.
+Siga as instruções para autenticar sua conta.
+
+Navegue até a pasta raiz do seu projeto no terminal:
+
+cd conexao-eclesia
+
+Implante seu projeto:
+
+vercel
+
+A Vercel detectará que é um projeto estático e fará o deploy. Siga as instruções no terminal. Após o deploy, a Vercel fornecerá uma URL HTTPS onde seu aplicativo estará disponível.
+
 🤝 Contribuição
 Sinta-se à vontade para contribuir com este projeto! Abra issues para bugs ou sugestões, e envie pull requests com melhorias.
+
 📄 Licença
-Este projeto está licenciado sob a Licença MIT. Veja o arquivo LICENSE para mais detalhes. <!-- Crie um arquivo LICENSE se ainda não tiver -->
+Este projeto está licenciado sob a Licença MIT. Veja o arquivo LICENSE para mais detalhes. 
