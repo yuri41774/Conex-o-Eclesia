@@ -70,13 +70,14 @@
           const [isLoading, setIsLoading] = React.useState(true);
           const [isSaving, setIsSaving] = React.useState(false);
           const [isEditing, setIsEditing] = React.useState(false);
+          const [isUploadingImage, setIsUploadingImage] = React.useState(false); // Novo estado para upload da imagem
 
           // Estados para os campos editáveis, inicializados com valores vazios ou do perfil
           const [fullName, setFullName] = React.useState('');
           const [phoneNumber, setPhoneNumber] = React.useState('');
           const [dateOfBirth, setDateOfBirth] = React.useState('');
           const [roleInChurch, setRoleInChurch] = React.useState('');
-          const [avatarUrl, setAvatarUrl] = React.useState(''); // Adicionado para avatar_url
+          const [avatarUrl, setAvatarUrl] = React.useState('');
 
           // Carrega os dados do perfil quando o componente é montado
           React.useEffect(() => {
@@ -123,6 +124,58 @@
             fetchProfile();
           }, [supabase, onShowModal]);
 
+          // Função para upload do avatar
+          const handleAvatarUpload = async (event) => {
+            const file = event.target.files[0];
+            if (!file) {
+                return;
+            }
+
+            setIsUploadingImage(true); // Inicia o estado de upload
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    onShowModal('Sessão expirada. Por favor, faça login novamente para enviar a imagem.', 'error');
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                const fileExtension = file.name.split('.').pop();
+                const filePath = `${user.id}/avatar.${fileExtension}`; // user_id/avatar.ext
+                
+                // Faz o upload da imagem para o bucket 'avatars'
+                const { data, error } = await supabase.storage
+                    .from('avatars')
+                    .upload(filePath, file, {
+                        cacheControl: '3600',
+                        upsert: true // Sobrescreve se o arquivo já existir
+                    });
+
+                if (error) {
+                    console.error('Erro ao enviar imagem:', error);
+                    onShowModal(`Erro ao enviar imagem: ${error.message}`, 'error');
+                } else {
+                    // Obtém a URL pública da imagem recém-enviada
+                    const { data: publicUrlData } = supabase.storage
+                        .from('avatars')
+                        .getPublicUrl(filePath);
+
+                    if (publicUrlData && publicUrlData.publicUrl) {
+                        setAvatarUrl(publicUrlData.publicUrl); // Atualiza o estado com a nova URL
+                        onShowModal('Imagem de perfil enviada com sucesso! Lembre-se de clicar em "Salvar" para aplicar as alterações.', 'success');
+                    } else {
+                        onShowModal('Erro ao obter URL da imagem. Por favor, tente novamente.', 'error');
+                    }
+                }
+            } catch (error) {
+                console.error('Erro inesperado no upload:', error);
+                onShowModal('Ocorreu um erro inesperado ao enviar a imagem.', 'error');
+            } finally {
+                setIsUploadingImage(false); // Finaliza o estado de upload
+            }
+          };
+
+
           // Função para salvar as alterações do perfil no Supabase
           const handleSaveProfile = async () => {
             setIsSaving(true); // Inicia o estado de salvamento
@@ -140,7 +193,7 @@
                 phone_number: phoneNumber,
                 date_of_birth: dateOfBirth,
                 role_in_church: roleInChurch,
-                avatar_url: avatarUrl,
+                avatar_url: avatarUrl, // O avatarUrl já deve ter sido atualizado por handleAvatarUpload
               };
 
               const { data, error } = await supabase
@@ -162,7 +215,7 @@
               console.error('Erro inesperado ao salvar perfil:', error);
               onShowModal('Ocorreu um erro inesperado ao salvar o perfil.', 'error');
             } finally {
-              setIsSaving(false);
+              setIsSaving(false); // Finaliza o estado de salvamento
             }
           };
 
@@ -208,15 +261,34 @@
                   aria-label="Imagem de perfil do usuário"
                 />
                 {isEditing && ( // Mostra o campo de input para URL do avatar apenas em modo de edição
-                    <input
-                      type="url"
-                      placeholder="URL do Avatar"
-                      value={avatarUrl}
-                      onChange={(e) => setAvatarUrl(e.target.value)}
-                      className="mt-4 shadow-sm appearance-none border rounded-lg py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter w-full max-w-xs"
-                      aria-label="Campo para editar a URL do avatar"
-                      disabled={isSaving}
-                    />
+                    <div className="mt-4 flex flex-col items-center">
+                        <label htmlFor="avatarUpload" className="block text-gray-700 text-sm font-semibold mb-2 font-inter cursor-pointer p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition">
+                            {isUploadingImage ? 'Enviando...' : 'Alterar Foto'}
+                            <input
+                                type="file"
+                                id="avatarUpload"
+                                accept="image/*"
+                                onChange={handleAvatarUpload}
+                                className="hidden"
+                                aria-label="Upload de nova imagem para o avatar"
+                                disabled={isUploadingImage || isSaving}
+                            />
+                        </label>
+                        {isUploadingImage && (
+                            <p className="text-blue-600 text-sm mt-2 font-inter">Aguarde o envio da imagem...</p>
+                        )}
+                         {avatarUrl && (
+                            <input
+                                type="url"
+                                placeholder="URL do Avatar (automático após upload)"
+                                value={avatarUrl}
+                                onChange={(e) => setAvatarUrl(e.target.value)}
+                                className="mt-4 shadow-sm appearance-none border rounded-lg py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter w-full max-w-xs"
+                                aria-label="URL direta do Avatar"
+                                disabled={true} /* Desabilitado para edição manual, só muda com upload */
+                            />
+                         )}
+                    </div>
                 )}
               </div>
 
@@ -323,7 +395,7 @@
                       }}
                       className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter"
                       aria-label="Cancelar edição do perfil"
-                      disabled={isSaving}
+                      disabled={isSaving || isUploadingImage}
                     >
                       Cancelar
                     </button>
@@ -331,7 +403,7 @@
                       onClick={handleSaveProfile}
                       className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter"
                       aria-label="Salvar alterações do perfil"
-                      disabled={isSaving}
+                      disabled={isSaving || isUploadingImage}
                     >
                       {isSaving ? 'Salvando...' : 'Salvar'}
                     </button>
@@ -413,14 +485,13 @@
           }
 
           return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex flex-col items-center p-4"> {/* Alterado para flex-col e items-center, removido justify-center */}
+            <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex flex-col items-center p-4">
               <ProfileScreen
                 onShowModal={showModal}
                 onBackToFeed={handleBackToFeed}
                 supabase={supabase}
               />
-              {/* Rodapé da página */}
-              <div className="mt-auto text-center text-white text-sm opacity-80 font-inter py-4"> {/* Adicionado mt-auto, removido absolute bottom-4 */}
+              <div className="mt-auto text-center text-white text-sm opacity-80 font-inter py-4">
                 © {new Date().getFullYear()} CPN Serviços. Todos os direitos reservados.
               </div>
               <Modal
