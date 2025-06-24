@@ -82,497 +82,6 @@
           const [avatarUrl, setAvatarUrl] = React.useState('');
           const [isUploadingImage, setIsUploadingImage] = React.useState(false);
 
-          React.useEffect(() => {
-            const fetchProfile = async () => {
-              setIsLoading(true);
-              try {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (!user) {
-                  onShowModal('Sessão expirada. Por favor, faça login novamente.', 'error');
-                  window.location.href = 'index.html';
-                  return;
-                }
-
-                const { data, error } = await supabase
-                  .from('profiles')
-                  .select('*')
-                  .eq('id', user.id)
-                  .single();
-
-                if (error) {
-                  console.error('Erro ao carregar perfil:', error);
-                  onShowModal(`Erro ao carregar perfil: ${error.message}`, 'error');
-                } else if (data) {
-                  setProfile(data);
-                  setFullName(data.full_name || '');
-                  setPhoneNumber(data.phone_number || '');
-                  setDateOfBirth(data.date_of_birth || '');
-                  setRoleInChurch(data.role_in_church || '');
-                  setAvatarUrl(data.avatar_url || '');
-                } else {
-                    onShowModal('Perfil não encontrado. Você pode criar um novo perfil ou atualizar um existente.', 'info');
-                }
-              } catch (error) {
-                console.error('Erro inesperado ao buscar perfil:', error);
-                onShowModal('Ocorreu um erro inesperado ao carregar o perfil.', 'error');
-              } finally {
-                setIsLoading(false);
-              }
-            };
-
-            fetchProfile();
-          }, [supabase, onShowModal]);
-
-          const handleAvatarUpload = async (event) => {
-            const file = event.target.files[0];
-            if (!file) {
-                return;
-            }
-
-            setIsUploadingImage(true);
-            try {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (!user) {
-                    onShowModal('Sessão expirada. Por favor, faça login novamente para enviar a imagem.', 'error');
-                    window.location.href = 'index.html';
-                    return;
-                }
-
-                const fileExtension = file.name.split('.').pop();
-                const filePath = `${user.id}/avatar.${fileExtension}`;
-                
-                const { data, error } = await supabase.storage
-                    .from('avatars')
-                    .upload(filePath, file, {
-                        cacheControl: '3600',
-                        upsert: true
-                    });
-
-                if (error) {
-                    console.error('Erro ao enviar imagem:', error);
-                    onShowModal(`Erro ao enviar imagem: ${error.message}`, 'error');
-                } else {
-                    const { data: publicUrlData } = supabase.storage
-                        .from('avatars')
-                        .getPublicUrl(filePath);
-
-                    if (publicUrlData && publicUrlData.publicUrl) {
-                        setAvatarUrl(publicUrlData.publicUrl);
-                        onShowModal('Imagem de perfil enviada com sucesso! Lembre-se de clicar em "Salvar" para aplicar as alterações.', 'success');
-                        console.log('URL pública do avatar após upload:', publicUrlData.publicUrl);
-                    } else {
-                        onShowModal('Erro ao obter URL da imagem. Por favor, tente novamente.', 'error');
-                    }
-                }
-            } catch (error) {
-                console.error('Erro inesperado no upload:', error);
-                onShowModal('Ocorreu um erro inesperado ao enviar a imagem.', 'error');
-            } finally {
-                setIsUploadingImage(false);
-            }
-          };
-
-          const handleSaveProfile = async () => {
-            setIsSaving(true);
-            try {
-              const { data: { user } = {} } = await supabase.auth.getUser();
-              if (!user) {
-                onShowModal('Sessão expirada. Por favor, faça login novamente para salvar.', 'error');
-                window.location.href = 'index.html';
-                return;
-              }
-
-              const updatedProfileData = {
-                full_name: fullName,
-                phone_number: phoneNumber,
-                date_of_birth: dateOfBirth,
-                role_in_church: roleInChurch,
-                avatar_url: avatarUrl,
-              };
-
-              const { data, error } = await supabase
-                .from('profiles')
-                .update(updatedProfileData)
-                .eq('id', user.id)
-                .select()
-                .single();
-
-              if (error) {
-                console.error('Erro ao salvar perfil:', error);
-                onShowModal(`Erro ao salvar perfil: ${error.message}`, 'error');
-              } else if (data) {
-                setProfile(data);
-                onShowModal('Perfil atualizado com sucesso!', 'success');
-                setIsEditing(false);
-              }
-            } catch (error) {
-              console.error('Erro inesperado ao salvar perfil:', error);
-              onShowModal('Ocorreu um erro inesperado ao salvar o perfil.', 'error');
-            } finally {
-              setIsSaving(false);
-            }
-          };
-
-          if (isLoading) {
-            return (
-              <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 to-purple-700">
-                <div className="text-white text-2xl font-bold font-inter">Carregando perfil...</div>
-              </div>
-            );
-          }
-
-          if (!profile && !isLoading) {
-            return (
-                <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md mx-auto text-center">
-                    <h2 className="text-2xl font-bold text-gray-800 mb-4 font-inter">Seu Perfil</h2>
-                    <p className="text-gray-600 mb-6 font-inter">Não foi possível carregar seu perfil. Certifique-se de que ele foi criado após o registro.</p>
-                    <button
-                        onClick={onBackToFeed}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter"
-                        aria-label="Voltar para o Feed"
-                    >
-                        Voltar ao Feed
-                    </button>
-                </div>
-            );
-          }
-
-          return (
-            <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-2xl mx-auto transform transition-all duration-300">
-              <div className="text-center mb-8">
-                <h1 className="text-4xl font-extrabold text-gray-800 mb-2 font-inter">Meu Perfil</h1>
-                <p className="text-gray-600 text-lg">Gerencie suas informações pessoais.</p>
-              </div>
-
-              <div className="flex flex-col items-center mb-6">
-                {console.log('URL do Avatar sendo usada:', avatarUrl)}
-                <img
-                  key={avatarUrl}
-                  src={avatarUrl || "https://placehold.co/150x150/cccccc/ffffff?text=Avatar"}
-                  alt="Avatar do Usuário"
-                  className="w-32 h-32 rounded-full object-cover border-4 border-blue-500 shadow-md"
-                  aria-label="Imagem de perfil do usuário"
-                />
-                {isEditing && (
-                    <div className="mt-4 flex flex-col items-center">
-                        <label htmlFor="avatarUpload" className="block text-gray-700 text-sm font-semibold mb-2 font-inter cursor-pointer p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition">
-                            {isUploadingImage ? 'Enviando...' : 'Alterar Foto'}
-                            <input
-                                type="file"
-                                id="avatarUpload"
-                                accept="image/*"
-                                onChange={handleAvatarUpload}
-                                className="hidden"
-                                aria-label="Upload de nova imagem para o avatar"
-                                disabled={isUploadingImage || isSaving}
-                            />
-                        </label>
-                        {isUploadingImage && (
-                            <p className="text-blue-600 text-sm mt-2 font-inter">Aguarde o envio da imagem...</p>
-                        )}
-                    </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div>
-                  <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter" htmlFor="fullNameInput">Nome Completo</label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      id="fullNameInput"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      className="shadow-sm appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter"
-                      aria-label="Campo de texto para nome completo"
-                      disabled={isSaving}
-                    />
-                  ) : (
-                    <p className="text-gray-800 text-lg font-inter p-2 border border-gray-200 rounded-lg bg-gray-50">{profile.full_name}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Email</label>
-                  <p className="text-gray-800 text-lg font-inter p-2 border border-gray-200 rounded-lg bg-gray-50">{profile.email || 'N/A'}</p>
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter" htmlFor="phoneNumberInput">Telefone</label>
-                  {isEditing ? (
-                    <input
-                      type="tel"
-                      id="phoneNumberInput"
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      className="shadow-sm appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter"
-                      aria-label="Campo de texto para número de telefone"
-                      disabled={isSaving}
-                    />
-                  ) : (
-                    <p className="text-gray-800 text-lg font-inter p-2 border border-gray-200 rounded-lg bg-gray-50">{profile.phone_number || 'N/A'}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter" htmlFor="dateOfBirthInput">Data de Nascimento</label>
-                  {isEditing ? (
-                    <input
-                      type="date"
-                      id="dateOfBirthInput"
-                      value={dateOfBirth}
-                      onChange={(e) => setDateOfBirth(e.target.value)}
-                      className="shadow-sm appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter"
-                      aria-label="Campo de entrada para data de nascimento"
-                      disabled={isSaving}
-                    />
-                  ) : (
-                    <p className="text-gray-800 text-lg font-inter p-2 border border-gray-200 rounded-lg bg-gray-50">{profile.date_of_birth || 'N/A'}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter" htmlFor="roleInChurchInput">Cargo/Função na Igreja</label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      id="roleInChurchInput"
-                      value={roleInChurch}
-                      onChange={(e) => setRoleInChurch(e.target.value)}
-                      className="shadow-sm appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter"
-                      aria-label="Campo de texto para cargo ou função na igreja"
-                      disabled={isSaving}
-                    />
-                  ) : (
-                    <p className="text-gray-800 text-lg font-inter p-2 border border-gray-200 rounded-lg bg-gray-50">{profile.role_in_church || 'N/A'}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Nome da Igreja</label>
-                  <p className="text-gray-800 text-lg font-inter p-2 border border-gray-200 rounded-lg bg-gray-50">Igreja Conectada (Placeholder)</p>
-                </div>
-
-              </div>
-
-              <div className="flex justify-end space-x-4">
-                {isEditing ? (
-                  <>
-                    <button
-                      onClick={() => {
-                        setIsEditing(false);
-                        setFullName(profile.full_name || '');
-                        setPhoneNumber(profile.phone_number || '');
-                        setDateOfBirth(profile.date_of_birth || '');
-                        setRoleInChurch(profile.role_in_church || '');
-                        setAvatarUrl(profile.avatar_url || '');
-                      }}
-                      className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter"
-                      aria-label="Cancelar edição do perfil"
-                      disabled={isSaving || isUploadingImage}
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      onClick={handleSaveProfile}
-                      className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter"
-                      aria-label="Salvar alterações do perfil"
-                      disabled={isSaving || isUploadingImage}
-                    >
-                      {isSaving ? 'Salvando...' : 'Salvar'}
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter"
-                    aria-label="Editar perfil"
-                  >
-                    Editar Perfil
-                  </button>
-                )}
-                 <button
-                    onClick={onBackToFeed}
-                    className="bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter"
-                    aria-label="Voltar para o Feed"
-                >
-                    Voltar ao Feed
-                </button>
-              </div>
-            </div>
-          );
-        }
-
-        // Componente principal do aplicativo React
-        function App() {
-          const [isModalOpen, setIsModalOpen] = React.useState(false);
-          const [modalMessage, setModalMessage] = React.useState('');
-          const [modalType, setModalType] = React.useState('info');
-          const [isAuthChecking, setIsAuthChecking] = React.useState(true);
-
-          // AGORA, ACESSE A INSTÂNCIA GLOBALMENTE
-          const supabase = window.supabaseClientInstance;
-
-          React.useEffect(() => {
-            const checkUserSession = async () => {
-              try {
-                const { data: { session } } = await supabase.auth.getSession();
-                if (!session) {
-                  window.location.href = 'index.html';
-                } else {
-                  setIsAuthChecking(false);
-                }
-              } catch (error) {
-                console.error('Erro ao verificar sessão:', error);
-                window.location.href = 'index.html';
-              }
-            };
-            checkUserSession();
-          }, [supabase]);
-
-          const showModal = (message, type) => {
-            setModalMessage(message);
-            setModalType(type);
-            setIsModalOpen(true);
-          };
-
-          const closeModal = () => {
-            setIsModalOpen(false);
-            setModalMessage('');
-            setModalType('info');
-          };
-
-          const handleBackToFeed = () => {
-            window.location.href = 'conexao-eclesia-feed.html';
-          };
-
-          if (isAuthChecking) {
-            return (
-              <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
-                <div className="text-white text-2xl font-bold font-inter">Verificando autenticação...</div>
-              </div>
-            );
-          }
-
-          return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex flex-col items-center p-4">
-              <ProfileScreen
-                onShowModal={showModal}
-                onBackToFeed={handleBackToFeed}
-                supabase={supabase}
-              />
-              <div className="mt-auto text-center text-white text-sm opacity-80 font-inter py-4">
-                © {new Date().getFullYear()} CPN Serviços. Todos os direitos reservados.
-              </div>
-              <Modal
-                isOpen={isModalOpen}
-                message={modalMessage}
-                type={modalType}
-                onClose={closeModal}
-              />
-            </div>
-          );
-        }
-
-        ReactDOM.render(<App />, document.getElementById('root'));
-    </script>
-</body>
-</html>
-```
-I'm sorry, I seem to have made a mistake. I will try to fix the error.Compreendo o erro `SyntaxError: Unexpected token, expected "..."` na linha 233 do seu `perfil.html`. Peço desculpas por isso. O erro persiste porque eu me confundi e não removi o comentário na linha onde a `key` é definida no `img` dentro do JSX.
-
-Este tipo de comentário (`/* ... */`) não é permitido diretamente dentro das chaves (`{}`) de um atributo JSX.
-
-Vou corrigir isso removendo o comentário: `/* Adicionado key para forçar re-renderização */`.
-
-Aqui está o código HTML atualizado para o seu `perfil.html` com a correção final para o `SyntaxError`:
-
-
-```html
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Conexão Eclesia - Meu Perfil</title>
-    <!-- Incluindo Tailwind CSS para estilização (via CDN) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Incluindo a fonte Inter do Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            text-size-adjust: none;
-            -webkit-text-size-adjust: none;
-        }
-    </style>
-</head>
-<body>
-    <div id="root"></div>
-
-    <!-- Importa React e ReactDOM a partir de um CDN (unpkg.com) -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Importa Babel para transpilar JSX diretamente no navegador -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Importa o SDK do Supabase Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Carrega o script verificador de instância Supabase -->
-    <script src="supabaseClientInstance.js"></script>
-
-    <!-- O código React/JSX agora será processado por Babel -->
-    <script type="text/babel">
-        // Componente Modal (sem alterações)
-        function Modal({ isOpen, message, type, onClose }) {
-          if (!isOpen) return null;
-
-          const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
-          const headerText = type === 'success' ? 'Sucesso!' : 'Erro!';
-
-          return (
-            <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
-              <div className="bg-white rounded-lg shadow-xl overflow-hidden max-w-sm w-full transform transition-all duration-300 scale-100">
-                <div className={`${bgColor} text-white px-6 py-4 flex justify-between items-center rounded-t-lg`}>
-                  <h3 className="text-xl font-bold font-inter">{headerText}</h3>
-                  <button
-                    onClick={onClose}
-                    className="text-white hover:text-gray-200 focus:outline-none text-2xl font-bold"
-                    aria-label="Fechar modal de mensagem"
-                  >
-                    &times;
-                  </button>
-                </div>
-                <div className="p-6">
-                  <p className="text-gray-700 text-lg mb-4 font-inter">{message}</p>
-                  <div className="flex justify-end">
-                    <button
-                      onClick={onClose}
-                      className={`py-2 px-6 rounded-lg font-bold text-white transition duration-300 shadow-md ${bgColor} hover:${bgColor.replace('500', '600')} focus:outline-none focus:ring-2 focus:ring-opacity-75`}
-                      aria-label="Entendido, fechar mensagem"
-                    >
-                      OK
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        }
-
-        // Componente da tela de Perfil (sem alterações significativas na lógica, apenas ARIA-label otimizado)
-        function ProfileScreen({ onShowModal, onBackToFeed, supabase }) {
-          const [profile, setProfile] = React.useState(null);
-          const [isLoading, setIsLoading] = React.useState(true);
-          const [isSaving, setIsSaving] = React.useState(false);
-          const [isEditing, setIsEditing] = React.useState(false);
-
-          const [fullName, setFullName] = React.useState('');
-          const [phoneNumber, setPhoneNumber] = React.useState('');
-          const [dateOfBirth, setDateOfBirth] = React.useState('');
-          const [roleInChurch, setRoleInChurch] = React.useState('');
-          const [avatarUrl, setAvatarUrl] = React.useState('');
-          const [isUploadingImage, setIsUploadingImage] = React.useState(false);
-
 
           // Carrega os dados do perfil quando o componente é montado
           React.useEffect(() => {
@@ -691,26 +200,21 @@ Aqui está o código HTML atualizado para o seu `perfil.html` com a correção f
                 .single();
 
               if (error) {
-                  // Se o erro for que o perfil não existe, podemos tentar inseri-lo
-                  if (error.code === 'PGRST116' || error.message.includes('0 rows in a single() query')) { // PGRST116 é "No rows found" para single()
+                  if (error.code === 'PGRST116' || error.message.includes('0 rows in a single() query')) {
                       console.log('Perfil não encontrado ao tentar atualizar, tentando inserir...');
                       const { error: insertError } = await supabase
                           .from('profiles')
-                          .insert({ id: user.id, ...updatedProfileData });
-
+                          .insert({ id: user.id, full_name: 'Novo Usuário', created_at: new Date().toISOString(), ...updatedProfileData });
+                      
                       if (insertError) {
                           console.error('Erro ao inserir novo perfil:', insertError);
                           onShowModal(`Erro ao salvar perfil: ${insertError.message}.`, 'error');
                       } else {
-                          // Se a inserção for bem-sucedida, recarregue para ver os dados
                           onShowModal('Perfil criado e salvo com sucesso!', 'success');
                           setIsEditing(false);
-                          // Força um re-fetch para garantir que o profile state seja atualizado
-                          // ao invés de usar o 'data' retornado pelo insert, que seria nulo se fosse um update anterior
-                          fetchProfile(); // Recarrega o perfil após inserção
+                          fetchProfile();
                       }
                   } else {
-                      // Outros erros de atualização
                       console.error('Erro ao salvar perfil:', error);
                       onShowModal(`Erro ao salvar perfil: ${error.message}`, 'error');
                   }
@@ -740,10 +244,9 @@ Aqui está o código HTML atualizado para o seu `perfil.html` com a correção f
                 <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md mx-auto text-center">
                     <h2 className="text-2xl font-bold text-gray-800 mb-4 font-inter">Seu Perfil</h2>
                     <p className="text-gray-600 mb-6 font-inter">Não foi possível carregar seu perfil. Certifique-se de que ele foi criado após o registro.</p>
-                    {/* Botão para tentar criar um perfil se não encontrado */}
                     <button
-                        onClick={async () => { // Adicionado async para usar await
-                            setIsSaving(true); // Usando isSaving para indicar o processo de criação inicial
+                        onClick={async () => {
+                            setIsSaving(true);
                             try {
                                 const { data: { user } } = await supabase.auth.getUser();
                                 if (!user) {
@@ -753,14 +256,14 @@ Aqui está o código HTML atualizado para o seu `perfil.html` com a correção f
                                 }
                                 const { error: insertError } = await supabase
                                     .from('profiles')
-                                    .insert({ id: user.id, full_name: 'Novo Usuário', created_at: new Date().toISOString() }); // Campos obrigatórios
+                                    .insert({ id: user.id, full_name: 'Novo Usuário', created_at: new Date().toISOString() });
                                 
                                 if (insertError) {
                                     console.error('Erro ao criar perfil inicial:', insertError);
                                     onShowModal(`Erro ao criar perfil inicial: ${insertError.message}`, 'error');
                                 } else {
                                     onShowModal('Perfil inicial criado! Agora você pode editá-lo.', 'success');
-                                    fetchProfile(); // Recarrega o perfil após a criação
+                                    fetchProfile();
                                 }
                             } catch (err) {
                                 console.error('Erro inesperado ao tentar criar perfil inicial:', err);
@@ -906,7 +409,6 @@ Aqui está o código HTML atualizado para o seu `perfil.html` com a correção f
 
               </div>
 
-              {/* Botões de Ação */}
               <div className="flex justify-end space-x-4">
                 {isEditing ? (
                   <>
