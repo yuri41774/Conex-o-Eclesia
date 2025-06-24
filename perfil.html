@@ -68,7 +68,7 @@
           );
         }
 
-        // Componente da tela de Perfil (sem alterações significativas na lógica, apenas ARIA-label otimizado)
+        // Componente da tela de Perfil
         function ProfileScreen({ onShowModal, onBackToFeed, supabase }) {
           const [profile, setProfile] = React.useState(null);
           const [isLoading, setIsLoading] = React.useState(true);
@@ -122,7 +122,6 @@
               }
             };
 
-            // Só tenta buscar o perfil se o cliente Supabase estiver disponível
             if (supabase) {
                 fetchProfile();
             }
@@ -453,7 +452,7 @@
                 >
                     Voltar ao Feed
                 </button>
-                {/* NOVO BOTÃO DE CHAT */}
+                {/* BOTÃO DE CHAT ADICIONADO AQUI */}
                 <button
                     onClick={() => { window.location.href = 'chat.html'; }}
                     className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter"
@@ -484,7 +483,7 @@
                 console.log("Supabase client initialized globally within App component.");
             }
             
-            // Agora, use a instância garantida para a verificação de sessão
+            // Agora, usa a instância garantida para a verificação de sessão
             if (window.globalSupabaseClient) {
                 setIsSupabaseClientReady(true);
                 const checkUserSession = async () => {
@@ -503,6 +502,14 @@
                 checkUserSession();
             } else {
                 console.log("Aguardando Supabase client ficar pronto...");
+                // Adiciona um pequeno atraso e tenta novamente se o cliente não estiver pronto
+                setTimeout(() => {
+                    if (!window.globalSupabaseClient && window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+                         window.globalSupabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                         setIsSupabaseClientReady(true);
+                         console.log("Supabase client initialized after timeout.");
+                    }
+                }, 500); // 500ms de atraso
             }
           }, [supabase]);
 
