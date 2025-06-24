@@ -122,7 +122,10 @@
               }
             };
 
-            fetchProfile();
+            // Só tenta buscar o perfil se o cliente Supabase estiver disponível
+            if (supabase) {
+                fetchProfile();
+            }
           }, [supabase, onShowModal]);
 
           const handleAvatarUpload = async (event) => {
@@ -296,7 +299,6 @@
                 <p className="text-gray-600 text-lg">Gerencie suas informações pessoais.</p>
               </div>
 
-              {/* Seção de Avatar */}
               <div className="flex flex-col items-center mb-6">
                 {console.log('URL do Avatar sendo usada:', avatarUrl)}
                 <img
@@ -327,7 +329,6 @@
                 )}
               </div>
 
-              {/* Grid de Informações do Perfil */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div>
                   <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter" htmlFor="fullNameInput">Nome Completo</label>
@@ -463,26 +464,40 @@
           const [modalMessage, setModalMessage] = React.useState('');
           const [modalType, setModalType] = React.useState('info');
           const [isAuthChecking, setIsAuthChecking] = React.useState(true);
+          const [isSupabaseClientReady, setIsSupabaseClientReady] = React.useState(false); // Novo estado
 
-          // AGORA, ACESSE A INSTÂNCIA GLOBALMENTE
-          const supabase = window.supabaseClientInstance;
+          // Acessa a instância global do Supabase (agora garantida)
+          const supabase = window.globalSupabaseClient; // Obtenha-a aqui
+
 
           React.useEffect(() => {
-            const checkUserSession = async () => {
-              try {
-                const { data: { session } } = await supabase.auth.getSession();
-                if (!session) {
-                  window.location.href = 'index.html';
-                } else {
-                  setIsAuthChecking(false);
-                }
-              } catch (error) {
-                console.error('Erro ao verificar sessão:', error);
-                window.location.href = 'index.html';
-              }
-            };
-            checkUserSession();
-          }, [supabase]);
+            // Inicializa o cliente Supabase globalmente se ainda não foi inicializado e o SDK está disponível
+            if (!supabase && window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+                window.globalSupabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                console.log("Supabase client initialized globally within App component.");
+            }
+            
+            // Agora, use a instância garantida para a verificação de sessão
+            if (window.globalSupabaseClient) {
+                setIsSupabaseClientReady(true); // Supabase client está pronto
+                const checkUserSession = async () => {
+                    try {
+                        const { data: { session } } = await window.globalSupabaseClient.auth.getSession();
+                        if (!session) {
+                            window.location.href = 'index.html';
+                        } else {
+                            setIsAuthChecking(false);
+                        }
+                    } catch (error) {
+                        console.error('Erro ao verificar sessão:', error);
+                        window.location.href = 'index.html';
+                    }
+                };
+                checkUserSession();
+            } else {
+                console.log("Aguardando Supabase client ficar pronto...");
+            }
+          }, [supabase]); // Depende da instância do supabase
 
           const showModal = (message, type) => {
             setModalMessage(message);
@@ -500,10 +515,10 @@
             window.location.href = 'conexao-eclesia-feed.html';
           };
 
-          if (isAuthChecking) {
+          if (!isSupabaseClientReady || isAuthChecking) { // Aguarda cliente e autenticação
             return (
               <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
-                <div className="text-white text-2xl font-bold font-inter">Verificando autenticação...</div>
+                <div className="text-white text-2xl font-bold font-inter">Carregando...</div>
               </div>
             );
           }
