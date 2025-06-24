@@ -404,18 +404,17 @@
           const [isModalOpen, setIsModalOpen] = React.useState(false);
           const [modalMessage, setModalMessage] = React.useState('');
           const [modalType, setModalType] = React.useState('info');
-          // const [isAuthChecking, setIsAuthChecking] = React.useState(true); // Removido: estado para verificar autenticação
+          const [isAuthChecking, setIsAuthChecking] = React.useState(true); // Restaurado: estado para verificar autenticação
 
           // Variáveis Supabase - SUBSTITUA PELOS SEUS VALORES REAIS!
           // Obtenha a URL do seu projeto Supabase no Dashboard > Settings > API
-          const SUPABASE_URL = "https://rahphlphegvvdehrumyp.supabase.co"; 
+          const SUPABASE_URL = "https://rahhplphegvvdehrumyp.supabase.co"; 
           const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJhaGhwbHBoZWd2dmRlaHJ1bXlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3MDk2NDMsImV4cCI6MjA2NjI4NTY0M30.EDM-RotlChTCWiisI4o5okQ6Llee1ZaQEAcLaphBqTs";
 
           // Inicializa o cliente Supabase
           const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-          // Removido o React.useEffect que verificava a sessão
-          /*
+          // Restaurado: Efeito para verificar a sessão do usuário ao carregar a página
           React.useEffect(() => {
             const checkUserSession = async () => {
               try {
@@ -434,8 +433,7 @@
             };
 
             checkUserSession();
-          }, []);
-          */
+          }, []); // Executa apenas uma vez ao montar
 
           const showModal = (message, type) => {
             setModalMessage(message);
@@ -466,8 +464,7 @@
             }
           };
 
-          // Removido o condicional de carregamento
-          /*
+          // Restaurado: Mostra uma tela de carregamento enquanto verifica a autenticação
           if (isAuthChecking) {
             return (
               <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
@@ -475,7 +472,6 @@
               </div>
             );
           }
-          */
 
           return (
             // Contêiner principal da aplicação: fundo gradiente, ocupa toda a tela.
