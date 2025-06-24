@@ -49,13 +49,3 @@
     }
   ]
 }
-
-Este manifest.json foi atualizado com a lista de ícones, incluindo vários tamanhos comuns para PWA, todos referenciando a pasta icons e o prefixo logo-.
-
-Para que funcione corretamente:
-
-Salve o conteúdo acima em um arquivo chamado manifest.json na raiz do seu projeto.
-
-Certifique-se de que você tem arquivos de imagem (PNG é o recomendado) com os nomes exatos (ex: logo-192x192.png, logo-512x512.png, etc.) dentro da pasta icons/ na raiz do seu projeto.
-
-Com isso, seu navegador poderá detectar e oferecer a instalação do seu aplicativo na tela inicial do smartphone.
