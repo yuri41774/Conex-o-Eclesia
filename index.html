@@ -526,7 +526,7 @@
         }
 
         // NOVO COMPONENTE: ChurchRegisterScreen (sem alterações)
-        function ChurchRegisterScreen({ onSwitchToLogin, onShowModal, supabase }) { // onChurchRegisterSuccess REMOVIDO
+        function ChurchRegisterScreen({ onSwitchToLogin, onShowModal, onChurchRegisterSuccess, supabase }) {
             const [churchName, setChurchName] = React.useState('');
             const [churchAddress, setChurchAddress] = React.useState('');
             const [churchCity, setChurchCity] = React.useState('');
@@ -661,7 +661,6 @@
           const [isSupabaseClientReady, setIsSupabaseClientReady] = React.useState(false);
 
           // Variáveis para o modal de login após registo (AGORA NÃO SÃO MAIS USADAS PARA ESTE FLUXO)
-          // Estes estados são redundantes se LoginAfterRegisterModal não for renderizado
           const [showLoginAfterRegisterModal, setShowLoginAfterRegisterModal] = React.useState(false);
           const [registeredEmailForLogin, setRegisteredEmailForLogin] = React.useState('');
 
