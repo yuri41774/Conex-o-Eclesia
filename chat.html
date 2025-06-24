@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Conexão Eclesia - Chat</title>
+    <title>Conexão Eclesia - Chat Global</title>
     <!-- Incluindo Tailwind CSS para estilização (via CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Incluindo a fonte Inter do Google Fonts -->
@@ -13,11 +12,11 @@
         body {
             font-family: 'Inter', sans-serif;
             margin: 0;
-            overflow: hidden; /* Evita barras de rolagem no iframe do chat */
-            text-size-adjust: none; /* Adicionado para resolver o aviso de text-size-adjust */
-            -webkit-text-size-adjust: none; /* Adicionado para resolver o aviso de text-size-adjust */
+            overflow: hidden; /* Oculta a barra de rolagem principal da página */
+            text-size-adjust: none;
+            -webkit-text-size-adjust: none;
         }
-        /* Oculta a barra de rolagem principal do iframe, mas permite no conteúdo do chat */
+        /* Oculta a barra de rolagem do browser, mas permite na área de mensagens do chat */
         ::-webkit-scrollbar {
             width: 0px;
             background: transparent;
@@ -43,7 +42,7 @@
 
     <!-- O código React/JSX do Chat -->
     <script type="text/babel">
-        // Definição do Modal (sem alterações)
+        // Componente Modal reutilizável para exibir mensagens de sucesso ou erro (mantido, caso seja usado no chat)
         function Modal({ isOpen, message, type, onClose }) {
           if (!isOpen) return null;
 
@@ -80,27 +79,70 @@
           );
         }
 
-        // Componente principal do Chat
-        function ChatApp() {
+        // Componente principal da Página de Chat
+        function ChatPage() {
             // Inicializa a instância do Supabase globalmente se ainda não foi inicializada
             // Isso garante que window.supabase.createClient esteja disponível
-            if (!window.globalSupabaseClient && window.supabase) {
+            if (!window.globalSupabaseClient && window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
                 window.globalSupabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                console.log("Supabase client initialized globally for ChatPage.");
             }
             // Acessa a instância global do Supabase (agora garantida)
             const supabase = window.globalSupabaseClient;
 
-            const [isOpen, setIsOpen] = React.useState(false);
-            const [messages, setMessages] = React.useState([]);
-            const [newMessage, setNewMessage] = React.useState('');
-            const [userProfile, setUserProfile] = React.useState(null);
+            const [messages, setMessages] = React.useState([]); // Lista de mensagens
+            const [newMessage, setNewMessage] = React.useState(''); // Conteúdo da nova mensagem
+            const [userProfile, setUserProfile] = React.useState(null); // Perfil do utilizador logado
             const [isLoadingMessages, setIsLoadingMessages] = React.useState(true);
-            const messagesEndRef = React.useRef(null);
+            const messagesEndRef = React.useRef(null); // Referência para scroll automático
+            const [isModalOpen, setIsModalOpen] = React.useState(false); // Estado para o modal de mensagem
+            const [modalMessage, setModalMessage] = React.useState('');
+            const [modalType, setModalType] = React.useState('info');
+            const [isAuthChecking, setIsAuthChecking] = React.useState(true); // Estado para verificar autenticação
 
+
+            // Função para exibir o modal
+            const showModal = (message, type) => {
+                setModalMessage(message);
+                setModalType(type);
+                setIsModalOpen(true);
+            };
+
+            // Função para fechar o modal
+            const closeModal = () => {
+                setIsModalOpen(false);
+                setModalMessage('');
+                setModalType('info');
+            };
+
+            // Efeito para verificar a sessão do utilizador ao carregar a página
             React.useEffect(() => {
-                if (!supabase) { // Adiciona verificação para Supabase antes de usar
-                    console.error("Supabase client not initialized.");
-                    setIsLoadingMessages(false);
+                const checkUserSession = async () => {
+                    if (!supabase) { // Certifica-se de que o cliente Supabase está disponível
+                        console.error("Supabase client not initialized.");
+                        return;
+                    }
+                    try {
+                        const { data: { session } } = await supabase.auth.getSession();
+                        if (!session) {
+                            showModal('Sessão expirada. Por favor, faça login novamente.', 'error');
+                            window.location.href = 'index.html';
+                        } else {
+                            setIsAuthChecking(false);
+                        }
+                    } catch (error) {
+                        console.error('Erro ao verificar sessão:', error);
+                        showModal('Ocorreu um erro ao verificar a sessão.', 'error');
+                        window.location.href = 'index.html';
+                    }
+                };
+
+                checkUserSession();
+            }, [supabase]); // Depende da instância do supabase
+
+            // Efeito para carregar o perfil do utilizador logado e as mensagens iniciais
+            React.useEffect(() => {
+                if (!supabase || isAuthChecking) { // Aguarda Supabase e autenticação
                     return;
                 }
 
@@ -116,13 +158,14 @@
                                 .single();
 
                             if (profileError) {
-                                console.error("Erro ao buscar perfil do usuário no chat:", profileError);
-                                setUserProfile({ id: user.id, full_name: 'Usuário Desconhecido' });
+                                console.error("Erro ao buscar perfil do utilizador no chat:", profileError);
+                                setUserProfile({ id: user.id, full_name: 'Utilizador Desconhecido' });
                             } else {
-                                setUserProfile({ id: user.id, full_name: profileData.full_name || 'Usuário' });
+                                setUserProfile({ id: user.id, full_name: profileData.full_name || 'Utilizador' });
                             }
                         } else {
                             setUserProfile(null);
+                            showModal('Você não está logado. Mensagens não serão enviadas.', 'info');
                         }
 
                         const { data, error } = await supabase
@@ -135,15 +178,17 @@
 
                         if (error) {
                             console.error("Erro ao carregar mensagens:", error);
+                            showModal("Erro ao carregar mensagens do chat.", 'error');
                         } else {
                             const formattedMessages = data.map(msg => ({
                                 ...msg,
-                                sender_name: msg.profiles ? msg.profiles.full_name : 'Usuário Desconhecido'
+                                sender_name: msg.profiles ? msg.profiles.full_name : 'Utilizador Desconhecido'
                             }));
                             setMessages(formattedMessages);
                         }
                     } catch (error) {
                         console.error("Erro inesperado ao carregar dados do chat:", error);
+                        showModal("Ocorreu um erro inesperado ao carregar o chat.", 'error');
                     } finally {
                         setIsLoadingMessages(false);
                     }
@@ -162,7 +207,7 @@
                                 .eq('id', payload.new.sender_id)
                                 .single();
 
-                            const senderName = senderProfile ? senderProfile.full_name : 'Usuário Desconhecido';
+                            const senderName = senderProfile ? senderProfile.full_name : 'Utilizador Desconhecido';
                             setMessages(prevMessages => [...prevMessages, {
                                 ...payload.new,
                                 sender_name: senderName
@@ -175,17 +220,22 @@
                 return () => {
                     messagesSubscription.unsubscribe();
                 };
-            }, [supabase]); // Adiciona supabase às dependências
+            }, [supabase, isAuthChecking]); // Re-executa quando a instância Supabase ou estado de auth muda
 
+            // Efeito para rolar para a mensagem mais recente
             React.useEffect(() => {
                 if (messagesEndRef.current) {
                     messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
                 }
             }, [messages]);
 
+            // Envia uma nova mensagem
             const handleSendMessage = async (e) => {
                 e.preventDefault();
-                if (newMessage.trim() === '' || !userProfile) return;
+                if (newMessage.trim() === '' || !userProfile) {
+                    showModal(userProfile ? "A mensagem não pode estar vazia." : "Faça login para enviar mensagens.", 'info');
+                    return;
+                }
 
                 const { error } = await supabase
                     .from('messages')
@@ -198,88 +248,94 @@
 
                 if (error) {
                     console.error("Erro ao enviar mensagem:", error);
+                    showModal("Erro ao enviar mensagem.", 'error');
                 } else {
-                    setNewMessage('');
+                    setNewMessage(''); // Limpa o input
                 }
             };
 
+            // Exibe tela de carregamento enquanto verifica autenticação
+            if (isAuthChecking) {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
+                        <div className="text-white text-2xl font-bold font-inter">A verificar autenticação...</div>
+                    </div>
+                );
+            }
+
             return (
-                <div className="fixed bottom-0 right-0 z-50 p-4">
-                    <button
-                        onClick={() => setIsOpen(!isOpen)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg transition-all duration-300 transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75"
-                        aria-label={isOpen ? "Fechar chat" : "Abrir chat"}
-                    >
-                        {isOpen ? (
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H16.5m-1.5 2.25h.75c.414 0 .75.336.75.75s-.336.75-.75.75h-.75zm-9 0h.75c.414 0 .75.336.75.75s-.336.75-.75.75H7.5m9-1.5H15V12a3 3 0 00-3-3H9a3 3 0 00-3 3v1.5h1.5m9-1.5H12a.75.75 0 00-.75.75v.75h.75v.75H12a.75.75 0 00-.75.75v.75H6.75V15m1.5-1.5h.75m4.5 0h.75m3-3h.75m-9 3h.75" />
-                            </svg>
-                        )}
-                    </button>
-
-                    {isOpen && (
-                        <div className="bg-white rounded-lg shadow-xl flex flex-col w-72 h-96 fixed bottom-20 right-4">
-                            <div className="bg-blue-600 text-white p-3 rounded-t-lg flex justify-between items-center">
-                                <h3 className="font-bold text-lg">Chat Global</h3>
-                                <button
-                                    onClick={() => setIsOpen(false)}
-                                    className="text-white hover:text-gray-200 focus:outline-none"
-                                    aria-label="Fechar janela do chat"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            </div>
-
-                            <div className="flex-1 p-3 space-y-2 overflow-y-auto chat-messages">
-                                {isLoadingMessages ? (
-                                    <div className="text-gray-500 text-center text-sm">Carregando mensagens...</div>
-                                ) : messages.length === 0 ? (
-                                    <div className="text-gray-500 text-center text-sm">Nenhuma mensagem ainda.</div>
-                                ) : (
-                                    messages.map((msg, index) => (
-                                        <div key={msg.id} className={`flex ${userProfile && msg.sender_id === userProfile.id ? 'justify-end' : 'justify-start'}`}>
-                                            <div className={`${userProfile && msg.sender_id === userProfile.id ? 'bg-blue-100 text-blue-800' : 'bg-gray-200 text-gray-800'} p-2 rounded-lg max-w-[80%]`}>
-                                                <div className="font-bold text-sm">{msg.sender_name}</div>
-                                                <p className="text-sm">{msg.content}</p>
-                                                <div className="text-xs text-gray-500 text-right mt-1">{new Date(msg.created_at).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</div>
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
-                                <div ref={messagesEndRef} />
-                            </div>
-
-                            <form onSubmit={handleSendMessage} className="p-3 border-t border-gray-200">
-                                <input
-                                    type="text"
-                                    placeholder={userProfile ? "Digite sua mensagem..." : "Faça login para enviar mensagens..."}
-                                    className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    value={newMessage}
-                                    onChange={(e) => setNewMessage(e.target.value)}
-                                    disabled={!userProfile}
-                                    aria-label={userProfile ? "Campo de texto para digitar mensagem" : "Campo desabilitado. Faça login para digitar."}
-                                />
-                                <button
-                                    type="submit"
-                                    className="hidden"
-                                    aria-label="Enviar mensagem"
-                                >
-                                    Enviar
-                                </button>
-                            </form>
+                <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-600 to-purple-700 p-4">
+                    <div className="bg-white rounded-lg shadow-xl flex flex-col w-full max-w-lg h-[90vh]"> {/* Ajustado para altura e largura responsiva */}
+                        {/* Cabeçalho do Chat */}
+                        <div className="bg-blue-600 text-white p-3 rounded-t-lg flex justify-between items-center">
+                            <h3 className="font-bold text-lg">Chat Global Conexão Eclesia</h3>
+                            <button
+                                onClick={() => window.location.href = 'conexao-eclesia-feed.html'} // Volta para o feed
+                                className="bg-blue-700 hover:bg-blue-800 text-white font-bold py-1 px-3 rounded-lg focus:outline-none focus:shadow-outline transition duration-300"
+                                aria-label="Voltar para o feed de notícias"
+                            >
+                                Voltar ao Feed
+                            </button>
                         </div>
-                    )}
+
+                        {/* Área de Mensagens */}
+                        <div className="flex-1 p-3 space-y-2 overflow-y-auto chat-messages">
+                            {isLoadingMessages ? (
+                                <div className="text-gray-500 text-center text-sm">A carregar mensagens...</div>
+                            ) : !userProfile ? (
+                                <div className="text-gray-500 text-center text-sm">Não está logado. Inicie sessão para ver e enviar mensagens.</div>
+                            ) : messages.length === 0 ? (
+                                <div className="text-gray-500 text-center text-sm">Ainda não há mensagens. Seja o primeiro a enviar!</div>
+                            ) : (
+                                messages.map((msg) => (
+                                    <div key={msg.id} className={`flex ${msg.sender_id === userProfile.id ? 'justify-end' : 'justify-start'}`}>
+                                        <div className={`${msg.sender_id === userProfile.id ? 'bg-blue-100 text-blue-800' : 'bg-gray-200 text-gray-800'} p-2 rounded-lg max-w-[80%]`}>
+                                            <div className="font-bold text-sm">{msg.sender_name}</div>
+                                            <p className="text-sm">{msg.content}</p>
+                                            <div className="text-xs text-gray-500 text-right mt-1">{new Date(msg.created_at).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                            <div ref={messagesEndRef} /> {/* Elemento para scroll automático */}
+                        </div>
+
+                        {/* Input de Mensagem */}
+                        <form onSubmit={handleSendMessage} className="p-3 border-t border-gray-200">
+                            <input
+                                type="text"
+                                placeholder={userProfile ? "Digite a sua mensagem..." : "Faça login para enviar mensagens..."}
+                                className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                value={newMessage}
+                                onChange={(e) => setNewMessage(e.target.value)}
+                                disabled={!userProfile} // Desabilita se não estiver logado
+                                aria-label={userProfile ? "Campo de texto para digitar mensagem" : "Campo desabilitado. Faça login para digitar."}
+                            />
+                            <button
+                                type="submit"
+                                className="hidden" // Botão escondido, a mensagem é enviada ao apertar Enter
+                                aria-label="Enviar mensagem"
+                            >
+                                Enviar
+                            </button>
+                        </form>
+                    </div>
+                    {/* Rodapé da página */}
+                    <div className="mt-4 text-center text-white text-sm opacity-80 font-inter">
+                        © {new Date().getFullYear()} CPN Serviços. Todos os direitos reservados.
+                    </div>
+                    {/* Modal de mensagens */}
+                    <Modal
+                        isOpen={isModalOpen}
+                        message={modalMessage}
+                        type={modalType}
+                        onClose={closeModal}
+                    />
                 </div>
             );
         }
 
-        ReactDOM.render(<ChatApp />, document.getElementById('chat-root'));
+        ReactDOM.render(<ChatPage />, document.getElementById('chat-root'));
     </script>
 </body>
 </html>
