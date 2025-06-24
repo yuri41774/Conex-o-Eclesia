@@ -220,7 +220,7 @@
           );
         }
 
-        // Componente para a tela de Feed (sem alterações)
+        // Componente para a tela de Feed
         function FeedScreen({ onShowModal, onLogout, supabase }) {
           const [posts, setPosts] = React.useState([]);
           const [isCreatePostModalOpen, setIsCreatePostModalOpen] = React.useState(false);
@@ -279,6 +279,10 @@
             window.location.href = 'perfil.html';
           };
 
+          const handleNavigateToChat = () => { // Nova função para navegar para o chat
+            window.location.href = 'chat.html';
+          };
+
 
           return (
             <div className="flex flex-col md:flex-row min-h-screen w-full bg-gradient-to-br from-blue-600 to-purple-700 p-4 sm:p-6 md:p-8">
@@ -331,6 +335,15 @@
                     aria-label="Criar uma nova publicação"
                 >
                     Criar Publicação
+                </button>
+                
+                {/* BOTÃO DE CHAT ADICIONADO AQUI */}
+                <button
+                    onClick={handleNavigateToChat}
+                    className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter bg-purple-500 hover:bg-purple-600"
+                    aria-label="Abrir chat global"
+                >
+                    Chat
                 </button>
 
                 <div className="mt-auto pt-4 w-full border-t border-gray-700 md:border-none">
@@ -395,31 +408,47 @@
           const [modalMessage, setModalMessage] = React.useState('');
           const [modalType, setModalType] = React.useState('info');
           const [isAuthChecking, setIsAuthChecking] = React.useState(true);
+          const [isSupabaseClientReady, setIsSupabaseClientReady] = React.useState(false);
 
-          // Inicializa a instância do Supabase globalmente se ainda não foi inicializada
-          if (!window.globalSupabaseClient && window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
-              window.globalSupabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-          }
-          // Acessa a instância global do Supabase (agora garantida)
+          // AGORA, ACESSE A INSTÂNCIA GLOBALMENTE
           const supabase = window.globalSupabaseClient;
 
           React.useEffect(() => {
-            const checkUserSession = async () => {
-              try {
-                const { data: { session } } = await supabase.auth.getSession();
-                if (!session) {
-                  window.location.href = 'index.html';
-                } else {
-                  setIsAuthChecking(false);
-                }
-              } catch (error) {
-                console.error('Erro ao verificar sessão:', error);
-                window.location.href = 'index.html';
-              }
-            };
-
-            checkUserSession();
-          }, [supabase]); // Adicionado supabase às dependências
+            // Inicializa o cliente Supabase globalmente se ainda não foi inicializado e o SDK está disponível
+            if (!supabase && window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+                window.globalSupabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                console.log("Supabase client initialized globally within App component.");
+            }
+            
+            // Agora, usa a instância garantida para a verificação de sessão
+            if (window.globalSupabaseClient) {
+                setIsSupabaseClientReady(true);
+                const checkUserSession = async () => {
+                    try {
+                        const { data: { session } } = await window.globalSupabaseClient.auth.getSession();
+                        if (!session) {
+                            window.location.href = 'index.html';
+                        } else {
+                            setIsAuthChecking(false);
+                        }
+                    } catch (error) {
+                        console.error('Erro ao verificar sessão:', error);
+                        window.location.href = 'index.html';
+                    }
+                };
+                checkUserSession();
+            } else {
+                console.log("Aguardando Supabase client ficar pronto...");
+                // Adiciona um pequeno atraso e tenta novamente se o cliente não estiver pronto
+                setTimeout(() => {
+                    if (!window.globalSupabaseClient && window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+                         window.globalSupabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                         setIsSupabaseClientReady(true);
+                         console.log("Supabase client initialized after timeout.");
+                    }
+                }, 500); // 500ms de atraso
+            }
+          }, [supabase]);
 
           const showModal = (message, type) => {
             setModalMessage(message);
@@ -449,10 +478,10 @@
             }
           };
 
-          if (isAuthChecking) {
+          if (!isSupabaseClientReady || isAuthChecking) {
             return (
               <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
-                <div className="text-white text-2xl font-bold font-inter">Verificando autenticação...</div>
+                <div className="text-white text-2xl font-bold font-inter">Carregando...</div>
               </div>
             );
           }
