@@ -24,6 +24,8 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <!-- Importa o SDK do Supabase Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Carrega o script verificador de instância Supabase -->
+    <script src="supabaseClientInstance.js"></script>
 
     <!-- O código React/JSX agora será processado por Babel -->
     <script type="text/babel">
@@ -70,14 +72,15 @@
           const [isLoading, setIsLoading] = React.useState(true);
           const [isSaving, setIsSaving] = React.useState(false);
           const [isEditing, setIsEditing] = React.useState(false);
-          const [isUploadingImage, setIsUploadingImage] = React.useState(false); // Novo estado para upload da imagem
 
           // Estados para os campos editáveis, inicializados com valores vazios ou do perfil
           const [fullName, setFullName] = React.useState('');
           const [phoneNumber, setPhoneNumber] = React.useState('');
           const [dateOfBirth, setDateOfBirth] = React.useState('');
           const [roleInChurch, setRoleInChurch] = React.useState('');
-          const [avatarUrl, setAvatarUrl] = React.useState('');
+          const [avatarUrl, setAvatarUrl] = React.useState(''); // Adicionado para avatar_url
+          const [isUploadingImage, setIsUploadingImage] = React.useState(false); // Novo estado para upload da imagem
+
 
           // Carrega os dados do perfil quando o componente é montado
           React.useEffect(() => {
@@ -215,7 +218,7 @@
               console.error('Erro inesperado ao salvar perfil:', error);
               onShowModal('Ocorreu um erro inesperado ao salvar o perfil.', 'error');
             } finally {
-              setIsSaving(false); // Finaliza o estado de salvamento
+              setIsSaving(false);
             }
           };
 
@@ -277,17 +280,7 @@
                         {isUploadingImage && (
                             <p className="text-blue-600 text-sm mt-2 font-inter">Aguarde o envio da imagem...</p>
                         )}
-                         {avatarUrl && (
-                            <input
-                                type="url"
-                                placeholder="URL do Avatar (automático após upload)"
-                                value={avatarUrl}
-                                onChange={(e) => setAvatarUrl(e.target.value)}
-                                className="mt-4 shadow-sm appearance-none border rounded-lg py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter w-full max-w-xs"
-                                aria-label="URL direta do Avatar"
-                                disabled={true} /* Desabilitado para edição manual, só muda com upload */
-                            />
-                         )}
+                         {/* Removido o input de URL manual direta, agora só via upload */}
                     </div>
                 )}
               </div>
@@ -436,12 +429,8 @@
           const [modalType, setModalType] = React.useState('info');
           const [isAuthChecking, setIsAuthChecking] = React.useState(true);
 
-          // Variáveis Supabase - SUBSTITUA PELOS SEUS VALORES REAIS!
-          const SUPABASE_URL = "https://rahhplphegvvdehrumyp.supabase.co";
-          const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJhaGhwbHBoZWd2dmRlaHJ1bXlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3MDk2NDMsImV4cCI6MjA2NjI4NTY0M30.EDM-RotlChTCWiisI4o5okQ6Llee1ZaQEAcLaphBqTs";
-
-          // Inicializa o cliente Supabase
-          const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          // AGORA, ACESSE A INSTÂNCIA GLOBALMENTE
+          const supabase = window.supabaseClientInstance;
 
           React.useEffect(() => {
             const checkUserSession = async () => {
