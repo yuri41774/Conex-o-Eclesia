@@ -72,9 +72,7 @@
           );
         }
 
-        // REMOVIDO: LoginAfterRegisterModal (não é mais usado no fluxo atual de registo)
-        // O Supabase exige confirmação de e-mail, então o login pós-registo não é automático.
-        /*
+        // LoginAfterRegisterModal (mantido mas não é chamado no fluxo de registo atual)
         function LoginAfterRegisterModal({ isOpen, registeredEmail, onLoginSuccess, onClose, onShowMessage, supabase }) {
           const [password, setPassword] = React.useState('');
           const [isLoading, setIsLoading] = React.useState(false);
@@ -94,9 +92,9 @@
                 onShowMessage(`Erro ao fazer login: ${error.message}`, 'error');
               } else if (data.user) {
                 onShowMessage('Login bem-sucedido!', 'success');
-                onLoginSuccess();
+                onLoginSuccess(); // Redireciona para o feed
               } else {
-                onShowMessage('Credenciais inválidas. Por favor, tente novamente.', 'error');
+                onShowMessage('Credenciais inválidas. Tente novamente.', 'error');
               }
             } catch (error) {
               console.error('Erro inesperado ao tentar fazer login pós-registo:', error);
@@ -170,7 +168,6 @@
             </div>
           );
         }
-        */ // FIM DO COMPONENTE LoginAfterRegisterModal REMOVIDO
 
         // Componente para a tela de Login
         function LoginScreen({ onSwitchToRegister, onShowModal, onLoginSuccess, onSwitchToChurchRegister, supabase }) {
@@ -524,131 +521,12 @@
           );
         }
 
-        // NOVO COMPONENTE: ChurchRegisterScreen (sem alterações)
-        function ChurchRegisterScreen({ onSwitchToLogin, onShowModal, onChurchRegisterSuccess, supabase }) {
-            const [churchName, setChurchName] = React.useState('');
-            const [churchAddress, setChurchAddress] = React.useState('');
-            const [churchCity, setChurchCity] = React.useState('');
-            const [churchState, setChurchState] = React.useState('');
-            const [churchCountry, setChurchCountry] = React.useState('');
-            const [churchPhone, setChurchPhone] = React.useState('');
-            const [churchEmail, setChurchEmail] = React.useState('');
-            const [isLoading, setIsLoading] = React.useState(false);
-
-            const handleRegisterChurch = async (e) => {
-                e.preventDefault();
-                setIsLoading(true);
-
-                try {
-                    const { data: { user } } = await supabase.auth.getUser();
-                    if (!user) {
-                        onShowModal('Precisa de estar logado para registar uma igreja.', 'error');
-                        setIsLoading(false);
-                        return;
-                    }
-
-                    const { data: churchData, error: churchError } = await supabase
-                        .from('churches')
-                        .insert([
-                            {
-                                name: churchName,
-                                address: churchAddress,
-                                city: churchCity,
-                                state: churchState,
-                                country: churchCountry,
-                                phone: churchPhone,
-                                email: churchEmail,
-                                owner_id: user.id
-                            }
-                        ])
-                        .select()
-                        .single();
-
-                    if (churchError) {
-                        console.error('Erro ao registar igreja:', churchError);
-                        onShowModal(`Erro ao registar igreja: ${churchError.message}`, 'error');
-                        setIsLoading(false);
-                        return;
-                    }
-
-                    const { error: membershipError } = await supabase
-                        .from('memberships')
-                        .insert([
-                            {
-                                profile_id: user.id,
-                                church_id: churchData.id,
-                                role: 'admin'
-                            }
-                        ]);
-
-                    if (membershipError) {
-                        console.error('Erro ao criar associação de membro:', membershipError);
-                        onShowModal(`Igreja registada, mas erro ao criar associação de membro: ${membershipError.message}.`, 'error');
-                    } else {
-                        // FLUXO ALTERADO: Informa para verificar e-mail e redireciona para login.
-                        onShowModal('Igreja registada com sucesso! Por favor, verifique o seu e-mail para confirmar a conta e depois inicie sessão.', 'success');
-                        onChurchRegisterSuccess(); // Redireciona para o login
-                    }
-
-                } catch (error) {
-                    console.error('Erro inesperado ao registar igreja:', error);
-                    onShowModal('Ocorreu um erro inesperado ao registar a igreja.', 'error');
-                } finally {
-                    setIsLoading(false);
-                }
-            };
-
-            return (
-                <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md mx-auto transform transition-all duration-300 hover:scale-105">
-                    <div className="text-center mb-8">
-                        <h1 className="text-4xl font-extrabold text-gray-800 mb-2 font-inter">Registar Igreja</h1>
-                        <p className="text-gray-600 text-lg">Insira os dados da sua igreja</p>
-                    </div>
-
-                    <form onSubmit={handleRegisterChurch}>
-                        <div className="mb-4">
-                            <label htmlFor="churchName" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Nome da Igreja</label>
-                            <input type="text" id="churchName" className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter" placeholder="Nome completo da igreja" value={churchName} onChange={(e) => setChurchName(e.target.value)} required disabled={isLoading} aria-label="Nome da igreja" />
-                        </div>
-                        <div className="mb-4">
-                            <label htmlFor="churchAddress" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Morada</label>
-                            <input type="text" id="churchAddress" className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter" placeholder="Rua, número" value={churchAddress} onChange={(e) => setChurchAddress(e.target.value)} disabled={isLoading} aria-label="Morada da igreja" />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label htmlFor="churchCity" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Cidade</label>
-                                <input type="text" id="churchCity" className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter" placeholder="Cidade" value={churchCity} onChange={(e) => setChurchCity(e.target.value)} disabled={isLoading} aria-label="Cidade da igreja" />
-                            </div>
-                            <div>
-                                <label htmlFor="churchState" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Distrito</label>
-                                <input type="text" id="churchState" className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter" placeholder="Distrito" value={churchState} onChange={(e) => setChurchState(e.target.value)} disabled={isLoading} aria-label="Distrito da igreja" />
-                            </div>
-                        </div>
-                        <div className="mb-4">
-                            <label htmlFor="churchCountry" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">País</label>
-                            <input type="text" id="churchCountry" className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter" placeholder="País" value={churchCountry} onChange={(e) => setChurchCountry(e.target.value)} disabled={isLoading} aria-label="País da igreja" />
-                        </div>
-                        <div className="mb-4">
-                            <label htmlFor="churchPhone" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Telefone</label>
-                            <input type="tel" id="churchPhone" className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter" placeholder="(XX) XXXX-XXXX" value={churchPhone} onChange={(e) => setChurchPhone(e.target.value)} disabled={isLoading} aria-label="Telefone da igreja" />
-                        </div>
-                        <div className="mb-6">
-                            <label htmlFor="churchEmail" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Email da Igreja</label>
-                            <input type="email" id="churchEmail" className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter" placeholder="email@igreja.com" value={churchEmail} onChange={(e) => setChurchEmail(e.target.value)} disabled={isLoading} aria-label="Email da igreja" />
-                        </div>
-
-                        <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 transform hover:scale-100 active:scale-95 shadow-md font-inter" disabled={isLoading} aria-label="Registar a igreja">
-                            {isLoading ? 'A registar...' : 'Registar Igreja'}
-                        </button>
-                    </form>
-
-                    <div className="mt-8 text-center">
-                        <a href="#" onClick={onSwitchToLogin} className="font-bold text-blue-600 hover:text-blue-800 font-inter" aria-label="Voltar para a tela de login">Voltar ao Login</a>
-                    </div>
-                </div>
-            );
+        // REMOVIDO: ChurchRegisterScreen (já removido anteriormente)
+        /*
+        function ChurchRegisterScreen({ onSwitchToLogin, onShowModal, supabase }) {
+            // ... (código anterior) ...
         }
-
+        */
 
         // Componente principal do aplicativo React que gerencia as visualizações e o modal
         function App() {
@@ -714,15 +592,17 @@
             window.location.href = 'conexao-eclesia-feed.html';
           };
 
-          // Função para redirecionar após registo de igreja
+          // handleChurchRegisterSuccess agora está removido, pois ChurchRegisterScreen foi removida
+          /*
           const handleChurchRegisterSuccess = () => {
-            setCurrentView('login'); // Redireciona para o formulário de login
-            showModal('Igreja registada com sucesso! Por favor, inicie sessão.', 'success'); // Mensagem para o utilizador
+            setCurrentView('login');
+            showModal('Igreja registada com sucesso! Por favor, inicie sessão.', 'success');
           };
+          */
 
-          // handleLoginAfterRegister agora NÃO É MAIS chamada pela RegisterScreen ou ChurchRegisterScreen
+          // handleLoginAfterRegister agora NÃO É MAIS chamada pela RegisterScreen
           // O modal LoginAfterRegisterModal NÃO é renderizado e, portanto, não é necessário gerir estes estados.
-          // Mantido para referência se o componente LoginAfterRegisterModal for reintroduzido para outros fins.
+          // Este é mantido apenas como placeholder, se ainda houver alguma chamada externa para ele.
           const handleLoginAfterRegister = (email) => {
             console.log("handleLoginAfterRegister chamado. Redirecionando para login manual.");
             showModal("Registo bem-sucedido! Por favor, verifique o seu e-mail para confirmar a conta e depois faça login.", 'info');
@@ -750,7 +630,8 @@
                   onSwitchToRegister={() => setCurrentView('register')}
                   onShowModal={showModal}
                   onLoginSuccess={handleLoginSuccess}
-                  onSwitchToChurchRegister={() => setCurrentView('church_register')}
+                  // REMOVIDO: onSwitchToChurchRegister
+                  // onSwitchToChurchRegister={() => setCurrentView('church_register')}
                   supabase={supabase}
                 />
               );
@@ -762,7 +643,10 @@
                   supabase={supabase}
                 />
               );
-            } else if (currentView === 'church_register') {
+            }
+            // REMOVIDO: Condicional para ChurchRegisterScreen
+            /*
+            else if (currentView === 'church_register') {
                 return (
                     <ChurchRegisterScreen
                         onSwitchToLogin={() => setCurrentView('login')}
@@ -772,6 +656,7 @@
                     />
                 );
             }
+            */
           };
 
           return (
@@ -806,19 +691,20 @@
         // Renderiza o componente principal 'App' no elemento HTML com id 'root'
         ReactDOM.render(<App />, document.getElementById('root'));
     </script>
-    <!-- Iframe para o Chat Flutuante (mantido aqui, mas o chat agora é uma página dedicada) -->
-    <!-- Este iframe pode ser removido se o chat não for mais flutuante em todas as páginas -->
+    <!-- Iframe para o Chat Flutuante (agora não é mais usado para o chat global, pode ser removido) -->
+    <!--
     <iframe
         src="chat.html"
         title="Chat Global Conexão Eclesia"
         id="conexao-eclesia-chat-iframe"
-        style="width: 288px; height: 384px; /* Largura e altura padrão do chat */
+        style="width: 288px; height: 384px;
                position: fixed; bottom: 1rem; right: 1rem;
-               z-index: 1000; /* Garante que o chat fique por cima */
+               z-index: 1000;
                border: none;
-               pointer-events: auto; /* Permite interação com o iframe */
-               display: none; /* AGORA OCULTADO POR PADRÃO, POIS O CHAT É UMA PÁGINA SEPARADA */"
+               pointer-events: auto;
+               display: none;"
         scrolling="no"
     ></iframe>
+    -->
 </body>
 </html>
