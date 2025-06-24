@@ -11,6 +11,8 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
+            text-size-adjust: none; /* Adicionado para resolver o aviso de text-size-adjust */
+            -webkit-text-size-adjust: none; /* Adicionado para resolver o aviso de text-size-adjust */
         }
         /* Transição para a largura da barra lateral */
         .sidebar-transition {
@@ -41,7 +43,7 @@
 
     <!-- O código React/JSX agora será processado por Babel -->
     <script type="text/babel">
-        // Componente Modal reutilizável para exibir mensagens de sucesso ou erro
+        // Componente Modal (sem alterações)
         function Modal({ isOpen, message, type, onClose }) {
           if (!isOpen) return null;
 
@@ -78,12 +80,12 @@
           );
         }
 
-        // Novo Componente: CreatePostModal para criar novas publicações
+        // Novo Componente: CreatePostModal (sem alterações)
         function CreatePostModal({ isOpen, onClose, onSavePost, onShowMessage, supabase }) {
           const [title, setTitle] = React.useState('');
           const [content, setContent] = React.useState('');
-          const [image, setImage] = React.useState(''); // Para URL da imagem
-          const [isLoading, setIsLoading] = React.useState(false); // Novo estado para carregamento
+          const [image, setImage] = React.useState('');
+          const [isLoading, setIsLoading] = React.useState(false);
 
           const handleSubmit = async (e) => {
             e.preventDefault();
@@ -92,10 +94,10 @@
               return;
             }
 
-            setIsLoading(true); // Inicia o carregamento
+            setIsLoading(true);
 
             try {
-              const { data: { user } } = await supabase.auth.getUser(); // Obtém o usuário logado
+              const { data: { user } } = await supabase.auth.getUser();
               if (!user) {
                 onShowMessage('Você precisa estar logado para criar uma publicação.', 'error');
                 setIsLoading(false);
@@ -108,31 +110,29 @@
                   {
                     title,
                     content,
-                    image_url: image || null, // Usamos 'image_url' conforme a tabela Supabase
-                    author_id: user.id, // Associa o post ao usuário logado
-                    // church_id: 'seu_church_id_aqui' // Opcional: Se quiser associar a uma igreja específica
-                    is_published: true // Define como publicado por padrão
+                    image_url: image || null,
+                    author_id: user.id,
+                    is_published: true
                   }
                 ])
-                .select(); // Retorna o post inserido
+                .select();
 
               if (error) {
                 console.error('Erro ao salvar no Supabase:', error);
-                onShowModal(`Erro ao criar publicação: ${error.message}`, 'error');
+                onShowMessage(`Erro ao criar publicação: ${error.message}`, 'error');
               } else {
-                onSavePost(data[0]); // Adiciona o post retornado pelo Supabase
+                onSavePost(data[0]);
                 onShowMessage('Publicação criada com sucesso!', 'success');
-                // Limpa o formulário
                 setTitle('');
                 setContent('');
                 setImage('');
-                onClose(); // Fecha o modal
+                onClose();
               }
             } catch (error) {
               console.error('Erro inesperado:', error);
               onShowMessage('Ocorreu um erro inesperado ao criar a publicação.', 'error');
             } finally {
-              setIsLoading(false); // Finaliza o carregamento
+              setIsLoading(false);
             }
           };
 
@@ -147,7 +147,7 @@
                     onClick={onClose}
                     className="text-white hover:text-gray-200 focus:outline-none text-2xl font-bold"
                     aria-label="Fechar modal de criação de publicação"
-                    disabled={isLoading} // Desabilita o botão ao carregar
+                    disabled={isLoading}
                   >
                     &times;
                   </button>
@@ -165,7 +165,7 @@
                         onChange={(e) => setTitle(e.target.value)}
                         required
                         aria-label="Campo para o título da publicação"
-                        disabled={isLoading} // Desabilita o input ao carregar
+                        disabled={isLoading}
                       />
                     </div>
                     <div className="mb-4">
@@ -178,7 +178,7 @@
                         onChange={(e) => setContent(e.target.value)}
                         required
                         aria-label="Campo para o conteúdo da publicação"
-                        disabled={isLoading} // Desabilita o textarea ao carregar
+                        disabled={isLoading}
                       ></textarea>
                     </div>
                     <div className="mb-6">
@@ -191,7 +191,7 @@
                         value={image}
                         onChange={(e) => setImage(e.target.value)}
                         aria-label="Campo para a URL da imagem da publicação"
-                        disabled={isLoading} // Desabilita o input ao carregar
+                        disabled={isLoading}
                       />
                     </div>
                     <div className="flex justify-end">
@@ -200,7 +200,7 @@
                         onClick={onClose}
                         className="mr-4 py-2 px-6 rounded-lg font-bold text-gray-700 bg-gray-200 hover:bg-gray-300 transition duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75 font-inter"
                         aria-label="Cancelar criação da publicação"
-                        disabled={isLoading} // Desabilita o botão ao carregar
+                        disabled={isLoading}
                       >
                         Cancelar
                       </button>
@@ -208,7 +208,7 @@
                         type="submit"
                         className="py-2 px-6 rounded-lg font-bold text-white bg-green-600 hover:bg-green-700 transition duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75 font-inter"
                         aria-label="Salvar nova publicação"
-                        disabled={isLoading} // Desabilita o botão ao carregar
+                        disabled={isLoading}
                       >
                         {isLoading ? 'Publicando...' : 'Publicar'}
                       </button>
@@ -220,14 +220,13 @@
           );
         }
 
-        // Componente para a tela de Feed
+        // Componente para a tela de Feed (sem alterações)
         function FeedScreen({ onShowModal, onLogout, supabase }) {
-          const [posts, setPosts] = React.useState([]); // Começa com posts vazios, serão carregados do Supabase
+          const [posts, setPosts] = React.useState([]);
           const [isCreatePostModalOpen, setIsCreatePostModalOpen] = React.useState(false);
-          const [isLoadingPosts, setIsLoadingPosts] = React.useState(true); // Novo estado para indicar carregamento dos posts
-          const [isSidebarOpen, setIsSidebarOpen] = React.useState(window.innerWidth >= 768); // Sidebar aberta por padrão em desktop
+          const [isLoadingPosts, setIsLoadingPosts] = React.useState(true);
+          const [isSidebarOpen, setIsSidebarOpen] = React.useState(window.innerWidth >= 768);
 
-          // Função para carregar posts do Supabase
           const fetchPosts = async () => {
             setIsLoadingPosts(true);
             try {
@@ -235,25 +234,23 @@
                 .from('posts')
                 .select(`
                   *,
-                  profiles (full_name)  // Pega o nome completo do autor do perfil
+                  profiles (full_name)
                 `)
-                .order('created_at', { ascending: false }); // Ordena pelos mais recentes
+                .order('created_at', { ascending: false });
 
               if (error) {
                 console.error('Erro ao carregar posts:', error);
-                // Exibe a mensagem de erro específica do Supabase
                 onShowModal(`Erro ao carregar publicações: ${error.message || 'Erro desconhecido'}`, 'error');
-                setPosts([]); // Limpa os posts em caso de erro
+                setPosts([]);
               } else {
-                // Mapeia os dados para incluir o nome do autor e a igreja (se tiver)
                 const formattedPosts = data.map(post => ({
                   id: post.id,
-                  author: post.profiles ? post.profiles.full_name : 'Autor Desconhecido', // Usa o nome do perfil, se disponível
-                  church: post.church_id ? 'Nome da Igreja Aqui (buscar)' : '', // Em um app real, buscaria o nome da igreja
+                  author: post.profiles ? post.profiles.full_name : 'Autor Desconhecido',
+                  church: post.church_id ? 'Nome da Igreja Aqui (buscar)' : '',
                   date: new Date(post.created_at).toLocaleDateString('pt-BR'),
                   title: post.title,
                   content: post.content,
-                  image: post.image_url // Assume que a coluna se chama image_url
+                  image: post.image_url
                 }));
                 setPosts(formattedPosts);
               }
@@ -266,32 +263,25 @@
             }
           };
 
-          // Efeito para carregar os posts quando o componente é montado
           React.useEffect(() => {
             fetchPosts();
-          }, []); // Executa apenas uma vez ao montar
+          }, []);
 
           const handleNewPost = (newPost) => {
-            // Re-busca os posts para garantir que a lista esteja atualizada com o Supabase
-            // ou, para maior performance em apps pequenos, adicione o newPost diretamente no estado
             fetchPosts();
           };
 
-          // Função para alternar a visibilidade da barra lateral
           const toggleSidebar = () => {
             setIsSidebarOpen(!isSidebarOpen);
           };
 
           const handleNavigateToProfile = () => {
-            window.location.href = 'perfil.html'; // Redireciona para a página de perfil
+            window.location.href = 'perfil.html';
           };
 
 
           return (
-            // Contêiner principal do layout do feed: barra lateral e conteúdo principal
-            // flex-col para mobile, md:flex-row para desktop
             <div className="flex flex-col md:flex-row min-h-screen w-full bg-gradient-to-br from-blue-600 to-purple-700 p-4 sm:p-6 md:p-8">
-              {/* Botão de hambúrguer para mobile */}
               <button
                 onClick={toggleSidebar}
                 className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-300"
@@ -302,27 +292,23 @@
                 </svg>
               </button>
 
-              {/* Barra Lateral */}
-              {/* Classes dinâmicas para controlar a largura e visibilidade */}
               <aside className={`fixed md:static top-0 left-0 h-full z-40
                                 w-64 md:w-64 sidebar-transition
                                 bg-gray-800 text-white p-4 flex flex-col items-center md:items-start space-y-4 rounded-xl shadow-lg
                                 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
                                 md:mb-0 md:rounded-r-none md:mr-4`}>
                 
-                {/* Botão de fechar para mobile dentro do sidebar, quando aberto */}
                 <button
                     onClick={toggleSidebar}
                     className="md:hidden absolute top-4 right-4 p-2 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-300"
                     aria-label="Fechar menu lateral"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
 
                 <div className="text-3xl font-extrabold mb-6 font-inter text-blue-300 sidebar-item-text">Menu</div>
-                {/* Ícone de Perfil e Nome (Placeholder) - AGORA CLICÁVEL */}
                 <div 
                     className="flex items-center space-x-2 text-xl cursor-pointer hover:text-blue-300 transition duration-200" 
                     aria-label="Acessar meu perfil"
@@ -333,24 +319,21 @@
                     </svg>
                     <span className="font-inter sidebar-item-text">Meu Perfil</span>
                 </div>
-                {/* Botões de Navegação */}
                 <button className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" aria-label="Navegar para Igrejas"><span className="sidebar-item-text">Igrejas</span></button>
                 <button className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" aria-label="Navegar para Eventos"><span className="sidebar-item-text">Eventos</span></button>
-                {/* Botões de categorias na barra lateral */}
                 <button className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" aria-label="Ver posts de Estudo Bíblico">Estudo Bíblico</button>
                 <button className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" aria-label="Ver posts de Ação Social">Ação Social</button>
                 <button className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" aria-label="Ver posts de Noite de Louvor">Noite de Louvor</button>
 
                 <button
-                    onClick={() => setIsCreatePostModalOpen(true)} // Abre o modal de criação de post
+                    onClick={() => setIsCreatePostModalOpen(true)}
                     className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter bg-blue-500 hover:bg-blue-600"
                     aria-label="Criar uma nova publicação"
                 >
                     Criar Publicação
                 </button>
 
-                {/* Botão de Sair no rodapé da barra lateral */}
-                <div className="mt-auto pt-4 w-full border-t border-gray-700 md:border-none"> {/* Adicionado borda superior para mobile */}
+                <div className="mt-auto pt-4 w-full border-t border-gray-700 md:border-none">
                   <button
                     onClick={onLogout}
                     className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 transform hover:scale-100 active:scale-95 shadow-md font-inter"
@@ -361,8 +344,6 @@
                 </div>
               </aside>
 
-              {/* Área de Conteúdo Principal (Feed de Publicações) */}
-              {/* Adicionado margin-left dinâmica e classe para expansão */}
               <main className={`flex-1 p-6 bg-gray-100 rounded-xl shadow-xl max-w-2xl mx-auto
                                 md:ml-0 ${isSidebarOpen ? 'md:ml-64' : 'md:ml-20'} sidebar-transition`}>
                 <div className="text-center mb-8">
@@ -375,10 +356,9 @@
                 ) : posts.length === 0 ? (
                   <div className="text-center text-gray-600 text-lg font-inter">Nenhuma publicação encontrada.</div>
                 ) : (
-                  // Feed de posts em uma única coluna
-                  <div className="flex flex-col space-y-6"> {/* Mudado para flex-col e space-y para espaçamento vertical */}
+                  <div className="flex flex-col space-y-6">
                     {posts.map(post => (
-                      <div key={post.id} className="bg-white p-6 rounded-lg shadow-lg border border-gray-200"> {/* bg-white e shadow-lg para um visual mais proeminente */}
+                      <div key={post.id} className="bg-white p-6 rounded-lg shadow-lg border border-gray-200">
                         {post.image && (
                           <img
                             src={post.image}
@@ -398,13 +378,12 @@
                 )}
               </main>
 
-              {/* Modal de Criação de Publicação */}
               <CreatePostModal
                 isOpen={isCreatePostModalOpen}
                 onClose={() => setIsCreatePostModalOpen(false)}
                 onSavePost={handleNewPost}
                 onShowMessage={onShowModal}
-                supabase={supabase} // Passa a instância do Supabase
+                supabase={supabase}
               />
             </div>
           );
@@ -415,31 +394,32 @@
           const [isModalOpen, setIsModalOpen] = React.useState(false);
           const [modalMessage, setModalMessage] = React.useState('');
           const [modalType, setModalType] = React.useState('info');
-          const [isAuthChecking, setIsAuthChecking] = React.useState(true); // Estado para verificar autenticação
+          const [isAuthChecking, setIsAuthChecking] = React.useState(true);
 
-          // AGORA, ACESSE A INSTÂNCIA GLOBALMENTE
-          const supabase = window.supabaseClientInstance;
+          // Inicializa a instância do Supabase globalmente se ainda não foi inicializada
+          if (!window.globalSupabaseClient && window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+              window.globalSupabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+          }
+          // Acessa a instância global do Supabase (agora garantida)
+          const supabase = window.globalSupabaseClient;
 
-          // Efeito para verificar a sessão do usuário ao carregar a página
           React.useEffect(() => {
             const checkUserSession = async () => {
               try {
                 const { data: { session } } = await supabase.auth.getSession();
                 if (!session) {
-                  // Se não houver sessão, redireciona para a página de login
                   window.location.href = 'index.html';
                 } else {
-                  setIsAuthChecking(false); // Autenticado, então desativa o estado de checagem
+                  setIsAuthChecking(false);
                 }
               } catch (error) {
                 console.error('Erro ao verificar sessão:', error);
-                // Em caso de erro, ainda redireciona para o login por segurança
                 window.location.href = 'index.html';
               }
             };
 
             checkUserSession();
-          }, []); // Executa apenas uma vez ao montar
+          }, [supabase]); // Adicionado supabase às dependências
 
           const showModal = (message, type) => {
             setModalMessage(message);
@@ -461,7 +441,6 @@
                 showModal(`Erro ao fazer logout: ${error.message}`, 'error');
               } else {
                 showModal('Logout realizado com sucesso!', 'success');
-                // Redireciona de volta para a página de login principal (index.html)
                 window.location.href = 'index.html';
               }
             } catch (error) {
@@ -470,7 +449,6 @@
             }
           };
 
-          // Mostra uma tela de carregamento enquanto verifica a autenticação
           if (isAuthChecking) {
             return (
               <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
@@ -480,18 +458,13 @@
           }
 
           return (
-            // Contêiner principal da aplicação: fundo gradiente, ocupa toda a tela.
-            // Para mobile, os itens internos (sidebar e main) se empilham por padrão (flex-col).
-            // A barra lateral e o feed são os filhos diretos do div principal.
             <div className="min-h-screen flex flex-col md:flex-row items-stretch justify-center p-0">
               <FeedScreen
                 onShowModal={showModal}
                 onLogout={handleLogout}
-                supabase={supabase} // Passa a instância do Supabase para FeedScreen
+                supabase={supabase}
               />
-              {/* Rodapé da página (fixo na parte inferior da tela, ocupando a largura total) */}
               <div className="text-center text-white text-sm opacity-80 font-inter py-4 bg-gray-800 w-full md:hidden">
-                 {/* Rodapé só aparece em telas menores que md, pois no desktop a sidebar já tem o botão sair no fim */}
                 © {new Date().getFullYear()} CPN Serviços. Todos os direitos reservados.
               </div>
               <Modal
