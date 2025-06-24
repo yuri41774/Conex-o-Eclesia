@@ -421,14 +421,51 @@
           const [isModalOpen, setIsModalOpen] = React.useState(false);
           const [modalMessage, setModalMessage] = React.useState('');
           const [modalType, setModalType] = React.useState('info');
+          const [isSupabaseClientReady, setIsSupabaseClientReady] = React.useState(false); // Novo estado
 
           // Inicializa a instância do Supabase globalmente se ainda não foi inicializada
           // Isso garante que window.supabase.createClient esteja disponível
-          if (!window.globalSupabaseClient && window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
-              window.globalSupabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-          }
-          // Acessa a instância global do Supabase (agora garantida)
-          const supabase = window.globalSupabaseClient;
+          // Certifique-se de que supabaseClientInstance.js é carregado ANTES deste script
+          let supabase = window.globalSupabaseClient; 
+
+          React.useEffect(() => {
+            // Inicializa o cliente Supabase apenas se ele ainda não estiver inicializado
+            // E se o SDK global e as variáveis de URL estiverem disponíveis
+            if (!supabase && window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+                supabase = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                window.globalSupabaseClient = supabase; // Armazena a instância globalmente
+                console.log("Supabase client initialized within App component (index.html).");
+            }
+
+            // Agora, use a instância garantida para a verificação de sessão
+            if (supabase) {
+                setIsSupabaseClientReady(true);
+                const checkUserSession = async () => {
+                    try {
+                        const { data: { session } } = await supabase.auth.getSession();
+                        if (session) {
+                            // Se já estiver logado, redireciona para o feed
+                            window.location.href = 'conexao-eclesia-feed.html';
+                        }
+                    } catch (error) {
+                        console.error('Erro ao verificar sessão inicial:', error);
+                        // Permite que o usuário tente logar mesmo com erro na verificação
+                    }
+                };
+                checkUserSession();
+            } else {
+                console.log("Aguardando Supabase client ficar pronto em index.html...");
+                // Adiciona um pequeno atraso e tenta novamente se o cliente não estiver pronto
+                setTimeout(() => {
+                    if (!window.globalSupabaseClient && window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+                         supabase = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                         window.globalSupabaseClient = supabase;
+                         setIsSupabaseClientReady(true);
+                         console.log("Supabase client initialized after timeout in index.html.");
+                    }
+                }, 500); // 500ms de atraso
+            }
+          }, []); // Executa apenas uma vez ao montar, sem depender de 'supabase' diretamente no array de deps
 
           const showModal = (message, type) => {
             setModalMessage(message);
@@ -444,34 +481,35 @@
 
           // Função responsável por redirecionar para o feed após o login bem-sucedido
           const handleLoginSuccess = () => {
-            // Redireciona para o arquivo do feed após o login
-            window.location.href = 'conexao-eclesia-feed.html'; // Nome do novo arquivo HTML para o feed
+            window.location.href = 'conexao-eclesia-feed.html';
           };
 
-          const renderView = () => {
-            if (currentView === 'login') {
-              return (
-                <LoginScreen
-                  onSwitchToRegister={() => setCurrentView('register')}
-                  onShowModal={showModal}
-                  onLoginSuccess={handleLoginSuccess} // Passando a função de redirecionamento
-                  supabase={supabase} // Passa a instância do Supabase para LoginScreen
-                />
-              );
-            } else if (currentView === 'register') {
-              return (
-                <RegisterScreen
-                  onSwitchToLogin={() => setCurrentView('login')}
-                  onShowModal={showModal}
-                  supabase={supabase} // Passa a instância do Supabase para RegisterScreen
-                />
-              );
-            }
-          };
+          // Mostra tela de carregamento se o Supabase não estiver pronto
+          if (!isSupabaseClientReady) {
+            return (
+              <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
+                <div className="text-white text-2xl font-bold font-inter">A iniciar aplicação...</div>
+              </div>
+            );
+          }
 
           return (
             <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex flex-col items-center justify-center p-4">
-              {renderView()}
+              {/* Passa a instância do Supabase para os componentes de login/registro */}
+              {currentView === 'login' ? (
+                <LoginScreen
+                  onSwitchToRegister={() => setCurrentView('register')}
+                  onShowModal={showModal}
+                  onLoginSuccess={handleLoginSuccess}
+                  supabase={supabase}
+                />
+              ) : (
+                <RegisterScreen
+                  onSwitchToLogin={() => setCurrentView('login')}
+                  onShowModal={showModal}
+                  supabase={supabase}
+                />
+              )}
               <div className="mt-8 text-center text-white text-sm opacity-80 font-inter">
                 © {new Date().getFullYear()} CPN Serviços. Todos os direitos reservados.
               </div>
@@ -488,5 +526,18 @@
         // Renderiza o componente principal 'App' no elemento HTML com id 'root'
         ReactDOM.render(<App />, document.getElementById('root'));
     </script>
+    <!-- Iframe para o Chat Flutuante (mantido para que o chat esteja sempre visível, se desejado) -->
+    <iframe
+        src="chat.html"
+        title="Chat Global Conexão Eclesia"
+        id="conexao-eclesia-chat-iframe"
+        style="width: 288px; height: 384px; /* Largura e altura padrão do chat */
+               position: fixed; bottom: 1rem; right: 1rem;
+               z-index: 1000; /* Garante que o chat fique por cima */
+               border: none;
+               pointer-events: auto; /* Permite interação com o iframe */
+               display: block; /* Garante que seja visível */"
+        scrolling="no"
+    ></iframe>
 </body>
 </html>
