@@ -280,6 +280,11 @@
             setIsSidebarOpen(!isSidebarOpen);
           };
 
+          const handleNavigateToProfile = () => {
+            window.location.href = 'perfil.html'; // Redireciona para a página de perfil
+          };
+
+
           return (
             // Contêiner principal do layout do feed: barra lateral e conteúdo principal
             // flex-col para mobile, md:flex-row para desktop
@@ -315,8 +320,12 @@
                 </button>
 
                 <div className="text-3xl font-extrabold mb-6 font-inter text-blue-300 sidebar-item-text">Menu</div>
-                {/* Ícone de Perfil e Nome (Placeholder) */}
-                <div className="flex items-center space-x-2 text-xl cursor-pointer hover:text-blue-300 transition duration-200" aria-label="Acessar meu perfil">
+                {/* Ícone de Perfil e Nome (Placeholder) - AGORA CLICÁVEL */}
+                <div 
+                    className="flex items-center space-x-2 text-xl cursor-pointer hover:text-blue-300 transition duration-200" 
+                    aria-label="Acessar meu perfil"
+                    onClick={handleNavigateToProfile}
+                >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                     </svg>
@@ -404,7 +413,7 @@
           const [isModalOpen, setIsModalOpen] = React.useState(false);
           const [modalMessage, setModalMessage] = React.useState('');
           const [modalType, setModalType] = React.useState('info');
-          const [isAuthChecking, setIsAuthChecking] = React.useState(true); // Restaurado: estado para verificar autenticação
+          const [isAuthChecking, setIsAuthChecking] = React.useState(true); // Estado para verificar autenticação
 
           // Variáveis Supabase - SUBSTITUA PELOS SEUS VALORES REAIS!
           // Obtenha a URL do seu projeto Supabase no Dashboard > Settings > API
@@ -414,7 +423,7 @@
           // Inicializa o cliente Supabase
           const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-          // Restaurado: Efeito para verificar a sessão do usuário ao carregar a página
+          // Efeito para verificar a sessão do usuário ao carregar a página
           React.useEffect(() => {
             const checkUserSession = async () => {
               try {
@@ -464,7 +473,7 @@
             }
           };
 
-          // Restaurado: Mostra uma tela de carregamento enquanto verifica a autenticação
+          // Mostra uma tela de carregamento enquanto verifica a autenticação
           if (isAuthChecking) {
             return (
               <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
@@ -502,4 +511,3 @@
     </script>
 </body>
 </html>
-
