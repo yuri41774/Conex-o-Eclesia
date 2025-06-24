@@ -453,6 +453,14 @@
                 >
                     Voltar ao Feed
                 </button>
+                {/* NOVO BOTÃO DE CHAT */}
+                <button
+                    onClick={() => { window.location.href = 'chat.html'; }}
+                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter"
+                    aria-label="Abrir chat global"
+                >
+                    Chat
+                </button>
               </div>
             </div>
           );
@@ -464,11 +472,10 @@
           const [modalMessage, setModalMessage] = React.useState('');
           const [modalType, setModalType] = React.useState('info');
           const [isAuthChecking, setIsAuthChecking] = React.useState(true);
-          const [isSupabaseClientReady, setIsSupabaseClientReady] = React.useState(false); // Novo estado
+          const [isSupabaseClientReady, setIsSupabaseClientReady] = React.useState(false);
 
-          // Acessa a instância global do Supabase (agora garantida)
-          const supabase = window.globalSupabaseClient; // Obtenha-a aqui
-
+          // AGORA, ACESSE A INSTÂNCIA GLOBALMENTE
+          const supabase = window.globalSupabaseClient;
 
           React.useEffect(() => {
             // Inicializa o cliente Supabase globalmente se ainda não foi inicializado e o SDK está disponível
@@ -479,7 +486,7 @@
             
             // Agora, use a instância garantida para a verificação de sessão
             if (window.globalSupabaseClient) {
-                setIsSupabaseClientReady(true); // Supabase client está pronto
+                setIsSupabaseClientReady(true);
                 const checkUserSession = async () => {
                     try {
                         const { data: { session } } = await window.globalSupabaseClient.auth.getSession();
@@ -497,7 +504,7 @@
             } else {
                 console.log("Aguardando Supabase client ficar pronto...");
             }
-          }, [supabase]); // Depende da instância do supabase
+          }, [supabase]);
 
           const showModal = (message, type) => {
             setModalMessage(message);
@@ -515,7 +522,7 @@
             window.location.href = 'conexao-eclesia-feed.html';
           };
 
-          if (!isSupabaseClientReady || isAuthChecking) { // Aguarda cliente e autenticação
+          if (!isSupabaseClientReady || isAuthChecking) {
             return (
               <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
                 <div className="text-white text-2xl font-bold font-inter">Carregando...</div>
