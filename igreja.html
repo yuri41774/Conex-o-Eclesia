@@ -216,7 +216,8 @@
             const [userIsAdmin, setUserIsAdmin] = React.useState(false); // Se o utilizador é admin desta igreja
             const [userProfile, setUserProfile] = React.useState(null); // Perfil do utilizador logado
 
-            const supabase = window.globalSupabaseClient;
+            // Acessa a instância global do Supabase
+            let supabase = window.globalSupabaseClient;
 
             // Função para extrair churchId do URL (ex: igreja.html?churchId=SEU_UUID)
             const getChurchIdFromUrl = () => {
@@ -226,8 +227,10 @@
 
             // Efeito para inicializar o Supabase e verificar a sessão/carregar dados da igreja
             React.useEffect(() => {
+                // Inicializa o cliente Supabase globalmente se ainda não foi inicializado e o SDK está disponível
                 if (!supabase && window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
-                    window.globalSupabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                    supabase = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                    window.globalSupabaseClient = supabase;
                     console.log("Supabase client initialized globally for Igreja App.");
                 }
 
@@ -382,3 +385,15 @@
     </script>
 </body>
 </html>
+" selected code and am asking a query about/based on this code below.
+Instructions to follow:
+  * Don't output/edit the document if the query is Direct/Simple. For example, if the query asks for a simple explanation, output a direct answer.
+  * Make sure to **edit** the document if the query shows the intent of editing the document, in which case output the entire edited document, **not just that section or the edits**.
+    * Don't output the same document/empty document and say that you have edited it.
+    * Don't change unrelated code in the document.
+  * Don't output  and  in your final response.
+  * Any references like "this" or "selected code" refers to the code between  and  tags.
+  * Just acknowledge my request in the introduction.
+  * Make sure to refer to the document as "Canvas" in your response.
+
+vamos adicionar um botao de adcionar igreja para o layout de administrador da igr
