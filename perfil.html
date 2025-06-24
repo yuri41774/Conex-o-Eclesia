@@ -127,7 +127,7 @@
           const handleSaveProfile = async () => {
             setIsSaving(true); // Inicia o estado de salvamento
             try {
-              const { data: { user } } = await supabase.auth.getUser();
+              const { data: { user } = {} } = await supabase.auth.getUser(); // Desestrutura com fallback
               if (!user) {
                 onShowModal('Sessão expirada. Por favor, faça login novamente para salvar.', 'error');
                 window.location.href = 'index.html';
@@ -205,16 +205,16 @@
                   src={avatarUrl || "https://placehold.co/150x150/cccccc/ffffff?text=Avatar"}
                   alt="Avatar do Usuário"
                   className="w-32 h-32 rounded-full object-cover border-4 border-blue-500 shadow-md"
-                  aria-label="Imagem de perfil do usuário" // ARIA-LABEL para a imagem
+                  aria-label="Imagem de perfil do usuário"
                 />
-                {isEditing && ( // Mostra o campo de input para URL do avatar apenas em modo de edição
+                {isEditing && (
                     <input
                       type="url"
                       placeholder="URL do Avatar"
                       value={avatarUrl}
                       onChange={(e) => setAvatarUrl(e.target.value)}
                       className="mt-4 shadow-sm appearance-none border rounded-lg py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter w-full max-w-xs"
-                      aria-label="Campo para editar a URL do avatar" // ARIA-LABEL para o input do avatar
+                      aria-label="Campo para editar a URL do avatar"
                       disabled={isSaving}
                     />
                 )}
@@ -224,15 +224,15 @@
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 {/* Campo Nome Completo */}
                 <div>
-                  <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter" htmlFor="fullNameInput">Nome Completo</label> {/* Adicionado htmlFor */}
+                  <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter" htmlFor="fullNameInput">Nome Completo</label>
                   {isEditing ? (
                     <input
                       type="text"
-                      id="fullNameInput" // Adicionado id
+                      id="fullNameInput"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       className="shadow-sm appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter"
-                      aria-label="Editar nome completo do perfil" // ARIA-LABEL mais específico
+                      aria-label="Campo de texto para nome completo" // ARIA-LABEL otimizado
                       disabled={isSaving}
                     />
                   ) : (
@@ -248,15 +248,15 @@
 
                 {/* Campo Telefone */}
                 <div>
-                  <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter" htmlFor="phoneNumberInput">Telefone</label> {/* Adicionado htmlFor */}
+                  <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter" htmlFor="phoneNumberInput">Telefone</label>
                   {isEditing ? (
                     <input
                       type="tel"
-                      id="phoneNumberInput" // Adicionado id
+                      id="phoneNumberInput"
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
                       className="shadow-sm appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter"
-                      aria-label="Editar número de telefone do perfil" // ARIA-LABEL mais específico
+                      aria-label="Campo de texto para número de telefone" // ARIA-LABEL otimizado
                       disabled={isSaving}
                     />
                   ) : (
@@ -266,15 +266,15 @@
 
                 {/* Campo Data de Nascimento */}
                 <div>
-                  <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter" htmlFor="dateOfBirthInput">Data de Nascimento</label> {/* Adicionado htmlFor */}
+                  <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter" htmlFor="dateOfBirthInput">Data de Nascimento</label>
                   {isEditing ? (
                     <input
                       type="date"
-                      id="dateOfBirthInput" // Adicionado id
+                      id="dateOfBirthInput"
                       value={dateOfBirth}
                       onChange={(e) => setDateOfBirth(e.target.value)}
                       className="shadow-sm appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter"
-                      aria-label="Editar data de nascimento do perfil" // ARIA-LABEL mais específico
+                      aria-label="Campo de entrada para data de nascimento" // ARIA-LABEL otimizado
                       disabled={isSaving}
                     />
                   ) : (
@@ -284,15 +284,15 @@
 
                 {/* Campo Cargo/Função na Igreja */}
                 <div>
-                  <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter" htmlFor="roleInChurchInput">Cargo/Função na Igreja</label> {/* Adicionado htmlFor */}
+                  <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter" htmlFor="roleInChurchInput">Cargo/Função na Igreja</label>
                   {isEditing ? (
                     <input
                       type="text"
-                      id="roleInChurchInput" // Adicionado id
+                      id="roleInChurchInput"
                       value={roleInChurch}
                       onChange={(e) => setRoleInChurch(e.target.value)}
                       className="shadow-sm appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter"
-                      aria-label="Editar cargo ou função na igreja" // ARIA-LABEL mais específico
+                      aria-label="Campo de texto para cargo ou função na igreja" // ARIA-LABEL otimizado
                       disabled={isSaving}
                     />
                   ) : (
@@ -310,12 +310,11 @@
 
               {/* Botões de Ação */}
               <div className="flex justify-end space-x-4">
-                {isEditing ? ( // Mostra botões de Salvar/Cancelar quando em modo de edição
+                {isEditing ? (
                   <>
                     <button
                       onClick={() => {
                         setIsEditing(false);
-                        // Reverte para os dados originais do perfil se cancelar a edição
                         setFullName(profile.full_name || '');
                         setPhoneNumber(profile.phone_number || '');
                         setDateOfBirth(profile.date_of_birth || '');
@@ -323,7 +322,7 @@
                         setAvatarUrl(profile.avatar_url || '');
                       }}
                       className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter"
-                      aria-label="Cancelar edição do perfil e reverter alterações" // ARIA-LABEL mais específico
+                      aria-label="Cancelar edição do perfil" // ARIA-LABEL mais conciso
                       disabled={isSaving}
                     >
                       Cancelar
@@ -331,17 +330,17 @@
                     <button
                       onClick={handleSaveProfile}
                       className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter"
-                      aria-label="Salvar alterações do perfil agora" // ARIA-LABEL mais específico
+                      aria-label="Salvar alterações do perfil" // ARIA-LABEL mais conciso
                       disabled={isSaving}
                     >
                       {isSaving ? 'Salvando...' : 'Salvar'}
                     </button>
                   </>
-                ) : ( // Mostra apenas o botão Editar quando não está em modo de edição
+                ) : (
                   <button
-                    onClick={() => setIsEditing(true)} // Entra no modo de edição
+                    onClick={() => setIsEditing(true)}
                     className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter"
-                    aria-label="Entrar no modo de edição do perfil" // ARIA-LABEL mais específico
+                    aria-label="Editar perfil" // ARIA-LABEL mais conciso
                   >
                     Editar Perfil
                   </button>
@@ -349,7 +348,7 @@
                  <button
                     onClick={onBackToFeed}
                     className="bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter"
-                    aria-label="Voltar para o Feed de publicações" // ARIA-LABEL mais específico
+                    aria-label="Voltar para o Feed" // ARIA-LABEL mais conciso
                 >
                     Voltar ao Feed
                 </button>
@@ -363,35 +362,31 @@
           const [isModalOpen, setIsModalOpen] = React.useState(false);
           const [modalMessage, setModalMessage] = React.useState('');
           const [modalType, setModalType] = React.useState('info');
-          const [isAuthChecking, setIsAuthChecking] = React.useState(true); // Estado para verificar autenticação
+          const [isAuthChecking, setIsAuthChecking] = React.useState(true);
 
           // Variáveis Supabase - SUBSTITUA PELOS SEUS VALORES REAIS!
-          const SUPABASE_URL = "https://rahhplphegvvdehrumyp.supabase.co"; // Substitua pela sua URL real do Supabase
+          const SUPABASE_URL = "https://rahhplphegvvdehrumyp.supabase.co";
           const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJhaGhwbHBoZWd2dmRlaHJ1bXlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3MDk2NDMsImV4cCI6MjA2NjI4NTY0M30.EDM-RotlChTCWiisI4o5okQ6Llee1ZaQEAcLaphBqTs";
 
           // Inicializa o cliente Supabase
           const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-          // Efeito para verificar a sessão do usuário ao carregar a página
           React.useEffect(() => {
             const checkUserSession = async () => {
               try {
                 const { data: { session } } = await supabase.auth.getSession();
                 if (!session) {
-                  // Se não houver sessão, redireciona para a página de login
                   window.location.href = 'index.html';
                 } else {
-                  setIsAuthChecking(false); // Autenticado, então desativa o estado de checagem
+                  setIsAuthChecking(false);
                 }
               } catch (error) {
                 console.error('Erro ao verificar sessão:', error);
-                // Em caso de erro, ainda redireciona para o login por segurança
                 window.location.href = 'index.html';
               }
             };
-
             checkUserSession();
-          }, []); // Executa apenas uma vez ao montar
+          }, []);
 
           const showModal = (message, type) => {
             setModalMessage(message);
@@ -406,10 +401,9 @@
           };
 
           const handleBackToFeed = () => {
-            window.location.href = 'conexao-eclesia-feed.html'; // Redireciona de volta para o feed
+            window.location.href = 'conexao-eclesia-feed.html';
           };
 
-          // Mostra uma tela de carregamento enquanto verifica a autenticação
           if (isAuthChecking) {
             return (
               <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
@@ -425,7 +419,6 @@
                 onBackToFeed={handleBackToFeed}
                 supabase={supabase}
               />
-              {/* Rodapé da página (opcional na tela de perfil, mas mantido por consistência) */}
               <div className="mt-8 text-center text-white text-sm opacity-80 font-inter absolute bottom-4">
                 © {new Date().getFullYear()} CPN Serviços. Todos os direitos reservados.
               </div>
