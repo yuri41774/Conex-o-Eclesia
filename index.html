@@ -13,34 +13,46 @@
         /* Define a fonte Inter como padrão para o corpo da página */
         body {
             font-family: 'Inter', sans-serif;
-            /* Adiciona o fundo gradiente e centraliza o conteúdo principal */
             min-height: 100vh;
-            background: linear-gradient(to bottom right, #2563eb, #8b5cf6); /* from-blue-600 to-purple-700 */
+            background: linear-gradient(to bottom right, #2563eb, #8b5cf6);
             display: flex;
-            flex-direction: column; /* Para que os itens se empilhem verticalmente */
-            align-items: center; /* Centraliza horizontalmente */
-            justify-content: space-between; /* Empurra o conteúdo para cima e o rodapé para baixo */
-            padding: 1rem; /* p-4 */
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
         }
-        /* Ajusta o contêiner #root para preencher o espaço disponível e centralizar o conteúdo React */
         #root {
-            flex-grow: 1; /* Permite que o #root preencha o espaço entre o topo e o rodapé */
+            flex-grow: 1;
             display: flex;
-            align-items: center; /* Centraliza o conteúdo React verticalmente */
-            justify-content: center; /* Centraliza o conteúdo React horizontalmente */
-            width: 100%; /* Garante que ocupe a largura total */
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+        /* Estilos adicionais para o placeholder das datas em navegadores que não os preenchem automaticamente */
+        input[type="date"]::-webkit-datetime-edit-text,
+        input[type="date"]::-webkit-datetime-edit-month-field,
+        input[type="date"]::-webkit-datetime-edit-day-field,
+        input[type="date"]::-webkit-datetime-edit-year-field {
+            color: #718096; /* Cor do placeholder */
+        }
+        input[type="date"]:focus::-webkit-datetime-edit-text,
+        input[type="date"]:focus::-webkit-datetime-edit-month-field,
+        input[type="date"]:focus::-webkit-datetime-edit-day-field,
+        input[type="date"]:focus::-webkit-datetime-edit-year-field {
+            color: #4a5568; /* Cor do texto ao focar */
         }
     </style>
     
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#2563eb"> </head>
+    <meta name="theme-color" content="#2563eb">
+    </head>
 <body>
     <div id="root">
         <div class="text-white text-2xl font-bold font-inter">A carregar aplicação...</div>
     </div>
 
-    <div className="mt-8 text-center text-white text-sm opacity-80 font-inter">
-        © {new Date().getFullYear()} CPN Serviços. Todos os direitos reservados. <span className="text-xs ml-2 opacity-70">v1.0.0</span>
+    <div class="mt-8 text-center text-white text-sm opacity-80 font-inter">
+        © {new Date().getFullYear()} CPN Serviços. Todos os direitos reservados. <span class="text-xs ml-2 opacity-70">v1.0.0</span>
     </div>
 
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -50,9 +62,8 @@
     
     <script>
         // Substitua 'SUA_URL_DO_SUPABASE' e 'SUA_ANON_KEY_DO_SUPABASE' pelos seus valores reais do projeto Supabase.
-        // A ANONYMOUS KEY é segura para ser exposta publicamente.
-        window.SUPABASE_URL = 'https://rahphlphhegvvdehrumyp.supabase.co'; // Exemplo: 'https://seu_projeto_id.supabase.co'
-        window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJhaHBocGxwaGVndnZkZWhydW15cCIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzA3MDk2NDMsImV4cCI6MjA2NjI4NTY0M30.EDM-RotlChTCWiisI4o5okQ6Llee1ZaQEAcLaphBqTs'; // Exemplo: 'eyJ...'
+        window.SUPABASE_URL = 'https://rahphlphhegvvdehrumyp.supabase.co'; // SEU URL DO SUPABASE
+        window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJhaHBocGxwaGVndnZkZWhydW15cCIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzA3MDk2NDMsImV4cCI6MjA2NjI4NTY0M30.EDM-RotlChTCWiisI4o5okQ6Llee1ZaQEAcLaphBqTs'; // SUA ANON KEY DO SUPABASE
 
         // Inicializa o cliente Supabase globalmente UMA VEZ
         if (!window.globalSupabaseClient) {
@@ -198,14 +209,7 @@
                                 Crie uma agora!
                             </a>
                         </p>
-                        <p className="text-gray-600 font-inter mt-4">
-                            É uma igreja?{' '}
-                            <a href="#" className="font-bold text-purple-600 hover:text-purple-800 font-inter"
-                                 aria-label="Entre em contato para registrar sua igreja"
-                            >
-                                Entre em contato!
-                            </a>
-                        </p>
+                        {/* Removida a opção de registro de igreja direta aqui */}
                     </div>
                 </div>
             );
@@ -217,11 +221,19 @@
             const [dateOfBirth, setDateOfBirth] = React.useState('');
             const [phoneNumber, setPhoneNumber] = React.useState('');
             const [roleInChurch, setRoleInChurch] = React.useState('');
-            const [churchName, setChurchName] = React.useState('');
             const [registerEmail, setRegisterEmail] = React.useState('');
             const [registerPassword, setRegisterPassword] = React.useState('');
             const [confirmPassword, setConfirmPassword] = React.useState('');
             const [isLoading, setIsLoading] = React.useState(false);
+
+            // Novos estados para o cadastro de igreja
+            const [isLeader, setIsLeader] = React.useState(false); // Pergunta "Você é líder?"
+            const [churchName, setChurchName] = React.useState('');
+            const [churchAddress, setChurchAddress] = React.useState('');
+            const [churchCity, setChurchCity] = React.useState('');
+            const [churchState, setChurchState] = React.useState('');
+            const [churchZipCode, setChurchZipCode] = React.useState('');
+            const [churchCountry, setChurchCountry] = React.useState('');
 
             const handleRegister = async (e) => {
                 e.preventDefault();
@@ -230,9 +242,19 @@
                     onShowModal('As palavras-passe não coincidem. Por favor, verifique.', 'error');
                     return;
                 }
+                
+                // Validação mínima para campos de igreja se for líder
+                if (isLeader) {
+                    if (!churchName || !churchAddress || !churchCity || !churchState || !churchZipCode || !churchCountry) {
+                        onShowModal('Por favor, preencha todos os campos da igreja.', 'error');
+                        return;
+                    }
+                }
+
                 setIsLoading(true);
 
                 try {
+                    // 1. Registro de autenticação do usuário no Supabase Auth
                     const { data: authData, error: authError } = await supabase.auth.signUp({
                         email: registerEmail,
                         password: registerPassword,
@@ -246,40 +268,78 @@
                     if (authError) {
                         console.error('Erro de registo no Supabase Auth:', authError);
                         onShowModal(`Erro ao registar: ${authError.message}`, 'error');
-                    } else if (authData.user) {
-                        const { error: profileError } = await supabase
-                            .from('profiles')
+                        setIsLoading(false);
+                        return;
+                    }
+
+                    const userId = authData.user.id;
+                    let newChurchId = null; // Para armazenar o ID da igreja se for criada
+
+                    // 2. Se for líder e deseja cadastrar igreja: Insere na tabela 'churches'
+                    if (isLeader) {
+                        const { data: churchData, error: churchError } = await supabase
+                            .from('churches')
                             .insert([
                                 {
-                                    id: authData.user.id,
-                                    full_name: fullName,
-                                    phone_number: phoneNumber,
-                                    date_of_birth: dateOfBirth,
-                                    role_in_church: roleInChurch,
-                                    // church_name não está sendo inserido na tabela 'profiles' aqui.
-                                    // Se 'church_name' for um campo de perfil do usuário, ele precisa ser inserido aqui.
-                                    // Caso contrário, se for para registro de igreja, seria em outra tabela.
+                                    name: churchName,
+                                    address: churchAddress,
+                                    city: churchCity,
+                                    state: churchState,
+                                    zip_code: churchZipCode,
+                                    country: churchCountry,
+                                    admin_user_id: userId // Atribui o ID do usuário como admin da igreja
                                 }
-                            ]);
+                            ])
+                            .select(); // Retorna os dados da igreja inserida, incluindo o ID
 
-                        if (profileError) {
-                            console.error('Erro ao criar perfil:', profileError);
-                            onShowModal(`Registo de utilizador OK, mas erro ao criar perfil: ${profileError.message}. Por favor, tente novamente.`, 'error');
-                        } else {
-                            onShowModal('Registo bem-sucedido! Por favor, verifique o seu e-mail para confirmar a conta e depois faça login.', 'success');
-                            // Limpa o formulário após o sucesso
-                            setFullName('');
-                            setDateOfBirth('');
-                            setPhoneNumber('');
-                            setRoleInChurch('');
-                            setChurchName('');
-                            setRegisterEmail('');
-                            setRegisterPassword('');
-                            setConfirmPassword('');
-                            onSwitchToLogin(); // Volta para a tela de login
+                        if (churchError) {
+                            console.error('Erro ao cadastrar igreja:', churchError);
+                            // Se der erro no cadastro da igreja, desfaça o registro do usuário se possível,
+                            // ou instrua o usuário a tentar novamente / contatar suporte.
+                            onShowModal(`Registo de usuário OK, mas erro ao cadastrar igreja: ${churchError.message}. Por favor, contate o suporte.`, 'error');
+                            // Em um cenário real, você poderia tentar deletar o usuário recém-criado aqui,
+                            // mas isso exigiria a service_role_key e seria feito no backend.
+                            setIsLoading(false);
+                            return;
                         }
+                        newChurchId = churchData[0].id; // Pega o ID da igreja recém-criada
+                    }
+
+                    // 3. Criação/Atualização do perfil do usuário na tabela 'profiles'
+                    const { error: profileError } = await supabase
+                        .from('profiles')
+                        .insert([
+                            {
+                                id: userId,
+                                full_name: fullName,
+                                phone_number: phoneNumber,
+                                date_of_birth: dateOfBirth,
+                                role_in_church: isLeader ? 'Admin da Igreja' : roleInChurch, // Atribui 'Admin' se cadastrou igreja
+                                church_id: newChurchId // Associa o usuário à igreja recém-criada
+                            }
+                        ]);
+
+                    if (profileError) {
+                        console.error('Erro ao criar/atualizar perfil:', profileError);
+                        onShowModal(`Registo de usuário OK, mas erro ao criar/atualizar perfil: ${profileError.message}. Por favor, contate o suporte.`, 'error');
                     } else {
-                        onShowModal('Registo falhou. Por favor, tente novamente.', 'error');
+                        onShowModal('Registo bem-sucedido! Por favor, verifique o seu e-mail para confirmar a conta e depois faça login.', 'success');
+                        // Limpa o formulário após o sucesso
+                        setFullName('');
+                        setDateOfBirth('');
+                        setPhoneNumber('');
+                        setRoleInChurch('');
+                        setRegisterEmail('');
+                        setRegisterPassword('');
+                        setConfirmPassword('');
+                        setIsLeader(false); // Reseta a opção de líder
+                        setChurchName('');
+                        setChurchAddress('');
+                        setChurchCity('');
+                        setChurchState('');
+                        setChurchZipCode('');
+                        setChurchCountry('');
+                        onSwitchToLogin(); // Volta para a tela de login
                     }
                 } catch (error) {
                     console.error('Erro inesperado ao tentar registar:', error);
@@ -351,35 +411,169 @@
                             <label htmlFor="roleInChurch" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
                                 Cargo/Função na Igreja
                             </label>
-                            <input
-                                type="text"
+                            <select
                                 id="roleInChurch"
-                                className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
-                                placeholder="Ex: Pastor, Membro, Voluntário"
+                                className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter bg-white"
                                 value={roleInChurch}
                                 onChange={(e) => setRoleInChurch(e.target.value)}
-                                aria-label="Insira o seu cargo ou função na igreja"
+                                required
+                                aria-label="Selecione o seu cargo ou função na igreja"
                                 disabled={isLoading}
-                            />
+                            >
+                                <option value="">Selecione...</option>
+                                <option value="Membro">Membro</option>
+                                <option value="Líder de Pequeno Grupo">Líder de Pequeno Grupo</option>
+                                <option value="Diácono/Diaconisa">Diácono/Diaconisa</option>
+                                <option value="Presbítero/Presbítera">Presbítero/Presbítera</option>
+                                <option value="Pastor/Pastora">Pastor/Pastora</option>
+                                <option value="Voluntário">Voluntário</option>
+                                <option value="Outro">Outro</option>
+                            </select>
                         </div>
-
-                        <div className="mb-6">
-                            <label htmlFor="churchName" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
-                                Nome da Igreja/Comunidade
+                        
+                        {/* Pergunta condicional para cadastro de igreja */}
+                        <div className="mb-6 bg-blue-50 p-4 rounded-lg">
+                            <label className="block text-gray-800 text-base font-semibold mb-3 font-inter">
+                                Você é líder de uma congregação? Deseja fazer o cadastro da sua igreja?
                             </label>
-                            <input
-                                type="text"
-                                id="churchName"
-                                className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
-                                placeholder="Nome da sua igreja"
-                                value={churchName}
-                                onChange={(e) => setChurchName(e.target.value)}
-                                aria-label="Insira o nome da sua igreja ou comunidade"
-                                disabled={isLoading}
-                            />
+                            <div className="flex items-center space-x-4">
+                                <label htmlFor="isLeaderYes" className="inline-flex items-center font-inter">
+                                    <input
+                                        type="radio"
+                                        id="isLeaderYes"
+                                        name="isLeader"
+                                        value="yes"
+                                        checked={isLeader === true}
+                                        onChange={() => setIsLeader(true)}
+                                        className="form-radio h-4 w-4 text-blue-600 transition duration-150 ease-in-out"
+                                        disabled={isLoading}
+                                    />
+                                    <span className="ml-2 text-gray-700">Sim</span>
+                                </label>
+                                <label htmlFor="isLeaderNo" className="inline-flex items-center font-inter">
+                                    <input
+                                        type="radio"
+                                        id="isLeaderNo"
+                                        name="isLeader"
+                                        value="no"
+                                        checked={isLeader === false}
+                                        onChange={() => setIsLeader(false)}
+                                        className="form-radio h-4 w-4 text-blue-600 transition duration-150 ease-in-out"
+                                        disabled={isLoading}
+                                    />
+                                    <span className="ml-2 text-gray-700">Não</span>
+                                </label>
+                            </div>
                         </div>
 
-                        <div className="mb-6">
+                        {/* Formulário de cadastro da igreja (condicional) */}
+                        {isLeader && (
+                            <div className="mt-6 p-6 border border-blue-200 rounded-lg bg-blue-50">
+                                <h3 className="text-xl font-bold text-gray-800 mb-4 font-inter">Dados da Igreja</h3>
+                                <div className="mb-4">
+                                    <label htmlFor="churchName" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+                                        Nome da Igreja
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="churchName"
+                                        className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+                                        placeholder="Nome completo da igreja"
+                                        value={churchName}
+                                        onChange={(e) => setChurchName(e.target.value)}
+                                        required={isLeader}
+                                        aria-label="Insira o nome da sua igreja"
+                                        disabled={isLoading}
+                                    />
+                                </div>
+                                <div className="mb-4">
+                                    <label htmlFor="churchAddress" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+                                        Endereço
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="churchAddress"
+                                        className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+                                        placeholder="Rua, número, bairro"
+                                        value={churchAddress}
+                                        onChange={(e) => setChurchAddress(e.target.value)}
+                                        required={isLeader}
+                                        aria-label="Insira o endereço da igreja"
+                                        disabled={isLoading}
+                                    />
+                                </div>
+                                <div className="mb-4 flex space-x-4">
+                                    <div className="w-1/2">
+                                        <label htmlFor="churchCity" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+                                            Cidade
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id="churchCity"
+                                            className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+                                            placeholder="Cidade"
+                                            value={churchCity}
+                                            onChange={(e) => setChurchCity(e.target.value)}
+                                            required={isLeader}
+                                            aria-label="Insira a cidade da igreja"
+                                            disabled={isLoading}
+                                        />
+                                    </div>
+                                    <div className="w-1/2">
+                                        <label htmlFor="churchState" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+                                            Estado
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id="churchState"
+                                            className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+                                            placeholder="Estado (ex: SP)"
+                                            value={churchState}
+                                            onChange={(e) => setChurchState(e.target.value)}
+                                            required={isLeader}
+                                            aria-label="Insira o estado da igreja"
+                                            disabled={isLoading}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="mb-4 flex space-x-4">
+                                    <div className="w-1/2">
+                                        <label htmlFor="churchZipCode" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+                                            CEP
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id="churchZipCode"
+                                            className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+                                            placeholder="XXXXX-XXX"
+                                            value={churchZipCode}
+                                            onChange={(e) => setChurchZipCode(e.target.value)}
+                                            required={isLeader}
+                                            aria-label="Insira o CEP da igreja"
+                                            disabled={isLoading}
+                                        />
+                                    </div>
+                                    <div className="w-1/2">
+                                        <label htmlFor="churchCountry" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+                                            País
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id="churchCountry"
+                                            className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+                                            placeholder="País"
+                                            value={churchCountry}
+                                            onChange={(e) => setChurchCountry(e.target.value)}
+                                            required={isLeader}
+                                            aria-label="Insira o país da igreja"
+                                            disabled={isLoading}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="mb-6 mt-6">
                             <label htmlFor="registerEmail" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
                                 Email
                             </label>
@@ -501,7 +695,7 @@
 
             const renderView = () => {
                 if (!isSupabaseClientReady) {
-                    return null; // A mensagem de carregamento inicial é controlada pelo HTML/CSS
+                    return null;
                 }
 
                 const supabaseInstance = window.globalSupabaseClient;
@@ -524,12 +718,10 @@
                         />
                     );
                 }
-                return null; // Caso a view seja desconhecida
+                return null;
             };
 
             return (
-                // O div principal do App agora só gerencia o conteúdo das telas de login/registro
-                // e o modal. O rodapé está fora deste componente, no body.
                 <>
                     {renderView()}
                     <Modal
@@ -542,8 +734,6 @@
             );
         }
 
-        // Renderiza o componente principal 'App' no elemento HTML com id 'root'
-        // Isso substituirá o div de carregamento inicial.
         ReactDOM.render(<App />, document.getElementById('root'));
     </script>
 </body>
