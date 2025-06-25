@@ -671,11 +671,13 @@
             const supabase = window.globalSupabaseClient;
 
             React.useEffect(() => {
-                if (supabase) {
+                // A instância do Supabase é inicializada via supabaseClientInstance.js
+                // Verificar se window.globalSupabaseClient está definido após o script ter sido executado
+                if (window.globalSupabaseClient) {
                     setIsSupabaseClientReady(true);
                     const checkUserSession = async () => {
                         try {
-                            const { data: { session } } = await supabase.auth.getSession();
+                            const { data: { session } } = await window.globalSupabaseClient.auth.getSession();
                             if (!session) {
                                 window.location.href = 'index.html';
                             } else {
@@ -686,4 +688,79 @@
                             window.location.href = 'index.html';
                         }
                     };
-                    check
+                    checkUserSession();
+                } else {
+                    console.log("Supabase client não está pronto. Aguardando inicialização global.");
+                    // Se o cliente não estiver pronto imediatamente, esperamos que o DOMContentLoaded em supabaseClientInstance.js o inicialize.
+                    // O React renderizará a tela de carregamento enquanto isso.
+                }
+            }, []); // Removido 'supabase' da dependência para evitar re-execuções desnecessárias, já que 'supabase' é constante aqui e 'window.globalSupabaseClient' é modificado globalmente.
+
+            const showModal = (message, type) => {
+                setModalMessage(message);
+                setModalType(type);
+                setIsModalOpen(true);
+            };
+
+            const closeModal = () => {
+                setIsModalOpen(false);
+                setModalMessage('');
+                setModalType('info');
+            };
+
+            const handleLoginSuccess = () => {
+                window.location.href = 'conexao-eclesia-feed.html';
+            };
+
+            const renderView = () => {
+                // Exibe a tela de carregamento enquanto o Supabase não está pronto ou a autenticação está sendo verificada.
+                if (!isSupabaseClientReady || isAuthChecking) {
+                    return (
+                        <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
+                            <div className="text-white text-2xl font-bold font-inter">A carregar...</div>
+                        </div>
+                    );
+                }
+
+                // Renderiza a tela de Login ou Registro quando tudo estiver pronto.
+                if (currentView === 'login') {
+                    return (
+                        <LoginScreen
+                            onSwitchToRegister={() => setCurrentView('register')}
+                            onShowModal={showModal}
+                            onLoginSuccess={handleLoginSuccess}
+                            supabase={supabase}
+                        />
+                    );
+                } else if (currentView === 'register') {
+                    return (
+                        <RegisterScreen
+                            onSwitchToLogin={() => setCurrentView('login')}
+                            onShowModal={showModal}
+                            supabase={supabase}
+                        />
+                    );
+                }
+                return null;
+            };
+
+            return (
+                // O contêiner principal agora está mais simples, pois a tela de carregamento está no renderView
+                <div className="min-h-screen flex flex-col items-center justify-center p-4">
+                    {renderView()}
+                    {/* O rodapé é um elemento separado no HTML, fora do root */}
+                    <Modal
+                        isOpen={isModalOpen}
+                        message={modalMessage}
+                        type={modalType}
+                        onClose={closeModal}
+                    />
+                </div>
+            );
+        }
+
+        // Renderiza o componente principal 'App' no elemento HTML com id 'root'
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
