@@ -61,9 +61,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <script>
-        // SUA URL DO SUPABASE (AJUSTADA CONFORME FORNECIDO ANTERIORMENTE)
+        // SUA URL DO SUPABASE
         window.SUPABASE_URL = 'https://rahhplphegvvdehrumyp.supabase.co'; 
-        // SUA ANON KEY DO SUPABASE (ATUALIZADA)
+        // SUA ANON KEY DO SUPABASE
         window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJhaHBocGxwaGVndnZkZWhydW15cCIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzA3MDk2NDMsImV4cCI6MjA2NjI4NTY0M30.EDM-RotlChTCWiisI4o5okQ6Llee1ZaQEAcLaphBqTs'; 
 
         // Inicializa o cliente Supabase globalmente UMA VEZ
@@ -457,3 +457,269 @@
                             <div className="mt-6 p-6 border border-blue-200 rounded-lg bg-blue-50">
                                 <h3 className="text-xl font-bold text-gray-800 mb-4 font-inter">Dados da Igreja</h3>
                                 <div className="mb-4">
+                                    <label htmlFor="churchName" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+                                        Nome da Igreja
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="churchName"
+                                        className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+                                        placeholder="Nome completo da igreja"
+                                        value={churchName}
+                                        onChange={(e) => setChurchName(e.target.value)}
+                                        required={isLeader}
+                                        aria-label="Insira o nome da sua igreja"
+                                        disabled={isLoading}
+                                    />
+                                </div>
+                                <div className="mb-4">
+                                    <label htmlFor="churchAddress" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+                                        Endereço
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="churchAddress"
+                                        className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+                                        placeholder="Rua, número, bairro"
+                                        value={churchAddress}
+                                        onChange={(e) => setChurchAddress(e.target.value)}
+                                        required={isLeader}
+                                        aria-label="Insira o endereço da igreja"
+                                        disabled={isLoading}
+                                    />
+                                </div>
+                                <div className="mb-4 flex space-x-4">
+                                    <div className="w-1/2">
+                                        <label htmlFor="churchCity" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+                                            Cidade
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id="churchCity"
+                                            className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+                                            placeholder="Cidade"
+                                            value={churchCity}
+                                            onChange={(e) => setChurchCity(e.target.value)}
+                                            required={isLeader}
+                                            aria-label="Insira a cidade da igreja"
+                                            disabled={isLoading}
+                                        />
+                                    </div>
+                                    <div className="w-1/2">
+                                        <label htmlFor="churchState" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+                                            Estado
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id="churchState"
+                                            className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+                                            placeholder="Estado (ex: SP)"
+                                            value={churchState}
+                                            onChange={(e) => setChurchState(e.target.value)}
+                                            required={isLeader}
+                                            aria-label="Insira o estado da igreja"
+                                            disabled={isLoading}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="mb-4 flex space-x-4">
+                                    <div className="w-1/2">
+                                        <label htmlFor="churchZipCode" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+                                            CEP
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id="churchZipCode"
+                                            className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+                                            placeholder="XXXXX-XXX"
+                                            value={churchZipCode}
+                                            onChange={(e) => setChurchZipCode(e.target.value)}
+                                            required={isLeader}
+                                            aria-label="Insira o CEP da igreja"
+                                            disabled={isLoading}
+                                        />
+                                    </div>
+                                    <div className="w-1/2">
+                                        <label htmlFor="churchCountry" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+                                            País
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id="churchCountry"
+                                            className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+                                            placeholder="País"
+                                            value={churchCountry}
+                                            onChange={(e) => setChurchCountry(e.target.value)}
+                                            required={isLeader}
+                                            aria-label="Insira o país da igreja"
+                                            disabled={isLoading}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="mb-6 mt-6">
+                            <label htmlFor="registerEmail" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+                                Email
+                            </label>
+                            <input
+                                type="email"
+                                id="registerEmail"
+                                className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+                                placeholder="O seu email@exemplo.com"
+                                value={registerEmail}
+                                onChange={(e) => setRegisterEmail(e.target.value)}
+                                required
+                                aria-label="Insira o seu endereço de email para registo"
+                                disabled={isLoading}
+                            />
+                        </div>
+
+                        <div className="mb-6">
+                            <label htmlFor="registerPassword" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+                                Palavra-passe
+                            </label>
+                            <input
+                                type="password"
+                                id="registerPassword"
+                                className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+                                placeholder="••••••••"
+                                value={registerPassword}
+                                onChange={(e) => setRegisterPassword(e.target.value)}
+                                required
+                                aria-label="Insira a sua palavra-passe de registo"
+                                disabled={isLoading}
+                            />
+                        </div>
+
+                        <div className="mb-8">
+                            <label htmlFor="confirmPassword" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+                                Confirmar Palavra-passe
+                            </label>
+                            <input
+                                type="password"
+                                id="confirmPassword"
+                                className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+                                placeholder="••••••••"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                required
+                                aria-label="Confirme a sua palavra-passe de registo"
+                                disabled={isLoading}
+                            />
+                        </div>
+
+                        <button
+                            type="submit"
+                            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 transform hover:scale-100 active:scale-95 shadow-md font-inter"
+                            aria-label="Finalizar registo da conta"
+                            disabled={isLoading}
+                        >
+                            {isLoading ? 'A registar...' : 'Registar'}
+                        </button>
+                    </form>
+
+                    <div className="mt-8 text-center">
+                        <p className="text-gray-600 font-inter">
+                            Já tem uma conta?{' '}
+                            <a href="#" onClick={onSwitchToLogin} className="font-bold text-blue-600 hover:text-blue-800 font-inter"
+                                 aria-label="Clique para fazer login na sua conta existente"
+                            >
+                                Fazer login
+                            </a>
+                        </p>
+                    </div>
+                </div>
+            );
+        }
+
+        function App() {
+            const [currentView, setCurrentView] = React.useState('login');
+            const [isModalOpen, setIsModalOpen] = React.useState(false);
+            const [modalMessage, setModalMessage] = React.useState('');
+            const [modalType, setModalType] = React.useState('info');
+            const [isSupabaseClientReady, setIsSupabaseClientReady] = React.useState(false);
+
+            React.useEffect(() => {
+                const supabase = window.globalSupabaseClient;
+
+                if (supabase) {
+                    setIsSupabaseClientReady(true);
+                    const checkUserSession = async () => {
+                        try {
+                            const { data: { session } = {} } = await supabase.auth.getSession();
+                            if (session) {
+                                window.location.href = 'conexao-eclesia-feed.html';
+                            }
+                        } catch (error) {
+                            console.error('Erro ao verificar sessão inicial:', error);
+                        }
+                    };
+                    checkUserSession();
+                } else {
+                    console.error("Supabase client não está pronto. Verifique a configuração das chaves.");
+                }
+            }, []); 
+
+            const showModal = (message, type) => {
+                setModalMessage(message);
+                setModalType(type);
+                setIsModalOpen(true);
+            };
+
+            const closeModal = () => {
+                setIsModalOpen(false);
+                setModalMessage('');
+                setModalType('info');
+            };
+
+            const handleLoginSuccess = () => {
+                window.location.href = 'conexao-eclesia-feed.html';
+            };
+
+            const renderView = () => {
+                if (!isSupabaseClientReady) {
+                    return null;
+                }
+
+                const supabaseInstance = window.globalSupabaseClient;
+
+                if (currentView === 'login') {
+                    return (
+                        <LoginScreen
+                            onSwitchToRegister={() => setCurrentView('register')}
+                            onShowModal={showModal}
+                            onLoginSuccess={handleLoginSuccess}
+                            supabase={supabaseInstance}
+                        />
+                    );
+                } else if (currentView === 'register') {
+                    return (
+                        <RegisterScreen
+                            onSwitchToLogin={() => setCurrentView('login')}
+                            onShowModal={showModal}
+                            supabase={supabaseInstance}
+                        />
+                    );
+                }
+                return null;
+            };
+
+            return (
+                <>
+                    {renderView()}
+                    <Modal
+                        isOpen={isModalOpen}
+                        message={modalMessage}
+                        type={modalType}
+                        onClose={closeModal}
+                    />
+                </>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
