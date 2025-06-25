@@ -17,18 +17,30 @@
             min-height: 100vh;
             background: linear-gradient(to bottom right, #2563eb, #8b5cf6); /* from-blue-600 to-purple-700 */
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            flex-direction: column; /* Para que os itens se empilhem verticalmente */
+            align-items: center; /* Centraliza horizontalmente */
+            justify-content: space-between; /* Empurra o conteúdo para cima e o rodapé para baixo */
             padding: 1rem; /* p-4 */
+        }
+        /* Ajusta o contêiner #root para preencher o espaço disponível e centralizar o conteúdo React */
+        #root {
+            flex-grow: 1; /* Permite que o #root preencha o espaço entre o topo e o rodapé */
+            display: flex;
+            align-items: center; /* Centraliza o conteúdo React verticalmente */
+            justify-content: center; /* Centraliza o conteúdo React horizontalmente */
+            width: 100%; /* Garante que ocupe a largura total */
         }
     </style>
     
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#2563eb"> </head>
 <body>
-    <div id="root" class="flex flex-grow items-center justify-center w-full">
+    <div id="root">
         <div class="text-white text-2xl font-bold font-inter">A carregar aplicação...</div>
+    </div>
+
+    <div className="mt-8 text-center text-white text-sm opacity-80 font-inter">
+        © {new Date().getFullYear()} CPN Serviços. Todos os direitos reservados. <span className="text-xs ml-2 opacity-70">v1.0.0</span>
     </div>
 
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -468,7 +480,6 @@
                     checkUserSession();
                 } else {
                     console.error("Supabase client não está pronto. Verifique a configuração das chaves.");
-                    // Em um ambiente de produção real, você poderia ter um fallback ou erro mais robusto aqui.
                 }
             }, []); 
 
@@ -517,19 +528,17 @@
             };
 
             return (
-                // Remove o estilo de fundo aqui, pois já está no body
-                <div className="flex flex-grow items-center justify-center w-full">
+                // O div principal do App agora só gerencia o conteúdo das telas de login/registro
+                // e o modal. O rodapé está fora deste componente, no body.
+                <>
                     {renderView()}
-                    <div className="mt-8 text-center text-white text-sm opacity-80 font-inter">
-                        © {new Date().getFullYear()} CPN Serviços. Todos os direitos reservados. <span className="text-xs ml-2 opacity-70">v1.0.0</span>
-                    </div>
                     <Modal
                         isOpen={isModalOpen}
                         message={modalMessage}
                         type={modalType}
                         onClose={closeModal}
                     />
-                </div>
+                </>
             );
         }
 
