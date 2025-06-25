@@ -220,8 +220,8 @@
             const [churchState, setChurchState] = React.useState('');
             const [churchZipCode, setChurchZipCode] = React.useState('');
             const [churchCountry, setChurchCountry] = React.useState('');
-            const [churchEmail, setChurchEmail] = React.useState(''); // Adicionado
-            const [churchPhone, setChurchPhone] = React.useState(''); // Adicionado
+            const [churchEmail, setChurchEmail] = React.useState('');
+            const [churchPhone, setChurchPhone] = React.useState('');
 
             const handleRegister = async (e) => {
                 e.preventDefault();
@@ -272,8 +272,8 @@
                                     state: churchState,
                                     zip_code: churchZipCode,
                                     country: churchCountry,
-                                    email: churchEmail, // Incluído
-                                    phone: churchPhone, // Incluído
+                                    email: churchEmail,
+                                    phone: churchPhone,
                                     admin_user_id: userId 
                                 }
                             ])
@@ -297,7 +297,7 @@
                                 phone_number: phoneNumber,
                                 date_of_birth: dateOfBirth,
                                 role_in_church: isLeader ? 'Admin da Igreja' : roleInChurch, 
-                                church_id: newChurchId // Associa o usuário à igreja recém-criada
+                                church_id: newChurchId 
                             }
                         ]);
 
@@ -320,8 +320,8 @@
                         setChurchState('');
                         setChurchZipCode('');
                         setChurchCountry('');
-                        setChurchEmail(''); // Limpar também
-                        setChurchPhone(''); // Limpar também
+                        setChurchEmail('');
+                        setChurchPhone('');
                         onSwitchToLogin(); 
                     }
                 } catch (error) {
@@ -671,7 +671,6 @@
             const supabase = window.globalSupabaseClient;
 
             React.useEffect(() => {
-                // A instância do Supabase é inicializada via supabaseClientInstance.js
                 if (supabase) {
                     setIsSupabaseClientReady(true);
                     const checkUserSession = async () => {
@@ -687,73 +686,4 @@
                             window.location.href = 'index.html';
                         }
                     };
-                    checkUserSession();
-                } else {
-                    console.log("Aguardando Supabase client ficar pronto no App principal (index.html)...");
-                    // A tela de carregamento na UI já cobre a espera.
-                    // O setTimeout de fallback foi removido daqui pois a lógica centralizada no .js lida com isso.
-                }
-            }, [supabase]);
-
-            const showModal = (message, type) => {
-                setModalMessage(message);
-                setModalType(type);
-                setIsModalOpen(true);
-            };
-
-            const closeModal = () => {
-                setIsModalOpen(false);
-                setModalMessage('');
-                setModalType('info');
-            };
-
-            const handleLoginSuccess = () => {
-                window.location.href = 'conexao-eclesia-feed.html';
-            };
-
-            const renderView = () => {
-                if (!isSupabaseClientReady || isAuthChecking) {
-                    return null; // A tela de carregamento inicial é tratada diretamente no HTML/CSS
-                }
-
-                if (currentView === 'login') {
-                    return (
-                        <LoginScreen
-                            onSwitchToRegister={() => setCurrentView('register')}
-                            onShowModal={showModal}
-                            onLoginSuccess={handleLoginSuccess}
-                            supabase={supabase}
-                        />
-                    );
-                } else if (currentView === 'register') {
-                    return (
-                        <RegisterScreen
-                            onSwitchToLogin={() => setCurrentView('login')}
-                            onShowModal={showModal}
-                            supabase={supabase}
-                        />
-                    );
-                }
-                return null;
-            };
-
-            return (
-                <div className="min-h-screen flex flex-col items-center justify-center p-4">
-                    {renderView()}
-                    <div className="mt-8 text-center text-white text-sm opacity-80 font-inter">
-                        © {new Date().getFullYear()} CPN Serviços. Todos os direitos reservados. <span className="text-xs ml-2 opacity-70">v1.0.0</span>
-                    </div>
-                    <Modal
-                        isOpen={isModalOpen}
-                        message={modalMessage}
-                        type={modalType}
-                        onClose={closeModal}
-                    />
-                </div>
-            );
-        }
-
-        ReactDOM.render(<App />, document.getElementById('root'));
-    </script>
-</body>
-</html>
+                    check
