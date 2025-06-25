@@ -33,13 +33,13 @@
         input[type="date"]::-webkit-datetime-edit-month-field,
         input[type="date"]::-webkit-datetime-edit-day-field,
         input[type="date"]::-webkit-datetime-edit-year-field {
-            color: #718096; /* Cor do placeholder */
+            color: #718096;
         }
         input[type="date"]:focus::-webkit-datetime-edit-text,
         input[type="date"]:focus::-webkit-datetime-edit-month-field,
         input[type="date"]:focus::-webkit-datetime-edit-day-field,
         input[type="date"]:focus::-webkit-datetime-edit-year-field {
-            color: #4a5568; /* Cor do texto ao focar */
+            color: #4a5568;
         }
     </style>
     
@@ -60,18 +60,7 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <script>
-        // SUA URL DO SUPABASE (confirmada por você)
-        window.SUPABASE_URL = 'https://rahhplphegvvdehrumyp.supabase.co'; 
-        // SUA ANON KEY DO SUPABASE (Publishable Key - sb_publishable_)
-        window.SUPABASE_ANON_KEY = 'sb_publishable_9nZIdJCVjWxq73FLJa8zQw_wRQzHNgS'; 
-
-        // Inicializa o cliente Supabase globalmente UMA VEZ
-        if (!window.globalSupabaseClient) {
-            window.globalSupabaseClient = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-            console.log("Supabase client inicializado globalmente.");
-        }
-    </script>
+    <script src="supabaseClientInstance.js"></script>
 
     <script type="text/babel">
         function Modal({ isOpen, message, type, onClose }) {
@@ -231,6 +220,8 @@
             const [churchState, setChurchState] = React.useState('');
             const [churchZipCode, setChurchZipCode] = React.useState('');
             const [churchCountry, setChurchCountry] = React.useState('');
+            const [churchEmail, setChurchEmail] = React.useState(''); // Adicionado
+            const [churchPhone, setChurchPhone] = React.useState(''); // Adicionado
 
             const handleRegister = async (e) => {
                 e.preventDefault();
@@ -241,7 +232,7 @@
                 }
                 
                 if (isLeader) {
-                    if (!churchName || !churchAddress || !churchCity || !churchState || !churchZipCode || !churchCountry) {
+                    if (!churchName || !churchAddress || !churchCity || !churchState || !churchZipCode || !churchCountry || !churchEmail || !churchPhone) {
                         onShowModal('Por favor, preencha todos os campos da igreja.', 'error');
                         return;
                     }
@@ -281,6 +272,8 @@
                                     state: churchState,
                                     zip_code: churchZipCode,
                                     country: churchCountry,
+                                    email: churchEmail, // Incluído
+                                    phone: churchPhone, // Incluído
                                     admin_user_id: userId 
                                 }
                             ])
@@ -304,7 +297,7 @@
                                 phone_number: phoneNumber,
                                 date_of_birth: dateOfBirth,
                                 role_in_church: isLeader ? 'Admin da Igreja' : roleInChurch, 
-                                church_id: newChurchId 
+                                church_id: newChurchId // Associa o usuário à igreja recém-criada
                             }
                         ]);
 
@@ -327,10 +320,12 @@
                         setChurchState('');
                         setChurchZipCode('');
                         setChurchCountry('');
+                        setChurchEmail(''); // Limpar também
+                        setChurchPhone(''); // Limpar também
                         onSwitchToLogin(); 
                     }
                 } catch (error) {
-                    console.error('Erro inesperado ao tentar registar:', error);
+                    console.error('Ocorreu um erro inesperado ao tentar registar:', error);
                     onShowModal('Ocorreu um erro inesperado ao registar.', 'error');
                 } finally {
                     setIsLoading(false);
@@ -537,7 +532,7 @@
                                             required={isLeader}
                                             aria-label="Insira o CEP da igreja"
                                             disabled={isLoading}
-                                        />
+                                    />
                                     </div>
                                     <div className="w-1/2">
                                         <label htmlFor="churchCountry" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
@@ -555,6 +550,38 @@
                                             disabled={isLoading}
                                         />
                                     </div>
+                                </div>
+                                <div className="mb-4">
+                                    <label htmlFor="churchEmail" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+                                        Email da Igreja
+                                    </label>
+                                    <input
+                                        type="email"
+                                        id="churchEmail"
+                                        className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+                                        placeholder="email@daigreja.com"
+                                        value={churchEmail}
+                                        onChange={(e) => setChurchEmail(e.target.value)}
+                                        required={isLeader}
+                                        aria-label="Insira o email da igreja"
+                                        disabled={isLoading}
+                                    />
+                                </div>
+                                <div className="mb-4">
+                                    <label htmlFor="churchPhone" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+                                        Telefone da Igreja
+                                    </label>
+                                    <input
+                                        type="tel"
+                                        id="churchPhone"
+                                        className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+                                        placeholder="(XX) XXXX-XXXX"
+                                        value={churchPhone}
+                                        onChange={(e) => setChurchPhone(e.target.value)}
+                                        required={isLeader}
+                                        aria-label="Insira o telefone da igreja"
+                                        disabled={isLoading}
+                                    />
                                 </div>
                             </div>
                         )}
@@ -635,32 +662,38 @@
         }
 
         function App() {
-            const [currentView, setCurrentView] = React.useState('login');
             const [isModalOpen, setIsModalOpen] = React.useState(false);
             const [modalMessage, setModalMessage] = React.useState('');
             const [modalType, setModalType] = React.useState('info');
+            const [isAuthChecking, setIsAuthChecking] = React.useState(true);
             const [isSupabaseClientReady, setIsSupabaseClientReady] = React.useState(false);
 
-            React.useEffect(() => {
-                const supabase = window.globalSupabaseClient;
+            const supabase = window.globalSupabaseClient;
 
+            React.useEffect(() => {
+                // A instância do Supabase é inicializada via supabaseClientInstance.js
                 if (supabase) {
                     setIsSupabaseClientReady(true);
                     const checkUserSession = async () => {
                         try {
-                            const { data: { session } = {} } = await supabase.auth.getSession();
-                            if (session) {
-                                window.location.href = 'conexao-eclesia-feed.html';
+                            const { data: { session } } = await supabase.auth.getSession();
+                            if (!session) {
+                                window.location.href = 'index.html';
+                            } else {
+                                setIsAuthChecking(false);
                             }
                         } catch (error) {
-                            console.error('Erro ao verificar sessão inicial:', error);
+                            console.error('Erro ao verificar sessão:', error);
+                            window.location.href = 'index.html';
                         }
                     };
                     checkUserSession();
                 } else {
-                    console.error("Supabase client não está pronto. Verifique a configuração das chaves.");
+                    console.log("Aguardando Supabase client ficar pronto no App principal (index.html)...");
+                    // A tela de carregamento na UI já cobre a espera.
+                    // O setTimeout de fallback foi removido daqui pois a lógica centralizada no .js lida com isso.
                 }
-            }, []); 
+            }, [supabase]);
 
             const showModal = (message, type) => {
                 setModalMessage(message);
@@ -679,11 +712,9 @@
             };
 
             const renderView = () => {
-                if (!isSupabaseClientReady) {
-                    return null;
+                if (!isSupabaseClientReady || isAuthChecking) {
+                    return null; // A tela de carregamento inicial é tratada diretamente no HTML/CSS
                 }
-
-                const supabaseInstance = window.globalSupabaseClient;
 
                 if (currentView === 'login') {
                     return (
@@ -691,7 +722,7 @@
                             onSwitchToRegister={() => setCurrentView('register')}
                             onShowModal={showModal}
                             onLoginSuccess={handleLoginSuccess}
-                            supabase={supabaseInstance}
+                            supabase={supabase}
                         />
                     );
                 } else if (currentView === 'register') {
@@ -699,7 +730,7 @@
                         <RegisterScreen
                             onSwitchToLogin={() => setCurrentView('login')}
                             onShowModal={showModal}
-                            supabase={supabaseInstance}
+                            supabase={supabase}
                         />
                     );
                 }
@@ -707,15 +738,18 @@
             };
 
             return (
-                <>
+                <div className="min-h-screen flex flex-col items-center justify-center p-4">
                     {renderView()}
+                    <div className="mt-8 text-center text-white text-sm opacity-80 font-inter">
+                        © {new Date().getFullYear()} CPN Serviços. Todos os direitos reservados. <span className="text-xs ml-2 opacity-70">v1.0.0</span>
+                    </div>
                     <Modal
                         isOpen={isModalOpen}
                         message={modalMessage}
                         type={modalType}
                         onClose={closeModal}
                     />
-                </>
+                </div>
             );
         }
 
