@@ -668,33 +668,42 @@
             const [isAuthChecking, setIsAuthChecking] = React.useState(true);
             const [isSupabaseClientReady, setIsSupabaseClientReady] = React.useState(false);
 
+            // Access Supabase client globally
+            // This is NOT React state, it's a direct reference to the global variable
+            // that supabaseClientInstance.js will set.
             const supabase = window.globalSupabaseClient;
 
             React.useEffect(() => {
-                // A instância do Supabase é inicializada via supabaseClientInstance.js
-                // Verificar se window.globalSupabaseClient está definido após o script ter sido executado
+                // This effect will run whenever `window.globalSupabaseClient` changes (i.e., when it's initialized).
+                // This is a more robust way to handle the asynchronous loading of the Supabase client.
                 if (window.globalSupabaseClient) {
-                    setIsSupabaseClientReady(true);
+                    setIsSupabaseClientReady(true); // Supabase client is ready
                     const checkUserSession = async () => {
                         try {
                             const { data: { session } } = await window.globalSupabaseClient.auth.getSession();
                             if (!session) {
-                                window.location.href = 'index.html';
+                                window.location.href = 'index.html'; // Redirect to login if not authenticated
                             } else {
-                                setIsAuthChecking(false);
+                                setIsAuthChecking(false); // Authentication check complete
                             }
                         } catch (error) {
                             console.error('Erro ao verificar sessão:', error);
-                            window.location.href = 'index.html';
+                            // If there's an error during session check, force re-login.
+                            // This might happen due to network issues or invalid sessions.
+                            window.location.href = 'index.html'; 
                         }
                     };
                     checkUserSession();
                 } else {
-                    console.log("Supabase client não está pronto. Aguardando inicialização global.");
-                    // Se o cliente não estiver pronto imediatamente, esperamos que o DOMContentLoaded em supabaseClientInstance.js o inicialize.
-                    // O React renderizará a tela de carregamento enquanto isso.
+                    console.log("Supabase client não está pronto. Aguardando inicialização global...");
+                    // This console log will show if the useEffect runs before supabaseClientInstance.js
+                    // has finished its DOMContentLoaded callback. The loading screen covers this.
                 }
-            }, []); // Removido 'supabase' da dependência para evitar re-execuções desnecessárias, já que 'supabase' é constante aqui e 'window.globalSupabaseClient' é modificado globalmente.
+
+                // Add a listener to global variable changes if necessary (less common for one-time init)
+                // For a simple setup like this, useEffect with window.globalSupabaseClient in dependency array
+                // and a DOMContentLoaded in supabaseClientInstance.js should be sufficient.
+            }, [window.globalSupabaseClient]); // Depend on the global variable directly
 
             const showModal = (message, type) => {
                 setModalMessage(message);
@@ -713,7 +722,7 @@
             };
 
             const renderView = () => {
-                // Exibe a tela de carregamento enquanto o Supabase não está pronto ou a autenticação está sendo verificada.
+                // Only render the loading screen if Supabase client isn't ready or auth is still checking
                 if (!isSupabaseClientReady || isAuthChecking) {
                     return (
                         <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
@@ -722,7 +731,7 @@
                     );
                 }
 
-                // Renderiza a tela de Login ou Registro quando tudo estiver pronto.
+                // If ready and checked, render the appropriate screen
                 if (currentView === 'login') {
                     return (
                         <LoginScreen
@@ -745,10 +754,10 @@
             };
 
             return (
-                // O contêiner principal agora está mais simples, pois a tela de carregamento está no renderView
+                // The main container. renderView handles showing the loading screen
                 <div className="min-h-screen flex flex-col items-center justify-center p-4">
                     {renderView()}
-                    {/* O rodapé é um elemento separado no HTML, fora do root */}
+                    {/* The footer is a separate HTML element, outside #root */}
                     <Modal
                         isOpen={isModalOpen}
                         message={modalMessage}
@@ -759,7 +768,7 @@
             );
         }
 
-        // Renderiza o componente principal 'App' no elemento HTML com id 'root'
+        // Render the main 'App' component into the 'root' HTML element
         ReactDOM.render(<App />, document.getElementById('root'));
     </script>
 </body>
