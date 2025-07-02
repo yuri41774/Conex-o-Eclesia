@@ -14,23 +14,43 @@
             text-size-adjust: none;
             -webkit-text-size-adjust: none;
         }
+        /* Gradiente laranja e branco para o fundo */
+        .bg-gradient-orange {
+            background: linear-gradient(135deg, #ff9800 0%, #fff 100%);
+        }
+        /* Ajuste de sombra e borda para o card de perfil */
+        .modern-shadow {
+            box-shadow: 0 4px 24px 0 rgba(255,152,0,0.10), 0 1.5px 4px 0 rgba(0,0,0,0.04);
+        }
+        .rounded-3xl {
+            border-radius: 1.5rem;
+        }
     </style>
 </head>
 <body>
-    <div id="root"></div>
-
-    <!-- Importa React e ReactDOM a partir de um CDN (unpkg.com) -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Importa Babel para transpilar JSX diretamente no navegador -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Importa o SDK do Supabase Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Carrega o script verificador de instância Supabase -->
-    <script src="supabaseClientInstance.js"></script>
-
-    <!-- O código React/JSX agora será processado por Babel -->
-    <script type="text/babel">
+  <div class="flex min-h-screen bg-gradient-orange">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white shadow-lg p-6 flex flex-col space-y-4 fixed md:static z-30 h-full md:h-auto">
+      <div class="text-2xl font-extrabold text-orange-500 font-inter mb-8">Conexão Eclesia</div>
+      <a href="conexao-eclesia-feed.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-orange-100 transition">Feed</a>
+      <a href="chat.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-orange-100 transition">Chat</a>
+      <a href="estudos.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-orange-100 transition">Estudos Bíblicos</a>
+      <a href="lives.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-orange-100 transition">Lives</a>
+      <a href="doacoes.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-orange-100 transition">Doações</a>
+      <a href="eventos.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-orange-100 transition">Eventos</a>
+      <a href="perfil.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter bg-orange-500 text-white hover:bg-orange-600 transition">Meu Perfil</a>
+      <a href="admin.html" id="admin-link" style="display:none" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-orange-100 transition">Administrador</a>
+    </aside>
+    <div class="flex-1 ml-0 md:ml-64 flex flex-col items-center justify-center">
+      <div id="root" class="w-full flex flex-col items-center justify-center"></div>
+    </div>
+  </div>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabaseClientInstance.js"></script>
+  <script type="text/babel">
         // Componente Modal (sem alterações)
         function Modal({ isOpen, message, type, onClose }) {
           if (!isOpen) return null;
@@ -68,12 +88,56 @@
           );
         }
 
+        // Modal para redefinição de senha
+        function ResetPasswordModal({ isOpen, userEmail, onClose, onShowMessage, supabase }) {
+          const [isLoading, setIsLoading] = React.useState(false);
+          const handleReset = async (e) => {
+            e.preventDefault();
+            setIsLoading(true);
+            try {
+              const { error } = await supabase.auth.resetPasswordForEmail(userEmail, {
+                redirectTo: window.location.origin + '/perfil.html',
+              });
+              if (error) {
+                onShowMessage('Erro ao solicitar redefinição: ' + error.message, 'error');
+              } else {
+                onShowMessage('Se o email estiver correto, você receberá instruções para redefinir a senha.', 'success');
+                onClose();
+              }
+            } catch (err) {
+              onShowMessage('Erro inesperado ao solicitar redefinição.', 'error');
+            } finally {
+              setIsLoading(false);
+            }
+          };
+          if (!isOpen) return null;
+          return (
+            <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-lg shadow-xl max-w-sm w-full">
+                <div className="bg-blue-600 text-white px-6 py-4 flex justify-between items-center rounded-t-lg">
+                  <h3 className="text-xl font-bold font-inter">Redefinir Senha</h3>
+                  <button onClick={onClose} className="text-white hover:text-gray-200 focus:outline-none text-2xl font-bold" aria-label="Fechar modal de redefinição" disabled={isLoading}>&times;</button>
+                </div>
+                <form className="p-6" onSubmit={handleReset}>
+                  <p className="mb-4 text-gray-700 font-inter">Deseja receber um link de redefinição de senha para o email <span className="font-bold">{userEmail}</span>?</p>
+                  <div className="flex justify-end">
+                    <button type="submit" className="py-2 px-6 rounded-lg font-bold text-white bg-blue-600 hover:bg-blue-700 transition duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-inter" aria-label="Solicitar redefinição de senha" disabled={isLoading}>
+                      {isLoading ? 'Enviando...' : 'Enviar link de redefinição'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          );
+        }
+
         // Componente da tela de Perfil
         function ProfileScreen({ onShowModal, onBackToFeed, supabase }) {
           const [profile, setProfile] = React.useState(null);
           const [isLoading, setIsLoading] = React.useState(true);
           const [isSaving, setIsSaving] = React.useState(false);
           const [isEditing, setIsEditing] = React.useState(false);
+          const [showResetModal, setShowResetModal] = React.useState(false);
 
           const [fullName, setFullName] = React.useState('');
           const [phoneNumber, setPhoneNumber] = React.useState('');
@@ -82,6 +146,8 @@
           const [avatarUrl, setAvatarUrl] = React.useState('');
           const [isUploadingImage, setIsUploadingImage] = React.useState(false);
 
+          // Adicionar obtenção do email do usuário autenticado
+          const [userEmail, setUserEmail] = React.useState('');
 
           // Carrega os dados do perfil quando o componente é montado
           React.useEffect(() => {
@@ -94,6 +160,8 @@
                   window.location.href = 'index.html'; // Redireciona para o login
                   return;
                 }
+
+                setUserEmail(user.email || '');
 
                 const { data, error } = await supabase
                   .from('profiles')
@@ -130,49 +198,53 @@
           const handleAvatarUpload = async (event) => {
             const file = event.target.files[0];
             if (!file) {
-                return;
+              return;
             }
-
             setIsUploadingImage(true);
             try {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (!user) {
-                    onShowModal('Sessão expirada. Por favor, faça login novamente para enviar a imagem.', 'error');
-                    window.location.href = 'index.html';
-                    return;
-                }
-
-                const fileExtension = file.name.split('.').pop();
-                const filePath = `${user.id}/avatar.${fileExtension}`;
-                
-                const { data, error } = await supabase.storage
-                    .from('avatars')
-                    .upload(filePath, file, {
-                        cacheControl: '3600',
-                        upsert: true
-                    });
-
-                if (error) {
-                    console.error('Erro ao enviar imagem:', error);
-                    onShowModal(`Erro ao enviar imagem: ${error.message}`, 'error');
+              const { data: { user } } = await supabase.auth.getUser();
+              if (!user) {
+                onShowModal('Sessão expirada. Por favor, faça login novamente para enviar a imagem.', 'error');
+                window.location.href = 'index.html';
+                return;
+              }
+              const fileExtension = file.name.split('.').pop();
+              const filePath = `${user.id}/avatar.${fileExtension}`;
+              const { data, error } = await supabase.storage
+                .from('avatars')
+                .upload(filePath, file, {
+                  cacheControl: '3600',
+                  upsert: true
+                });
+              if (error) {
+                console.error('Erro ao enviar imagem:', error);
+                onShowModal(`Erro ao enviar imagem: ${error.message}`, 'error');
+              } else {
+                // Obtém a URL pública
+                const { data: publicUrlData } = supabase.storage
+                  .from('avatars')
+                  .getPublicUrl(filePath);
+                if (publicUrlData && publicUrlData.publicUrl) {
+                  // Atualiza o campo avatar_url no banco imediatamente
+                  const { error: updateError } = await supabase
+                    .from('profiles')
+                    .update({ avatar_url: publicUrlData.publicUrl })
+                    .eq('id', user.id);
+                  if (updateError) {
+                    onShowModal('Imagem enviada, mas não foi possível atualizar o perfil: ' + updateError.message, 'error');
+                  } else {
+                    setAvatarUrl(publicUrlData.publicUrl);
+                    onShowModal('Imagem de perfil atualizada com sucesso!', 'success');
+                  }
                 } else {
-                    const { data: publicUrlData } = supabase.storage
-                        .from('avatars')
-                        .getPublicUrl(filePath);
-
-                    if (publicUrlData && publicUrlData.publicUrl) {
-                        setAvatarUrl(publicUrlData.publicUrl);
-                        onShowModal('Imagem de perfil enviada com sucesso! Lembre-se de clicar em "Salvar" para aplicar as alterações.', 'success');
-                        console.log('URL pública do avatar após upload:', publicUrlData.publicUrl);
-                    } else {
-                        onShowModal('Erro ao obter URL da imagem. Por favor, tente novamente.', 'error');
-                    }
+                  onShowModal('Erro ao obter URL da imagem. Por favor, tente novamente.', 'error');
                 }
+              }
             } catch (error) {
-                console.error('Erro inesperado no upload:', error);
-                onShowModal('Ocorreu um erro inesperado ao enviar a imagem.', 'error');
+              console.error('Erro inesperado no upload:', error);
+              onShowModal('Ocorreu um erro inesperado ao enviar a imagem.', 'error');
             } finally {
-                setIsUploadingImage(false);
+              setIsUploadingImage(false);
             }
           };
 
@@ -292,183 +364,224 @@
           }
 
           return (
-            <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-2xl mx-auto transform transition-all duration-300">
-              <div className="text-center mb-8">
-                <h1 className="text-4xl font-extrabold text-gray-800 mb-2 font-inter">Meu Perfil</h1>
-                <p className="text-gray-600 text-lg">Gerencie suas informações pessoais.</p>
-              </div>
-
-              {/* Seção de Avatar */}
-              <div className="flex flex-col items-center mb-6">
-                {console.log('URL do Avatar sendo usada:', avatarUrl)}
-                <img
-                  key={avatarUrl}
-                  src={avatarUrl || "https://placehold.co/150x150/cccccc/ffffff?text=Avatar"}
-                  alt="Avatar do Usuário"
-                  className="w-32 h-32 rounded-full object-cover border-4 border-blue-500 shadow-md"
-                  aria-label="Imagem de perfil do usuário"
-                />
-                {isEditing && (
-                    <div className="mt-4 flex flex-col items-center">
-                        <label htmlFor="avatarUpload" className="block text-gray-700 text-sm font-semibold mb-2 font-inter cursor-pointer p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition">
-                            {isUploadingImage ? 'Enviando...' : 'Alterar Foto'}
-                            <input
-                                type="file"
-                                id="avatarUpload"
-                                accept="image/*"
-                                onChange={handleAvatarUpload}
-                                className="hidden"
-                                aria-label="Upload de nova imagem para o avatar"
-                                disabled={isUploadingImage || isSaving}
-                            />
+            <div className="bg-white/90 backdrop-blur-lg p-10 rounded-3xl modern-shadow w-full max-w-3xl mx-auto flex flex-col items-center justify-center border border-orange-100">
+              <div className="flex flex-col md:flex-row items-center md:items-start gap-8 mb-10 w-full">
+                {/* Avatar e upload */}
+                <div className="flex flex-col items-center w-full md:w-1/3">
+                  <div className="relative group flex flex-col items-center">
+                    <img
+                      key={avatarUrl}
+                      src={avatarUrl || 'https://placehold.co/180x180/cccccc/ffffff?text=Avatar'}
+                      alt="Avatar do Usuário"
+                      className="w-44 h-44 rounded-full object-cover border-4 border-blue-500 shadow-xl group-hover:opacity-80 transition mb-2"
+                      aria-label="Imagem de perfil do usuário"
+                    />
+                    {isEditing && (
+                      <div className="flex flex-row gap-2 mt-2">
+                        <label htmlFor="avatarUpload" className="bg-blue-600 text-white px-3 py-1 rounded-lg shadow-lg text-xs font-bold cursor-pointer opacity-90 hover:opacity-100 transition flex items-center gap-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13h3l8-8a2.828 2.828 0 00-4-4l-8 8v3zm0 0v3a2 2 0 002 2h3" /></svg>
+                          {isUploadingImage ? 'Enviando...' : 'Alterar'}
+                          <input
+                            type="file"
+                            id="avatarUpload"
+                            accept="image/*"
+                            onChange={handleAvatarUpload}
+                            className="hidden"
+                            aria-label="Upload de nova imagem para o avatar"
+                            disabled={isUploadingImage || isSaving}
+                          />
                         </label>
-                        {isUploadingImage && (
-                            <p className="text-blue-600 text-sm mt-2 font-inter">Aguarde o envio da imagem...</p>
-                        )}
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            setIsUploadingImage(true);
+                            try {
+                              const { data: { user } } = await supabase.auth.getUser();
+                              if (!user) {
+                                onShowModal('Sessão expirada. Por favor, faça login novamente para remover a imagem.', 'error');
+                                window.location.href = 'index.html';
+                                return;
+                              }
+                              // Remove do storage (opcional, pode ser só limpar o campo no banco)
+                              if (avatarUrl) {
+                                const fileName = avatarUrl.split('/').pop().split('?')[0];
+                                const filePath = `${user.id}/${fileName}`;
+                                await supabase.storage.from('avatars').remove([filePath]);
+                              }
+                              // Limpa o campo no banco
+                              const { error: updateError } = await supabase
+                                .from('profiles')
+                                .update({ avatar_url: null })
+                                .eq('id', user.id);
+                              if (updateError) {
+                                onShowModal('Erro ao remover imagem: ' + updateError.message, 'error');
+                              } else {
+                                setAvatarUrl('');
+                                onShowModal('Imagem de perfil removida com sucesso!', 'success');
+                              }
+                            } catch (error) {
+                              onShowModal('Erro inesperado ao remover imagem.', 'error');
+                            } finally {
+                              setIsUploadingImage(false);
+                            }
+                          }}
+                          className="bg-red-600 text-white px-3 py-1 rounded-lg shadow-lg text-xs font-bold opacity-90 hover:opacity-100 transition flex items-center gap-1"
+                          aria-label="Remover imagem de perfil"
+                          disabled={isUploadingImage || isSaving}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                          Remover
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  {isUploadingImage && (
+                    <p className="text-blue-600 text-xs mt-2 font-inter animate-pulse">Aguarde o envio da imagem...</p>
+                  )}
+                </div>
+                {/* Informações do perfil */}
+                <div className="flex-1 w-full">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                      <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter" htmlFor="fullNameInput">Nome Completo</label>
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          id="fullNameInput"
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          className="shadow-sm appearance-none border rounded-xl w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter bg-white/70"
+                          aria-label="Campo de texto para nome completo"
+                          disabled={isSaving}
+                        />
+                      ) : (
+                        <p className="text-gray-800 text-lg font-inter p-2 border border-gray-200 rounded-xl bg-gray-50">{profile.full_name}</p>
+                      )}
                     </div>
-                )}
-              </div>
-
-              {/* Grid de Informações do Perfil */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div>
-                  <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter" htmlFor="fullNameInput">Nome Completo</label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      id="fullNameInput"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      className="shadow-sm appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter"
-                      aria-label="Campo de texto para nome completo"
-                      disabled={isSaving}
-                    />
-                  ) : (
-                    <p className="text-gray-800 text-lg font-inter p-2 border border-gray-200 rounded-lg bg-gray-50">{profile.full_name}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Email</label>
-                  <p className="text-gray-800 text-lg font-inter p-2 border border-gray-200 rounded-lg bg-gray-50">{profile.email || 'N/A'}</p>
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter" htmlFor="phoneNumberInput">Telefone</label>
-                  {isEditing ? (
-                    <input
-                      type="tel"
-                      id="phoneNumberInput"
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      className="shadow-sm appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter"
-                      aria-label="Campo de texto para número de telefone"
-                      disabled={isSaving}
-                    />
-                  ) : (
-                    <p className="text-gray-800 text-lg font-inter p-2 border border-gray-200 rounded-lg bg-gray-50">{profile.phone_number || 'N/A'}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter" htmlFor="dateOfBirthInput">Data de Nascimento</label>
-                  {isEditing ? (
-                    <input
-                      type="date"
-                      id="dateOfBirthInput"
-                      value={dateOfBirth}
-                      onChange={(e) => setDateOfBirth(e.target.value)}
-                      className="shadow-sm appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter"
-                      aria-label="Campo de entrada para data de nascimento"
-                      disabled={isSaving}
-                    />
-                  ) : (
-                    <p className="text-gray-800 text-lg font-inter p-2 border border-gray-200 rounded-lg bg-gray-50">{profile.date_of_birth || 'N/A'}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter" htmlFor="roleInChurchInput">Cargo/Função na Igreja</label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      id="roleInChurchInput"
-                      value={roleInChurch}
-                      onChange={(e) => setRoleInChurch(e.target.value)}
-                      className="shadow-sm appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter"
-                      aria-label="Campo de texto para cargo ou função na igreja"
-                      disabled={isSaving}
-                    />
-                  ) : (
-                    <p className="text-gray-800 text-lg font-inter p-2 border border-gray-200 rounded-lg bg-gray-50">{profile.role_in_church || 'N/A'}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Nome da Igreja</label>
-                  <p className="text-gray-800 text-lg font-inter p-2 border border-gray-200 rounded-lg bg-gray-50">Igreja Conectada (Placeholder)</p>
-                </div>
-
-              </div>
-
-              <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4">
-                {/* Botões de Navegação */}
-                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
-                  <button
-                    onClick={onBackToFeed}
-                    className="bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter w-full sm:w-auto"
-                    aria-label="Voltar para o Feed"
-                  >
-                    Voltar ao Feed
-                  </button>
-                  <button
-                    onClick={() => { window.location.href = 'chat.html'; }}
-                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter w-full sm:w-auto"
-                    aria-label="Abrir chat global"
-                  >
-                    Chat
-                  </button>
-                </div>
-
-                {/* Botões de Edição/Salvar/Cancelar */}
-                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto mt-4 sm:mt-0">
-                  {isEditing ? (
-                    <>
+                    <div>
+                      <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Email</label>
+                      <p className="text-gray-800 text-lg font-inter p-2 border border-gray-200 rounded-xl bg-gray-50">{profile.email || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter" htmlFor="phoneNumberInput">Telefone</label>
+                      {isEditing ? (
+                        <input
+                          type="tel"
+                          id="phoneNumberInput"
+                          value={phoneNumber}
+                          onChange={(e) => setPhoneNumber(e.target.value)}
+                          className="shadow-sm appearance-none border rounded-xl w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter bg-white/70"
+                          aria-label="Campo de texto para número de telefone"
+                          disabled={isSaving}
+                        />
+                      ) : (
+                        <p className="text-gray-800 text-lg font-inter p-2 border border-gray-200 rounded-xl bg-gray-50">{profile.phone_number || 'N/A'}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter" htmlFor="dateOfBirthInput">Data de Nascimento</label>
+                      {isEditing ? (
+                        <input
+                          type="date"
+                          id="dateOfBirthInput"
+                          value={dateOfBirth}
+                          onChange={(e) => setDateOfBirth(e.target.value)}
+                          className="shadow-sm appearance-none border rounded-xl w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter bg-white/70"
+                          aria-label="Campo de entrada para data de nascimento"
+                          disabled={isSaving}
+                        />
+                      ) : (
+                        <p className="text-gray-800 text-lg font-inter p-2 border border-gray-200 rounded-xl bg-gray-50">{profile.date_of_birth || 'N/A'}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter" htmlFor="roleInChurchInput">Cargo/Função na Igreja</label>
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          id="roleInChurchInput"
+                          value={roleInChurch}
+                          onChange={(e) => setRoleInChurch(e.target.value)}
+                          className="shadow-sm appearance-none border rounded-xl w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter bg-white/70"
+                          aria-label="Campo de texto para cargo ou função na igreja"
+                          disabled={isSaving}
+                        />
+                      ) : (
+                        <p className="text-gray-800 text-lg font-inter p-2 border border-gray-200 rounded-xl bg-gray-50">{profile.role_in_church || 'N/A'}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Nome da Igreja</label>
+                      <p className="text-gray-800 text-lg font-inter p-2 border border-gray-200 rounded-xl bg-gray-50">Igreja Conectada (Placeholder)</p>
+                    </div>
+                  </div>
+                  {/* Botões de ação */}
+                  <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-8">
+                    <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                       <button
-                        onClick={() => {
-                          setIsEditing(false);
-                          setFullName(profile.full_name || '');
-                          setPhoneNumber(profile.phone_number || '');
-                          setDateOfBirth(profile.date_of_birth || '');
-                          setRoleInChurch(profile.role_in_church || '');
-                          setAvatarUrl(profile.avatar_url || '');
-                        }}
-                        className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter w-full sm:w-auto"
-                        aria-label="Cancelar edição do perfil"
-                        disabled={isSaving || isUploadingImage}
+                        onClick={onBackToFeed}
+                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-2 px-6 rounded-xl focus:outline-none focus:shadow-outline transition duration-300 font-inter w-full sm:w-auto shadow-md"
+                        aria-label="Voltar para o Feed"
                       >
-                        Cancelar
+                        ← Voltar ao Feed
                       </button>
                       <button
-                        onClick={handleSaveProfile}
-                        className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter w-full sm:w-auto"
-                        aria-label="Salvar alterações do perfil"
-                        disabled={isSaving || isUploadingImage}
+                        onClick={() => { window.location.href = 'chat.html'; }}
+                        className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-2 px-6 rounded-xl focus:outline-none focus:shadow-outline transition duration-300 font-inter w-full sm:w-auto shadow-md"
+                        aria-label="Abrir chat global"
                       >
-                        {isSaving ? 'Salvando...' : 'Salvar'}
+                        Chat
                       </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={() => setIsEditing(true)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 font-inter w-full sm:w-auto"
-                      aria-label="Editar perfil"
-                    >
-                      Editar Perfil
-                    </button>
-                  )}
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto mt-4 sm:mt-0">
+                      {isEditing ? (
+                        <>
+                          <button
+                            onClick={() => {
+                              setIsEditing(false);
+                              setFullName(profile.full_name || '');
+                              setPhoneNumber(profile.phone_number || '');
+                              setDateOfBirth(profile.date_of_birth || '');
+                              setRoleInChurch(profile.role_in_church || '');
+                              setAvatarUrl(profile.avatar_url || '');
+                            }}
+                            className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-6 rounded-xl focus:outline-none focus:shadow-outline transition duration-300 font-inter w-full sm:w-auto shadow-md"
+                            aria-label="Cancelar edição do perfil"
+                            disabled={isSaving || isUploadingImage}
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            onClick={handleSaveProfile}
+                            className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-xl focus:outline-none focus:shadow-outline transition duration-300 font-inter w-full sm:w-auto shadow-md"
+                            aria-label="Salvar alterações do perfil"
+                            disabled={isSaving || isUploadingImage}
+                          >
+                            {isSaving ? 'Salvando...' : 'Salvar'}
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => setIsEditing(true)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-xl focus:outline-none focus:shadow-outline transition duration-300 font-inter w-full sm:w-auto shadow-md"
+                          aria-label="Editar perfil"
+                        >
+                          Editar Perfil
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setShowResetModal(true)}
+                        className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-xl focus:outline-none focus:shadow-outline transition duration-300 font-inter w-full sm:w-auto shadow-md"
+                        aria-label="Redefinir senha do usuário"
+                        disabled={!userEmail}
+                      >
+                        Redefinir Senha
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
+              <ResetPasswordModal isOpen={showResetModal} userEmail={userEmail} onClose={() => setShowResetModal(false)} onShowMessage={onShowModal} supabase={supabase} />
             </div>
           );
         }
@@ -483,6 +596,13 @@
 
           // AGORA, ACESSE A INSTÂNCIA GLOBALMENTE
           const supabase = window.globalSupabaseClient;
+          if (!supabase) {
+            return (
+              <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
+                <div className="text-white text-2xl font-bold font-inter">Erro ao carregar o Supabase. Recarregue a página.</div>
+              </div>
+            );
+          }
 
           React.useEffect(() => {
             // Inicializa o cliente Supabase globalmente se ainda não foi inicializado e o SDK está disponível
@@ -537,6 +657,23 @@
             window.location.href = 'conexao-eclesia-feed.html';
           };
 
+          // Checa se o usuário é admin e exibe o link do admin
+          React.useEffect(() => {
+            async function checkAdmin() {
+              const supabase = window.globalSupabaseClient;
+              if (supabase) {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                  const { data: profile } = await supabase.from('profiles').select('admin').eq('id', user.id).single();
+                  if (profile?.admin) {
+                    document.getElementById('admin-link').style.display = '';
+                  }
+                }
+              }
+            }
+            checkAdmin();
+          }, []);
+
           if (!isSupabaseClientReady || isAuthChecking) {
             return (
               <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
@@ -552,7 +689,7 @@
                 onBackToFeed={handleBackToFeed}
                 supabase={supabase}
               />
-              <div className="mt-auto text-center text-white text-sm opacity-80 font-inter py-4">
+              <div className="mt-auto text-center text-orange-700 text-sm opacity-80 font-inter py-4">
                 © {new Date().getFullYear()} CPN Serviços. Todos os direitos reservados.
               </div>
               <Modal
@@ -569,4 +706,3 @@
     </script>
 </body>
 </html>
-```

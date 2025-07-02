@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lives - Conexão Eclesia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .live-card { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-600 to-purple-700 min-h-screen">
+  <div class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white shadow-lg p-6 flex flex-col space-y-4 fixed md:static z-30 h-full md:h-auto">
+      <div class="text-2xl font-extrabold text-blue-700 font-inter mb-8">Conexão Eclesia</div>
+      <a href="conexao-eclesia-feed.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-blue-100 transition">Feed</a>
+      <a href="chat.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-blue-100 transition">Chat</a>
+      <a href="estudos.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-blue-100 transition">Estudos Bíblicos</a>
+      <a href="lives.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter bg-purple-600 text-white hover:bg-purple-700 transition">Lives</a>
+      <a href="doacoes.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-blue-100 transition">Doações</a>
+      <a href="eventos.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-blue-100 transition">Eventos</a>
+      <a href="perfil.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-blue-100 transition">Meu Perfil</a>
+      <a href="admin.html" id="admin-link" style="display:none" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-blue-100 transition">Administrador</a>
+    </aside>
+    <div class="flex-1 ml-0 md:ml-64">
+      <header class="bg-white shadow-sm p-4 flex justify-between items-center sticky top-0 z-20 rounded-b-xl">
+          <a href="conexao-eclesia-feed.html" class="text-2xl font-extrabold text-blue-700 font-inter">Conexão Eclesia</a>
+          <a href="conexao-eclesia-feed.html" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-bold font-inter transition">Voltar ao Feed</a>
+      </header>
+
+      <main class="container mx-auto px-4 py-8">
+          <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+              <h1 class="text-3xl font-extrabold text-white font-inter">Lives da Igreja</h1>
+              <button id="create-live-btn" class="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 font-bold flex items-center space-x-2 shadow-md transition">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                  <span>Agendar Nova Live</span>
+              </button>
+          </div>
+          <div id="lives-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+      </main>
+
+      <!-- Modal de Live -->
+      <div id="live-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg">
+              <h3 id="live-modal-title" class="text-xl font-bold mb-4 font-inter text-blue-700">Agendar Nova Live</h3>
+              <form id="live-form" class="space-y-4">
+                  <input type="hidden" id="live-id">
+                  <div><label for="live-titulo" class="block text-sm font-semibold text-gray-700 font-inter">Título da Live</label><input type="text" id="live-titulo" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"></div>
+                  <div><label for="live-link-youtube" class="block text-sm font-semibold text-gray-700 font-inter">Link do YouTube (Live ou Canal)</label><input type="url" id="live-link-youtube" placeholder="Ex: https://www.youtube.com/watch?v=..." required class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></div>
+                  <div><label for="live-data-hora-inicio" class="block text-sm font-semibold text-gray-700 font-inter">Data e Hora de Início</label><input type="datetime-local" id="live-data-hora-inicio" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></div>
+                  <div class="flex items-center space-x-2">
+                      <input type="checkbox" id="live-esta-ao-vivo" class="rounded text-blue-600 focus:ring-blue-500">
+                      <label for="live-esta-ao-vivo" class="text-sm font-semibold text-gray-700 font-inter">Está ao vivo agora?</label>
+                  </div>
+                  <div><label for="live-link-gravacao" class="block text-sm font-semibold text-gray-700 font-inter">Link da Gravação (se já disponível)</label><input type="url" id="live-link-gravacao" placeholder="Opcional: Link para a gravação após a live" class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></div>
+                  <div><label for="live-descricao" class="block text-sm font-semibold text-gray-700 font-inter">Descrição da Live</label><textarea id="live-descricao" rows="4" class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></textarea></div>
+                  <div class="flex justify-end space-x-4 mt-6">
+                      <button type="button" id="cancel-live-btn" class="bg-gray-200 px-4 py-2 rounded-lg font-bold hover:bg-gray-300 font-inter">Cancelar</button>
+                      <button type="submit" id="save-live-btn" class="bg-green-600 text-white px-4 py-2 rounded-lg font-bold font-inter hover:bg-green-700 transition">Salvar</button>
+                  </div>
+              </form>
+          </div>
+      </div>
+
+      <footer class="mt-12 text-center text-white text-sm opacity-80 font-inter py-4">
+          © 2025 CPN Serviços. Todos os direitos reservados. <span class="text-xs ml-2 opacity-70">v1.0.0</span>
+      </footer>
+
+      <script type="module" src="/js/app.js" defer></script>
+    </div>
+  </div>
+  <script type="module">
+  // Checa se o usuário é admin e exibe o link do admin
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+  (async () => {
+    const SUPABASE_URL = window.SUPABASE_URL || localStorage.getItem('SUPABASE_URL');
+    const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || localStorage.getItem('SUPABASE_ANON_KEY');
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase.from('profiles').select('admin').eq('id', user.id).single();
+      if (profile?.admin) {
+        document.getElementById('admin-link').style.display = '';
+      }
+    }
+  })();
+  </script>
+</body>
+</html>

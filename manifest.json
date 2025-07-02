@@ -47,5 +47,28 @@
       "sizes": "512x512",
       "type": "image/png"
     }
+  ],
+  "scope": "/",
+  "orientation": "portrait",
+  "lang": "pt-BR",
+  "categories": [
+    "social",
+    "productivity",
+    "community",
+    "communication"
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/login.png",
+      "sizes": "540x960",
+      "type": "image/png",
+      "label": "Tela de login do Conexão Eclesia"
+    },
+    {
+      "src": "/screenshots/feed.png",
+      "sizes": "540x960",
+      "type": "image/png",
+      "label": "Feed de publicações e eventos"
+    }
   ]
 }

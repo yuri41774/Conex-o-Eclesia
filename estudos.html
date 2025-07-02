@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estudos Bíblicos - SocialWeb</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .estudo-card, #estudo-modal { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-orange-50">
+    <div class="flex min-h-screen">
+      <!-- Sidebar -->
+      <aside class="w-64 bg-white shadow-lg p-6 flex flex-col space-y-4 fixed md:static z-30 h-full md:h-auto">
+        <div class="text-2xl font-extrabold text-orange-600 font-inter mb-8">Conexão Eclesia</div>
+        <a href="conexao-eclesia-feed.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-orange-100 transition">Feed</a>
+        <a href="chat.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-orange-100 transition">Chat</a>
+        <a href="estudos.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter bg-orange-500 text-white hover:bg-orange-600 transition">Estudos Bíblicos</a>
+        <a href="lives.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-orange-100 transition">Lives</a>
+        <a href="doacoes.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-orange-100 transition">Doações</a>
+        <a href="eventos.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-orange-100 transition">Eventos</a>
+        <a href="perfil.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-orange-100 transition">Meu Perfil</a>
+        <a href="admin.html" id="admin-link" style="display:none" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-orange-100 transition">Administrador</a>
+      </aside>
+      <div class="flex-1 ml-0 md:ml-64">
+        <main class="container mx-auto px-4 py-8">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-gray-800">Estudos Bíblicos</h1>
+                <button id="create-estudo-btn" class="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 font-semibold flex items-center space-x-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                    <span>Criar Novo Estudo</span>
+                </button>
+            </div>
+            <div id="estudos-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </main>
+
+        <!-- Modal de Estudo -->
+        <div id="estudo-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg">
+                <h3 id="estudo-modal-title" class="text-xl font-bold mb-4">Criar Novo Estudo</h3>
+                <form id="estudo-form" class="space-y-4">
+                    <input type="hidden" id="estudo-id">
+                    <div><label for="estudo-titulo" class="block text-sm font-medium text-gray-700">Título do Estudo</label><input type="text" id="estudo-titulo" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500"></div>
+                    <div><label for="estudo-tipo" class="block text-sm font-medium text-gray-700">Tipo de Estudo</label>
+                        <select id="estudo-tipo" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md bg-white focus:ring-orange-500 focus:border-orange-500">
+                            <option value="Texto">Texto</option>
+                            <option value="Video">Vídeo (YouTube)</option>
+                        </select>
+                    </div>
+                    <div id="estudo-video-field" class="hidden">
+                        <label for="estudo-link-video" class="block text-sm font-medium text-gray-700">Link do Vídeo (YouTube)</label>
+                        <input type="url" id="estudo-link-video" placeholder="Ex: https://www.youtube.com/watch?v=..." class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div id="estudo-text-field">
+                        <label for="estudo-conteudo-texto" class="block text-sm font-medium text-gray-700">Conteúdo do Texto</label>
+                        <textarea id="estudo-conteudo-texto" rows="8" class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></textarea>
+                    </div>
+                    <div class="flex justify-end space-x-4 mt-6">
+                        <button type="button" id="cancel-estudo-btn" class="bg-gray-200 px-4 py-2 rounded-lg font-semibold hover:bg-gray-300">Cancelar</button>
+                        <button type="submit" id="save-estudo-btn" class="bg-green-500 text-white px-4 py-2 rounded-lg font-semibold">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+        const SUPABASE_URL = 'https://rahhplphegvvdehrumyp.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJhaGhwbHBoZWd2dmRlaHJ1bXlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3MDk2NDMsImV4cCI6MjA2NjI4NTY0M30.EDM-RotlChTCWiisI4o5okQ6Llee1ZaQEAcLaphBqTs';
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const estudosContainer = document.getElementById('estudos-container');
+        const modal = document.getElementById('estudo-modal');
+        const form = document.getElementById('estudo-form');
+        const btnCreate = document.getElementById('create-estudo-btn');
+        const btnCancel = document.getElementById('cancel-estudo-btn');
+        const modalTitle = document.getElementById('estudo-modal-title');
+        const inputId = document.getElementById('estudo-id');
+        const inputTitulo = document.getElementById('estudo-titulo');
+        const selectTipo = document.getElementById('estudo-tipo');
+        const inputVideo = document.getElementById('estudo-link-video');
+        const inputTexto = document.getElementById('estudo-conteudo-texto');
+        const videoField = document.getElementById('estudo-video-field');
+        const textField = document.getElementById('estudo-text-field');
+
+        function showModal(isEdit = false, estudo = null) {
+          modal.classList.remove('hidden');
+          modalTitle.textContent = isEdit ? 'Editar Estudo' : 'Criar Novo Estudo';
+          form.reset();
+          inputId.value = '';
+          if (isEdit && estudo) {
+            inputId.value = estudo.id;
+            inputTitulo.value = estudo.titulo;
+            selectTipo.value = estudo.video_url ? 'Video' : 'Texto';
+            if (estudo.video_url) {
+              inputVideo.value = estudo.video_url;
+              videoField.classList.remove('hidden');
+              textField.classList.add('hidden');
+              inputTexto.value = '';
+            } else {
+              inputTexto.value = estudo.conteudo || '';
+              videoField.classList.add('hidden');
+              textField.classList.remove('hidden');
+              inputVideo.value = '';
+            }
+          } else {
+            videoField.classList.add('hidden');
+            textField.classList.remove('hidden');
+          }
+        }
+        function hideModal() { modal.classList.add('hidden'); form.reset(); }
+        btnCreate.onclick = () => showModal(false);
+        btnCancel.onclick = hideModal;
+        modal.onclick = (e) => { if (e.target === modal) hideModal(); };
+
+        selectTipo.addEventListener('change', () => {
+          if (selectTipo.value === 'Video') {
+            videoField.classList.remove('hidden');
+            textField.classList.add('hidden');
+            inputTexto.removeAttribute('required');
+            inputVideo.setAttribute('required', 'required');
+          } else {
+            videoField.classList.add('hidden');
+            textField.classList.remove('hidden');
+            inputVideo.removeAttribute('required');
+            inputTexto.setAttribute('required', 'required');
+          }
+        });
+
+        async function carregarEstudos() {
+          estudosContainer.innerHTML = '<div class="text-center text-gray-500">Carregando estudos...</div>';
+          const { data, error } = await supabase.from('estudos').select('*').order('created_at', { ascending: false });
+          if (error) {
+            estudosContainer.innerHTML = '<div class="text-center text-red-500">Erro ao carregar estudos.</div>';
+            return;
+          }
+          if (!data || data.length === 0) {
+            estudosContainer.innerHTML = '<div class="text-center text-gray-500">Nenhum estudo cadastrado.</div>';
+            return;
+          }
+          estudosContainer.innerHTML = data.map(estudo => `
+            <div class="estudo-card bg-white rounded-xl shadow-md p-6 border border-orange-100 flex flex-col gap-2 cursor-pointer hover:shadow-lg transition" onclick="window.location.href='estudo_detalhe.html?id=${estudo.id}'">
+              <h2 class="text-xl font-bold text-orange-700 font-inter mb-2">${estudo.titulo}</h2>
+              ${estudo.video_url ? `<div class='aspect-video mb-2'><iframe src='${estudo.video_url}' class='w-full h-full rounded-lg border' allowfullscreen></iframe></div>` : ''}
+              ${estudo.conteudo ? `<div class='text-gray-700 font-inter line-clamp-4'>${estudo.conteudo.substring(0, 200)}${estudo.conteudo.length > 200 ? '...' : ''}</div>` : ''}
+              <div class="flex justify-between items-center mt-2 gap-2">
+                <span class="text-xs text-gray-400">${new Date(estudo.created_at).toLocaleDateString('pt-BR')}</span>
+                <div class="flex gap-2">
+                  <button type="button" class="text-xs text-blue-600 hover:underline" onclick="event.stopPropagation(); editarEstudo('${estudo.id}')">Editar</button>
+                  <button type="button" class="text-xs text-red-600 hover:underline" onclick="event.stopPropagation(); deletarEstudo('${estudo.id}')">Excluir</button>
+                </div>
+              </div>
+            </div>
+          `).join('');
+        }
+
+        window.editarEstudo = async (id) => {
+          const { data, error } = await supabase.from('estudos').select('*').eq('id', id).single();
+          if (error || !data) {
+            alert('Erro ao carregar estudo para edição.');
+            return;
+          }
+          showModal(true, data);
+        };
+
+        window.deletarEstudo = async (id) => {
+          if (!confirm('Tem certeza que deseja excluir este estudo? Esta ação não pode ser desfeita.')) return;
+          const { error } = await supabase.from('estudos').delete().eq('id', id);
+          if (error) {
+            alert('Erro ao excluir estudo: ' + error.message);
+          } else {
+            carregarEstudos();
+          }
+        };
+
+        form.onsubmit = async (e) => {
+          e.preventDefault();
+          const id = inputId.value;
+          const titulo = inputTitulo.value.trim();
+          const tipo = selectTipo.value;
+          const video_url = tipo === 'Video' ? inputVideo.value.trim() : null;
+          const conteudo = tipo === 'Texto' ? inputTexto.value.trim() : null;
+          if (!titulo || (tipo === 'Video' && !video_url) || (tipo === 'Texto' && !conteudo)) return;
+          let error;
+          if (id) {
+            ({ error } = await supabase.from('estudos').update({ titulo, conteudo, video_url, updated_at: new Date().toISOString() }).eq('id', id));
+          } else {
+            ({ error } = await supabase.from('estudos').insert({ titulo, conteudo, video_url }));
+          }
+          if (error) {
+            alert('Erro ao salvar estudo: ' + error.message);
+            return;
+          }
+          hideModal();
+          carregarEstudos();
+        };
+
+        carregarEstudos();
+
+        // Checa se o usuário é admin e exibe o link do admin
+        (async () => {
+          // Usa as mesmas variáveis já definidas no topo do script!
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { data: profile } = await supabase.from('profiles').select('admin').eq('id', user.id).single();
+            if (profile?.admin) {
+              document.getElementById('admin-link').style.display = '';
+            }
+          }
+        })();
+
+        // Corrige o botão criar novo estudo após a renderização
+        document.addEventListener('DOMContentLoaded', () => {
+          const btnCreate = document.getElementById('create-estudo-btn');
+          if (btnCreate) {
+            btnCreate.onclick = () => showModal(false);
+          }
+        });
+        </script>
+
+        <footer class="mt-12 text-center text-orange-700 text-sm opacity-80 font-inter py-4">
+          © 2025 CPN Serviços. Todos os direitos reservados. <span class="text-xs ml-2 opacity-70">v1.2025.07.1</span>
+        </footer>
+      </div>
+    </div>
+</body>
+</html>

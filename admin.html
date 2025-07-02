@@ -108,29 +108,30 @@
         }
 
         // Gestão de Utilizadores (Exemplo de listagem e ações)
+        // Melhoria: Adiciona botão de adicionar usuário (exemplo de padrão aplicado a todos)
         function UserManagementView({ onShowModal, supabase }) {
             const [users, setUsers] = React.useState([]);
             const [isLoadingUsers, setIsLoadingUsers] = React.useState(true);
+            const [isAddUserModalOpen, setIsAddUserModalOpen] = React.useState(false);
+            const [newUserName, setNewUserName] = React.useState("");
+            const [newUserPhone, setNewUserPhone] = React.useState("");
+            const [newUserRole, setNewUserRole] = React.useState("");
+            const [newUserEmail, setNewUserEmail] = React.useState("");
+            const [isSavingUser, setIsSavingUser] = React.useState(false);
 
             React.useEffect(() => {
                 const fetchUsers = async () => {
                     setIsLoadingUsers(true);
                     try {
-                        // Para listar *todos* os utilizadores (profiles), as políticas de RLS devem permitir isso para admins.
-                        // Você precisaria de uma política específica para admins para SELECT ALL on profiles
-                        // Ex: CREATE POLICY "Admins can view all profiles." ON public.profiles FOR SELECT USING (EXISTS (SELECT 1 FROM public.memberships WHERE profile_id = auth.uid() AND role = 'admin') OR EXISTS (SELECT 1 FROM public.churches WHERE owner_id = auth.uid()));
                         const { data, error } = await supabase
                             .from('profiles')
-                            .select('id, full_name, phone_number, date_of_birth, role_in_church, created_at'); 
-
+                            .select('id, full_name, phone_number, date_of_birth, role_in_church, created_at');
                         if (error) {
-                            console.error("Erro ao carregar utilizadores:", error);
                             onShowModal(`Erro ao carregar utilizadores: ${error.message}`, 'error');
                         } else {
                             setUsers(data);
                         }
                     } catch (error) {
-                        console.error("Erro inesperado ao buscar utilizadores:", error);
                         onShowModal("Erro inesperado ao carregar utilizadores.", 'error');
                     } finally {
                         setIsLoadingUsers(false);
@@ -139,9 +140,56 @@
                 fetchUsers();
             }, [supabase, onShowModal]);
 
+            const handleAddUser = async (e) => {
+                e.preventDefault();
+                setIsSavingUser(true);
+                try {
+                    // Exemplo: apenas adiciona ao profiles, sem autenticação
+                    const { error } = await supabase
+                        .from('profiles')
+                        .insert([
+                            {
+                                full_name: newUserName,
+                                phone_number: newUserPhone,
+                                role_in_church: newUserRole,
+                                email: newUserEmail,
+                                created_at: new Date().toISOString(),
+                            }
+                        ]);
+                    if (error) {
+                        onShowModal(`Erro ao adicionar usuário: ${error.message}`, 'error');
+                    } else {
+                        onShowModal('Usuário adicionado com sucesso!', 'success');
+                        setIsAddUserModalOpen(false);
+                        setNewUserName("");
+                        setNewUserPhone("");
+                        setNewUserRole("");
+                        setNewUserEmail("");
+                        // Atualiza lista
+                        const { data, error } = await supabase
+                            .from('profiles')
+                            .select('id, full_name, phone_number, date_of_birth, role_in_church, created_at');
+                        if (!error) setUsers(data);
+                    }
+                } catch (error) {
+                    onShowModal('Erro inesperado ao adicionar usuário.', 'error');
+                } finally {
+                    setIsSavingUser(false);
+                }
+            };
+
             return (
                 <div className="bg-white p-6 rounded-xl shadow-lg">
-                    <h2 className="text-2xl font-bold text-gray-800 mb-4">Gestão de Utilizadores</h2>
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-2xl font-bold text-gray-800">Gestão de Utilizadores</h2>
+                        <button
+                            onClick={() => setIsAddUserModalOpen(true)}
+                            className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300"
+                            aria-label="Adicionar novo usuário"
+                        >
+                            + Adicionar Usuário
+                        </button>
+                    </div>
                     {isLoadingUsers ? (
                         <div className="text-center text-gray-600">A carregar utilizadores...</div>
                     ) : users.length === 0 ? (
@@ -175,14 +223,63 @@
                             </table>
                         </div>
                     )}
+                    {/* Modal de adicionar usuário */}
+                    {isAddUserModalOpen && (
+                        <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
+                            <div className="bg-white rounded-lg shadow-xl overflow-hidden max-w-md w-full transform transition-all duration-300 scale-100">
+                                <div className="bg-green-600 text-white px-6 py-4 flex justify-between items-center rounded-t-lg">
+                                    <h3 className="text-xl font-bold font-inter">Adicionar Novo Usuário</h3>
+                                    <button
+                                        onClick={() => setIsAddUserModalOpen(false)}
+                                        className="text-white hover:text-gray-200 focus:outline-none text-2xl font-bold"
+                                        aria-label="Fechar modal de adicionar usuário"
+                                        disabled={isSavingUser}
+                                    >
+                                        &times;
+                                    </button>
+                                </div>
+                                <form className="p-6" onSubmit={handleAddUser}>
+                                    <div className="mb-4">
+                                        <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Nome Completo</label>
+                                        <input type="text" className="w-full p-2 border rounded" value={newUserName} onChange={e => setNewUserName(e.target.value)} required disabled={isSavingUser} />
+                                    </div>
+                                    <div className="mb-4">
+                                        <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Telefone</label>
+                                        <input type="tel" className="w-full p-2 border rounded" value={newUserPhone} onChange={e => setNewUserPhone(e.target.value)} disabled={isSavingUser} />
+                                    </div>
+                                    <div className="mb-4">
+                                        <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Função na Igreja</label>
+                                        <input type="text" className="w-full p-2 border rounded" value={newUserRole} onChange={e => setNewUserRole(e.target.value)} disabled={isSavingUser} />
+                                    </div>
+                                    <div className="mb-4">
+                                        <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Email</label>
+                                        <input type="email" className="w-full p-2 border rounded" value={newUserEmail} onChange={e => setNewUserEmail(e.target.value)} required disabled={isSavingUser} />
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button type="button" onClick={() => setIsAddUserModalOpen(false)} className="mr-4 py-2 px-6 rounded-lg font-bold text-gray-700 bg-gray-200 hover:bg-gray-300 transition duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75 font-inter" disabled={isSavingUser}>Cancelar</button>
+                                        <button type="submit" className="py-2 px-6 rounded-lg font-bold text-white bg-green-600 hover:bg-green-700 transition duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75 font-inter" disabled={isSavingUser}>{isSavingUser ? 'Salvando...' : 'Salvar'}</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         }
 
         // Gestão de Igrejas (Exemplo de listagem e ações)
+        // Adiciona botão de adicionar igreja e melhorias de acessibilidade e usabilidade
         function ChurchManagementView({ onShowModal, supabase }) {
             const [churches, setChurches] = React.useState([]);
             const [isLoadingChurches, setIsLoadingChurches] = React.useState(true);
+            const [isAddChurchModalOpen, setIsAddChurchModalOpen] = React.useState(false);
+            const [newChurchName, setNewChurchName] = React.useState("");
+            const [newChurchCity, setNewChurchCity] = React.useState("");
+            const [newChurchState, setNewChurchState] = React.useState("");
+            const [newChurchCountry, setNewChurchCountry] = React.useState("");
+            const [newChurchEmail, setNewChurchEmail] = React.useState("");
+            const [newChurchPhone, setNewChurchPhone] = React.useState("");
+            const [isSavingChurch, setIsSavingChurch] = React.useState(false);
 
             React.useEffect(() => {
                 const fetchChurches = async () => {
@@ -190,8 +287,7 @@
                     try {
                         const { data, error } = await supabase
                             .from('churches')
-                            .select('id, name, city, state, country, email, phone, created_at, owner_id'); // Seleciona mais campos
-
+                            .select('id, name, city, state, country, email, phone, created_at, owner_id');
                         if (error) {
                             console.error("Erro ao carregar igrejas:", error);
                             onShowModal(`Erro ao carregar igrejas: ${error.message}`, 'error');
@@ -208,9 +304,65 @@
                 fetchChurches();
             }, [supabase, onShowModal]);
 
+            const handleAddChurch = async (e) => {
+                e.preventDefault();
+                setIsSavingChurch(true);
+                try {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (!user) {
+                        onShowModal('Sessão expirada. Faça login novamente.', 'error');
+                        setIsSavingChurch(false);
+                        return;
+                    }
+                    const { error } = await supabase
+                        .from('churches')
+                        .insert([
+                            {
+                                name: newChurchName,
+                                city: newChurchCity,
+                                state: newChurchState,
+                                country: newChurchCountry,
+                                email: newChurchEmail,
+                                phone: newChurchPhone,
+                                owner_id: user.id,
+                            }
+                        ]);
+                    if (error) {
+                        onShowModal(`Erro ao adicionar igreja: ${error.message}`, 'error');
+                    } else {
+                        onShowModal('Igreja adicionada com sucesso!', 'success');
+                        setIsAddChurchModalOpen(false);
+                        setNewChurchName("");
+                        setNewChurchCity("");
+                        setNewChurchState("");
+                        setNewChurchCountry("");
+                        setNewChurchEmail("");
+                        setNewChurchPhone("");
+                        // Atualiza lista
+                        const { data, error } = await supabase
+                            .from('churches')
+                            .select('id, name, city, state, country, email, phone, created_at, owner_id');
+                        if (!error) setChurches(data);
+                    }
+                } catch (error) {
+                    onShowModal('Erro inesperado ao adicionar igreja.', 'error');
+                } finally {
+                    setIsSavingChurch(false);
+                }
+            };
+
             return (
                 <div className="bg-white p-6 rounded-xl shadow-lg">
-                    <h2 className="text-2xl font-bold text-gray-800 mb-4">Gestão de Igrejas</h2>
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-2xl font-bold text-gray-800">Gestão de Igrejas</h2>
+                        <button
+                            onClick={() => setIsAddChurchModalOpen(true)}
+                            className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300"
+                            aria-label="Adicionar nova igreja"
+                        >
+                            + Adicionar Igreja
+                        </button>
+                    </div>
                     {isLoadingChurches ? (
                         <div className="text-center text-gray-600">A carregar igrejas...</div>
                     ) : churches.length === 0 ? (
@@ -244,14 +396,67 @@
                             </table>
                         </div>
                     )}
+                    {/* Modal de adicionar igreja */}
+                    {isAddChurchModalOpen && (
+                        <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
+                            <div className="bg-white rounded-lg shadow-xl overflow-hidden max-w-md w-full transform transition-all duration-300 scale-100">
+                                <div className="bg-green-600 text-white px-6 py-4 flex justify-between items-center rounded-t-lg">
+                                    <h3 className="text-xl font-bold font-inter">Adicionar Nova Igreja</h3>
+                                    <button
+                                        onClick={() => setIsAddChurchModalOpen(false)}
+                                        className="text-white hover:text-gray-200 focus:outline-none text-2xl font-bold"
+                                        aria-label="Fechar modal de adicionar igreja"
+                                        disabled={isSavingChurch}
+                                    >
+                                        &times;
+                                    </button>
+                                </div>
+                                <form className="p-6" onSubmit={handleAddChurch}>
+                                    <div className="mb-4">
+                                        <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Nome</label>
+                                        <input type="text" className="w-full p-2 border rounded" value={newChurchName} onChange={e => setNewChurchName(e.target.value)} required disabled={isSavingChurch} />
+                                    </div>
+                                    <div className="mb-4">
+                                        <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Cidade</label>
+                                        <input type="text" className="w-full p-2 border rounded" value={newChurchCity} onChange={e => setNewChurchCity(e.target.value)} required disabled={isSavingChurch} />
+                                    </div>
+                                    <div className="mb-4">
+                                        <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Estado</label>
+                                        <input type="text" className="w-full p-2 border rounded" value={newChurchState} onChange={e => setNewChurchState(e.target.value)} required disabled={isSavingChurch} />
+                                    </div>
+                                    <div className="mb-4">
+                                        <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter">País</label>
+                                        <input type="text" className="w-full p-2 border rounded" value={newChurchCountry} onChange={e => setNewChurchCountry(e.target.value)} required disabled={isSavingChurch} />
+                                    </div>
+                                    <div className="mb-4">
+                                        <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Email</label>
+                                        <input type="email" className="w-full p-2 border rounded" value={newChurchEmail} onChange={e => setNewChurchEmail(e.target.value)} disabled={isSavingChurch} />
+                                    </div>
+                                    <div className="mb-6">
+                                        <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Telefone</label>
+                                        <input type="tel" className="w-full p-2 border rounded" value={newChurchPhone} onChange={e => setNewChurchPhone(e.target.value)} disabled={isSavingChurch} />
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button type="button" onClick={() => setIsAddChurchModalOpen(false)} className="mr-4 py-2 px-6 rounded-lg font-bold text-gray-700 bg-gray-200 hover:bg-gray-300 transition duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75 font-inter" disabled={isSavingChurch}>Cancelar</button>
+                                        <button type="submit" className="py-2 px-6 rounded-lg font-bold text-white bg-green-600 hover:bg-green-700 transition duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75 font-inter" disabled={isSavingChurch}>{isSavingChurch ? 'Salvando...' : 'Salvar'}</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         }
 
-        // Gestão de Publicações (Placeholder)
+        // Gestão de Publicações (com modal de análise/exclusão)
         function PostManagementView({ onShowModal, supabase }) {
             const [posts, setPosts] = React.useState([]);
             const [isLoadingPosts, setIsLoadingPosts] = React.useState(true);
+            const [analyzeModalOpen, setAnalyzeModalOpen] = React.useState(false);
+            const [selectedPost, setSelectedPost] = React.useState(null);
+            const [deleteReason, setDeleteReason] = React.useState('');
+            const [isDeleting, setIsDeleting] = React.useState(false);
+            const [deleteError, setDeleteError] = React.useState('');
 
             React.useEffect(() => {
                 const fetchPosts = async () => {
@@ -259,24 +464,79 @@
                     try {
                         const { data, error } = await supabase
                             .from('posts')
-                            .select('id, title, content, author_id, is_published, created_at, profiles(full_name), churches(name)') // Adicionado churches(name)
+                            .select('id, title, content, author_id, is_published, created_at, profiles(full_name), churches(name)')
                             .order('created_at', { ascending: false });
-
                         if (error) {
-                            console.error("Erro ao carregar publicações:", error);
                             onShowModal(`Erro ao carregar publicações: ${error.message}`, 'error');
                         } else {
                             setPosts(data);
                         }
                     } catch (error) {
-                        console.error("Erro inesperado ao buscar publicações:", error);
-                        onShowModal("Erro inesperado ao carregar publicações.", 'error');
+                        onShowModal('Erro inesperado ao carregar publicações.', 'error');
                     } finally {
                         setIsLoadingPosts(false);
                     }
                 };
                 fetchPosts();
             }, [supabase, onShowModal]);
+
+            const openAnalyzeModal = (post) => {
+                setSelectedPost(post);
+                setDeleteReason('');
+                setDeleteError('');
+                setAnalyzeModalOpen(true);
+            };
+            const closeAnalyzeModal = () => {
+                setAnalyzeModalOpen(false);
+                setSelectedPost(null);
+                setDeleteReason('');
+                setDeleteError('');
+            };
+
+            const handleDeletePost = async (e) => {
+                e.preventDefault();
+                if (!deleteReason) {
+                    setDeleteError('Selecione um motivo para a exclusão.');
+                    return;
+                }
+                setIsDeleting(true);
+                setDeleteError('');
+                try {
+                    // 1. Registrar motivo na tabela de auditoria
+                    const { error: auditError } = await supabase
+                        .from('post_deletions')
+                        .insert([
+                            {
+                                post_id: selectedPost.id,
+                                reason: deleteReason,
+                                deleted_at: new Date().toISOString(),
+                            }
+                        ]);
+                    if (auditError) {
+                        setDeleteError('Erro ao registrar motivo: ' + auditError.message);
+                        setIsDeleting(false);
+                        return;
+                    }
+                    // 2. Excluir o post
+                    const { error: deleteErrorDb } = await supabase
+                        .from('posts')
+                        .delete()
+                        .eq('id', selectedPost.id);
+                    if (deleteErrorDb) {
+                        setDeleteError('Erro ao excluir publicação: ' + deleteErrorDb.message);
+                        setIsDeleting(false);
+                        return;
+                    }
+                    onShowModal('Publicação excluída com sucesso!', 'success');
+                    // Atualiza lista
+                    setPosts(posts.filter(p => p.id !== selectedPost.id));
+                    closeAnalyzeModal();
+                } catch (err) {
+                    setDeleteError('Erro inesperado ao excluir publicação.');
+                } finally {
+                    setIsDeleting(false);
+                }
+            };
 
             return (
                 <div className="bg-white p-6 rounded-xl shadow-lg">
@@ -303,17 +563,56 @@
                                         <tr key={post.id} className="hover:bg-gray-50">
                                             <td className="py-2 px-4 border-b">{post.title}</td>
                                             <td className="py-2 px-4 border-b">{post.profiles ? post.profiles.full_name : 'Desconhecido'}</td>
-                                            <td className="py-2 px-4 border-b">{post.churches ? post.churches.name : 'N/A'}</td> {/* Exibe o nome da igreja */}
+                                            <td className="py-2 px-4 border-b">{post.churches ? post.churches.name : 'N/A'}</td>
                                             <td className="py-2 px-4 border-b">{post.is_published ? 'Sim' : 'Não'}</td>
                                             <td className="py-2 px-4 border-b">{new Date(post.created_at).toLocaleDateString()}</td>
                                             <td className="py-2 px-4 border-b">
-                                                <button onClick={() => onShowModal(`Editar publicação ${post.title}`, 'info')} className="bg-blue-500 text-white px-3 py-1 rounded mr-2" aria-label="Editar publicação">Editar</button>
-                                                <button onClick={() => onShowModal(`Eliminar publicação ${post.title}`, 'error')} className="bg-red-500 text-white px-3 py-1 rounded" aria-label="Eliminar publicação">Eliminar</button>
+                                                <button onClick={() => openAnalyzeModal(post)} className="bg-yellow-600 text-white px-3 py-1 rounded mr-2" aria-label="Analisar/Excluir publicação">Analisar/Excluir</button>
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
+                        </div>
+                    )}
+                    {/* Modal de análise/exclusão */}
+                    {analyzeModalOpen && selectedPost && (
+                        <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
+                            <div className="bg-white rounded-lg shadow-xl overflow-hidden max-w-md w-full transform transition-all duration-300 scale-100">
+                                <div className="bg-yellow-600 text-white px-6 py-4 flex justify-between items-center rounded-t-lg">
+                                    <h3 className="text-xl font-bold font-inter">Analisar/Excluir Publicação</h3>
+                                    <button
+                                        onClick={closeAnalyzeModal}
+                                        className="text-white hover:text-gray-200 focus:outline-none text-2xl font-bold"
+                                        aria-label="Fechar modal de análise"
+                                        disabled={isDeleting}
+                                    >
+                                        &times;
+                                    </button>
+                                </div>
+                                <form className="p-6" onSubmit={handleDeletePost}>
+                                    <div className="mb-4">
+                                        <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Título</label>
+                                        <div className="p-2 border rounded bg-gray-100">{selectedPost.title}</div>
+                                    </div>
+                                    <div className="mb-4">
+                                        <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Motivo da exclusão <span className="text-red-500">*</span></label>
+                                        <select className="w-full p-2 border rounded" value={deleteReason} onChange={e => setDeleteReason(e.target.value)} required disabled={isDeleting}>
+                                            <option value="">Selecione um motivo</option>
+                                            <option value="Conteúdo impróprio">Conteúdo impróprio</option>
+                                            <option value="Spam ou promoção">Spam ou promoção</option>
+                                            <option value="Solicitação do autor">Solicitação do autor</option>
+                                            <option value="Violação de regras">Violação de regras</option>
+                                            <option value="Outro">Outro</option>
+                                        </select>
+                                    </div>
+                                    {deleteError && <div className="text-red-600 mb-2">{deleteError}</div>}
+                                    <div className="flex justify-end">
+                                        <button type="button" onClick={closeAnalyzeModal} className="mr-4 py-2 px-6 rounded-lg font-bold text-gray-700 bg-gray-200 hover:bg-gray-300 transition duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75 font-inter" disabled={isDeleting}>Cancelar</button>
+                                        <button type="submit" className="py-2 px-6 rounded-lg font-bold text-white bg-red-600 hover:bg-red-700 transition duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-75 font-inter" disabled={isDeleting}>{isDeleting ? 'Excluindo...' : 'Excluir'}</button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -390,6 +689,333 @@
             );
         }
 
+        // Moderação de Chat
+        function ChatModerationView({ onShowModal, supabase }) {
+            const [messages, setMessages] = React.useState([]);
+            const [isLoading, setIsLoading] = React.useState(true);
+            const [analyzeModalOpen, setAnalyzeModalOpen] = React.useState(false);
+            const [selectedMessage, setSelectedMessage] = React.useState(null);
+            const [deleteReason, setDeleteReason] = React.useState('');
+            const [isDeleting, setIsDeleting] = React.useState(false);
+            const [deleteError, setDeleteError] = React.useState('');
+            const [newMessage, setNewMessage] = React.useState('');
+            const [isSending, setIsSending] = React.useState(false);
+            const [userId, setUserId] = React.useState(null);
+
+            // Busca nomes dos usuários para cada mensagem
+            async function enrichMessagesWithNames(msgs) {
+                const uniqueIds = [...new Set(msgs.map(m => m.sender_id).filter(Boolean))];
+                if (uniqueIds.length === 0) return msgs;
+                const { data: profiles } = await supabase
+                    .from('profiles')
+                    .select('id, full_name')
+                    .in('id', uniqueIds);
+                const idToName = {};
+                (profiles || []).forEach(p => { idToName[p.id] = p.full_name; });
+                return msgs.map(m => ({ ...m, sender_name: idToName[m.sender_id] || m.sender_id }));
+            }
+
+            React.useEffect(() => {
+                const fetchMessages = async () => {
+                    setIsLoading(true);
+                    try {
+                        const { data, error } = await supabase
+                            .from('chat_messages')
+                            .select('id, content, sender_id, created_at')
+                            .order('created_at', { ascending: false });
+                        if (error) {
+                            onShowModal(`Erro ao carregar mensagens: ${error.message}`, 'error');
+                        } else {
+                            const enriched = await enrichMessagesWithNames(data);
+                            setMessages(enriched);
+                        }
+                    } catch (error) {
+                        onShowModal('Erro inesperado ao carregar mensagens.', 'error');
+                    } finally {
+                        setIsLoading(false);
+                    }
+                };
+                fetchMessages();
+                // Busca o id do admin logado
+                supabase.auth.getUser().then(({ data: { user } }) => setUserId(user?.id || null));
+            }, [supabase, onShowModal]);
+
+            const handleSendMessage = async (e) => {
+                e.preventDefault();
+                if (!newMessage.trim()) return;
+                setIsSending(true);
+                try {
+                    if (!userId) {
+                        onShowModal('Sessão expirada. Faça login novamente.', 'error');
+                        setIsSending(false);
+                        return;
+                    }
+                    const { error } = await supabase
+                        .from('chat_messages')
+                        .insert([{ content: newMessage, sender_id: userId }]);
+                    if (error) {
+                        onShowModal('Erro ao enviar mensagem: ' + error.message, 'error');
+                    } else {
+                        setNewMessage('');
+                        // Atualiza lista
+                        const { data } = await supabase
+                            .from('chat_messages')
+                            .select('id, content, sender_id, created_at')
+                            .order('created_at', { ascending: false });
+                        const enriched = await enrichMessagesWithNames(data);
+                        setMessages(enriched);
+                    }
+                } catch (err) {
+                    onShowModal('Erro inesperado ao enviar mensagem.', 'error');
+                } finally {
+                    setIsSending(false);
+                }
+            };
+
+            const openAnalyzeModal = (msg) => {
+                setSelectedMessage(msg);
+                setDeleteReason('');
+                setDeleteError('');
+                setAnalyzeModalOpen(true);
+            };
+            const closeAnalyzeModal = () => {
+                setAnalyzeModalOpen(false);
+                setSelectedMessage(null);
+                setDeleteReason('');
+                setDeleteError('');
+            };
+
+            const handleDeleteMessage = async (e) => {
+                e.preventDefault();
+                if (!deleteReason) {
+                    setDeleteError('Selecione um motivo para a exclusão.');
+                    return;
+                }
+                setIsDeleting(true);
+                setDeleteError('');
+                try {
+                    // 1. Registrar motivo na tabela de auditoria
+                    const { error: auditError } = await supabase
+                        .from('chat_message_deletions')
+                        .insert([
+                            {
+                                message_id: selectedMessage.id,
+                                reason: deleteReason,
+                                deleted_at: new Date().toISOString(),
+                            }
+                        ]);
+                    if (auditError) {
+                        setDeleteError('Erro ao registrar motivo: ' + auditError.message);
+                        setIsDeleting(false);
+                        return;
+                    }
+                    // 2. Excluir a mensagem
+                    const { error: deleteErrorDb } = await supabase
+                        .from('chat_messages')
+                        .delete()
+                        .eq('id', selectedMessage.id);
+                    if (deleteErrorDb) {
+                        setDeleteError('Erro ao excluir mensagem: ' + deleteErrorDb.message);
+                        setIsDeleting(false);
+                        return;
+                    }
+                    onShowModal('Mensagem excluída com sucesso!', 'success');
+                    setMessages(messages.filter(m => m.id !== selectedMessage.id));
+                    closeAnalyzeModal();
+                } catch (err) {
+                    setDeleteError('Erro inesperado ao excluir mensagem.');
+                } finally {
+                    setIsDeleting(false);
+                }
+            };
+
+            return (
+                <div className="bg-white p-6 rounded-xl shadow-lg">
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-2xl font-bold text-gray-800">Moderação do Chat</h2>
+                    </div>
+                    <form onSubmit={handleSendMessage} className="flex mb-4 gap-2">
+                        <input
+                            type="text"
+                            className="flex-1 border rounded p-2"
+                            placeholder="Digite uma mensagem como administrador..."
+                            value={newMessage}
+                            onChange={e => setNewMessage(e.target.value)}
+                            disabled={isSending}
+                        />
+                        <button
+                            type="submit"
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg"
+                            disabled={isSending}
+                        >{isSending ? 'Enviando...' : 'Enviar'}</button>
+                    </form>
+                    {isLoading ? (
+                        <div className="text-center text-gray-600">A carregar mensagens...</div>
+                    ) : messages.length === 0 ? (
+                        <div className="text-center text-gray-600">Nenhuma mensagem encontrada.</div>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full bg-white">
+                                <thead className="bg-gray-200">
+                                    <tr>
+                                        <th className="py-2 px-4 border-b text-left">Usuário</th>
+                                        <th className="py-2 px-4 border-b text-left">Mensagem</th>
+                                        <th className="py-2 px-4 border-b text-left">Data</th>
+                                        <th className="py-2 px-4 border-b text-left">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {messages.map(msg => (
+                                        <tr key={msg.id} className="hover:bg-gray-50">
+                                            <td className="py-2 px-4 border-b">{msg.sender_name}</td>
+                                            <td className="py-2 px-4 border-b">{msg.content}</td>
+                                            <td className="py-2 px-4 border-b">{new Date(msg.created_at).toLocaleString()}</td>
+                                            <td className="py-2 px-4 border-b">
+                                                <button onClick={() => openAnalyzeModal(msg)} className="bg-yellow-600 text-white px-3 py-1 rounded mr-2" aria-label="Analisar/Excluir mensagem">Analisar/Excluir</button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                    {/* Modal de análise/exclusão */}
+                    {analyzeModalOpen && selectedMessage && (
+                        <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
+                            <div className="bg-white rounded-lg shadow-xl overflow-hidden max-w-md w-full transform transition-all duration-300 scale-100">
+                                <div className="bg-yellow-600 text-white px-6 py-4 flex justify-between items-center rounded-t-lg">
+                                    <h3 className="text-xl font-bold font-inter">Analisar/Excluir Mensagem</h3>
+                                    <button
+                                        onClick={closeAnalyzeModal}
+                                        className="text-white hover:text-gray-200 focus:outline-none text-2xl font-bold"
+                                        aria-label="Fechar modal de análise"
+                                        disabled={isDeleting}
+                                    >
+                                        &times;
+                                    </button>
+                                </div>
+                                <form className="p-6" onSubmit={handleDeleteMessage}>
+                                    <div className="mb-4">
+                                        <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Mensagem</label>
+                                        <div className="p-2 border rounded bg-gray-100">{selectedMessage.content}</div>
+                                    </div>
+                                    <div className="mb-4">
+                                        <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Motivo da exclusão <span className="text-red-500">*</span></label>
+                                        <select className="w-full p-2 border rounded" value={deleteReason} onChange={e => setDeleteReason(e.target.value)} required disabled={isDeleting}>
+                                            <option value="">Selecione um motivo</option>
+                                            <option value="Conteúdo impróprio">Conteúdo impróprio</option>
+                                            <option value="Spam ou promoção">Spam ou promoção</option>
+                                            <option value="Solicitação do autor">Solicitação do autor</option>
+                                            <option value="Violação de regras">Violação de regras</option>
+                                            <option value="Outro">Outro</option>
+                                        </select>
+                                    </div>
+                                    {deleteError && <div className="text-red-600 mb-2">{deleteError}</div>}
+                                    <div className="flex justify-end">
+                                        <button type="button" onClick={closeAnalyzeModal} className="mr-4 py-2 px-6 rounded-lg font-bold text-gray-700 bg-gray-200 hover:bg-gray-300 transition duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75 font-inter" disabled={isDeleting}>Cancelar</button>
+                                        <button type="submit" className="py-2 px-6 rounded-lg font-bold text-white bg-red-600 hover:bg-red-700 transition duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-75 font-inter" disabled={isDeleting}>{isDeleting ? 'Excluindo...' : 'Excluir'}</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // Gestão de Doações (Admin pode editar dados de doação)
+        function DonationManagementView({ onShowModal, supabase }) {
+            const [donationData, setDonationData] = React.useState({
+                pixKey: '',
+                bank: '',
+                agency: '',
+                account: '',
+                description: ''
+            });
+            const [isLoading, setIsLoading] = React.useState(true);
+            const [isSaving, setIsSaving] = React.useState(false);
+
+            React.useEffect(() => {
+                const fetchDonationData = async () => {
+                    setIsLoading(true);
+                    try {
+                        const { data, error } = await supabase
+                            .from('donation_settings')
+                            .select('*')
+                            .single();
+                        if (error && error.code !== 'PGRST116') {
+                            onShowModal('Erro ao carregar dados de doação: ' + error.message, 'error');
+                        } else if (data) {
+                            setDonationData(data);
+                        }
+                    } catch (err) {
+                        onShowModal('Erro inesperado ao carregar dados de doação.', 'error');
+                    } finally {
+                        setIsLoading(false);
+                    }
+                };
+                fetchDonationData();
+            }, [supabase, onShowModal]);
+
+            const handleChange = e => {
+                setDonationData({ ...donationData, [e.target.name]: e.target.value });
+            };
+
+            const handleSave = async e => {
+                e.preventDefault();
+                setIsSaving(true);
+                try {
+                    // Upsert: atualiza se existir, insere se não existir
+                    const { error } = await supabase
+                        .from('donation_settings')
+                        .upsert([donationData], { onConflict: ['id'] });
+                    if (error) {
+                        onShowModal('Erro ao salvar dados de doação: ' + error.message, 'error');
+                    } else {
+                        onShowModal('Dados de doação atualizados com sucesso!', 'success');
+                    }
+                } catch (err) {
+                    onShowModal('Erro inesperado ao salvar dados de doação.', 'error');
+                } finally {
+                    setIsSaving(false);
+                }
+            };
+
+            return (
+                <div className="bg-white p-6 rounded-xl shadow-lg max-w-xl mx-auto">
+                    <h2 className="text-2xl font-bold text-gray-800 mb-4">Editar Dados de Doação</h2>
+                    {isLoading ? (
+                        <div className="text-center text-gray-600">Carregando dados...</div>
+                    ) : (
+                        <form onSubmit={handleSave} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-semibold mb-1">Chave PIX</label>
+                                <input type="text" name="pixKey" value={donationData.pixKey} onChange={handleChange} className="w-full border rounded p-2" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold mb-1">Banco</label>
+                                <input type="text" name="bank" value={donationData.bank} onChange={handleChange} className="w-full border rounded p-2" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold mb-1">Agência</label>
+                                <input type="text" name="agency" value={donationData.agency} onChange={handleChange} className="w-full border rounded p-2" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold mb-1">Conta</label>
+                                <input type="text" name="account" value={donationData.account} onChange={handleChange} className="w-full border rounded p-2" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold mb-1">Descrição</label>
+                                <textarea name="description" value={donationData.description} onChange={handleChange} className="w-full border rounded p-2" rows={3}></textarea>
+                            </div>
+                            <div className="flex justify-end">
+                                <button type="submit" className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg" disabled={isSaving}>{isSaving ? 'Salvando...' : 'Salvar'}</button>
+                            </div>
+                        </form>
+                    )}
+                </div>
+            );
+        }
 
         // Componente principal do Painel de Administração
         function AdminPanelApp() {
@@ -403,14 +1029,13 @@
             const [userRole, setUserRole] = React.useState('member'); // Papel do utilizador (ex: 'admin', 'owner', 'member')
 
             const supabase = window.globalSupabaseClient;
+            if (!supabase) {
+              document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(to bottom right,#2563eb,#7c3aed);color:white;font-size:2rem;font-family:Inter,sans-serif;">Erro ao carregar o Supabase. Recarregue a página.</div>';
+              throw new Error('Supabase não inicializado');
+            }
 
             // Efeito para inicializar o Supabase e verificar a sessão/carregar dados da igreja
             React.useEffect(() => {
-                if (!supabase && window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
-                    window.globalSupabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-                    console.log("Supabase client initialized globally for AdminPanelApp.");
-                }
-
                 if (window.globalSupabaseClient) {
                     setIsSupabaseClientReady(true);
                     const checkAuthAndRole = async () => {
@@ -536,6 +1161,10 @@
                         return <PostManagementView onShowModal={showModal} supabase={supabase} />;
                     case 'events':
                         return <EventManagementView onShowModal={showModal} supabase={supabase} />;
+                    case 'chat':
+                        return <ChatModerationView onShowModal={showModal} supabase={supabase} />;
+                    case 'donations':
+                        return <DonationManagementView onShowModal={showModal} supabase={supabase} />;
                     default:
                         return <AdminDashboardView onShowModal={showModal} supabase={supabase} />;
                 }
@@ -575,16 +1204,10 @@
                         <button onClick={() => setCurrentSection('churches')} className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" aria-label="Gerir Igrejas">Igrejas</button>
                         <button onClick={() => setCurrentSection('posts')} className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" aria-label="Gerir Publicações">Publicações</button>
                         <button onClick={() => setCurrentSection('events')} className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" aria-label="Gerir Eventos">Eventos</button>
-                        
-                        <div className="mt-auto pt-4 w-full border-t border-gray-700">
-                            <button
-                                onClick={handleLogout}
-                                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300"
-                                aria-label="Sair do painel de administração"
-                            >
-                                Sair
-                            </button>
-                        </div>
+                        <button onClick={() => setCurrentSection('chat')} className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" aria-label="Moderar Chat">Moderação do Chat</button>
+                        <button onClick={() => setCurrentSection('donations')} className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" aria-label="Editar Doações">Doações</button>
+                        <button onClick={() => window.location.href = 'conexao-eclesia-feed.html'} className="w-full text-left py-3 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 transition duration-200 font-bold text-lg font-inter mt-4" aria-label="Voltar ao Feed">← Voltar ao Feed</button>
+                        <button onClick={handleLogout} className="w-full text-left py-3 px-4 rounded-lg bg-red-600 hover:bg-red-700 transition duration-200 font-bold text-lg font-inter mt-8" aria-label="Sair">Sair</button>
                     </aside>
 
                     {/* Conteúdo Principal do Admin */}

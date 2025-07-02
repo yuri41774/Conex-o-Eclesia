@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eventos - Conexão Eclesia</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-blue-100 via-white to-purple-100 min-h-screen">
+  <div class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white shadow-lg p-6 flex flex-col space-y-4 fixed md:static z-30 h-full md:h-auto">
+      <div class="text-2xl font-extrabold text-blue-600 font-inter mb-8">Conexão Eclesia</div>
+      <a href="conexao-eclesia-feed.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-blue-100 transition">Feed</a>
+      <a href="chat.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-blue-100 transition">Chat</a>
+      <a href="estudos.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-blue-100 transition">Estudos Bíblicos</a>
+      <a href="lives.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-blue-100 transition">Lives</a>
+      <a href="doacoes.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-blue-100 transition">Doações</a>
+      <a href="eventos.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter bg-blue-500 text-white hover:bg-blue-600 transition">Eventos</a>
+      <a href="perfil.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-blue-100 transition">Meu Perfil</a>
+      <a href="admin.html" id="admin-link" style="display:none" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-blue-100 transition">Administrador</a>
+    </aside>
+    <div class="flex-1 ml-0 md:ml-64">
+      <header class="bg-white shadow-sm p-4 flex justify-between items-center sticky top-0 z-20">
+        <a href="conexao-eclesia-feed.html" class="text-2xl font-extrabold text-blue-600 font-inter">Conexão Eclesia</a>
+        <a href="#" onclick="window.history.back()" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 font-bold font-inter">Voltar</a>
+      </header>
+
+      <main class="container mx-auto px-4 py-8 max-w-3xl">
+        <div class="flex justify-between items-center mb-8">
+          <h1 class="text-3xl font-extrabold text-blue-700 font-inter">Eventos</h1>
+          <button id="btn-novo-evento" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow-md font-inter">Novo Evento</button>
+        </div>
+        <div id="eventos-lista" class="space-y-6">
+          <div class="text-center text-gray-500">Carregando eventos...</div>
+        </div>
+      </main>
+
+      <!-- Modal de criação de evento -->
+      <div id="modal-evento" class="hidden fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md">
+          <h2 class="text-2xl font-bold mb-4 text-blue-700 font-inter">Novo Evento</h2>
+          <form id="form-evento" class="space-y-4">
+            <input type="text" id="evento-titulo" class="w-full border rounded-lg p-3 font-inter" placeholder="Título do evento" required />
+            <textarea id="evento-descricao" class="w-full border rounded-lg p-3 font-inter" placeholder="Descrição" required></textarea>
+            <input type="datetime-local" id="evento-data" class="w-full border rounded-lg p-3 font-inter" required />
+            <input type="text" id="evento-local" class="w-full border rounded-lg p-3 font-inter" placeholder="Local" required />
+            <div class="flex justify-end gap-2">
+              <button type="button" id="btn-cancelar" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg">Cancelar</button>
+              <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">Salvar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <footer class="mt-12 text-center text-blue-700 text-sm opacity-80 font-inter py-4">
+        © 2025 CPN Serviços. Todos os direitos reservados. <span class="text-xs ml-2 opacity-70">v1.2025.07.1</span>
+      </footer>
+    </div>
+  </div>
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+    const SUPABASE_URL = window.SUPABASE_URL || localStorage.getItem('SUPABASE_URL');
+    const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || localStorage.getItem('SUPABASE_ANON_KEY');
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const eventosLista = document.getElementById('eventos-lista');
+    const modalEvento = document.getElementById('modal-evento');
+    const btnNovoEvento = document.getElementById('btn-novo-evento');
+    const btnCancelar = document.getElementById('btn-cancelar');
+    const formEvento = document.getElementById('form-evento');
+
+    function mostrarModal() { modalEvento.classList.remove('hidden'); }
+    function esconderModal() { modalEvento.classList.add('hidden'); formEvento.reset(); }
+
+    btnNovoEvento.onclick = mostrarModal;
+    btnCancelar.onclick = esconderModal;
+    modalEvento.onclick = (e) => { if (e.target === modalEvento) esconderModal(); };
+
+    async function carregarEventos() {
+      eventosLista.innerHTML = '<div class="text-center text-gray-500">Carregando eventos...</div>';
+      const { data, error } = await supabase.from('eventos').select('*').order('data', { ascending: true });
+      if (error) {
+        eventosLista.innerHTML = '<div class="text-center text-red-500">Erro ao carregar eventos.</div>';
+        return;
+      }
+      if (!data || data.length === 0) {
+        eventosLista.innerHTML = '<div class="text-center text-gray-500">Nenhum evento cadastrado.</div>';
+        return;
+      }
+      eventosLista.innerHTML = data.map(ev => `
+        <div class="bg-white rounded-xl shadow-md p-6 border border-blue-100 flex flex-col gap-2">
+          <div class="flex justify-between items-center">
+            <h2 class="text-xl font-bold text-blue-700 font-inter">${ev.titulo}</h2>
+            <span class="text-sm text-gray-500">${new Date(ev.data).toLocaleString('pt-BR')}</span>
+          </div>
+          <div class="text-gray-700 font-inter">${ev.descricao}</div>
+          <div class="text-sm text-gray-600 font-inter">Local: ${ev.local}</div>
+        </div>
+      `).join('');
+    }
+
+    formEvento.onsubmit = async (e) => {
+      e.preventDefault();
+      const titulo = document.getElementById('evento-titulo').value.trim();
+      const descricao = document.getElementById('evento-descricao').value.trim();
+      const dataEvento = document.getElementById('evento-data').value;
+      const local = document.getElementById('evento-local').value.trim();
+      if (!titulo || !descricao || !dataEvento || !local) return;
+      const { error } = await supabase.from('eventos').insert({ titulo, descricao, data: dataEvento, local });
+      if (error) {
+        alert('Erro ao salvar evento: ' + error.message);
+        return;
+      }
+      esconderModal();
+      carregarEventos();
+    };
+
+    // Checa se o usuário é admin e exibe o link do admin
+    (async () => {
+      const SUPABASE_URL = window.SUPABASE_URL || localStorage.getItem('SUPABASE_URL');
+      const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || localStorage.getItem('SUPABASE_ANON_KEY');
+      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase.from('profiles').select('admin').eq('id', user.id).single();
+        if (profile?.admin) {
+          document.getElementById('admin-link').style.display = '';
+        }
+      }
+    })();
+
+    carregarEventos();
+  </script>
+</body>
+</html>

@@ -11,20 +11,37 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            text-size-adjust: none; /* Adicionado para resolver o aviso de text-size-adjust */
-            -webkit-text-size-adjust: none; /* Adicionado para resolver o aviso de text-size-adjust */
+            text-size-adjust: none;
+            -webkit-text-size-adjust: none;
         }
-        /* Transição para a largura da barra lateral */
         .sidebar-transition {
             transition: width 0.3s ease-in-out;
         }
-        /* Esconder elementos quando a barra lateral está recolhida em desktop */
         .sidebar-collapsed .sidebar-item-text {
             display: none;
         }
-        /* Ajuste do flex-grow para o conteúdo principal quando a sidebar está colapsada */
         .main-content-expanded {
-            flex-grow: 1; /* Permite que o conteúdo principal ocupe o espaço restante */
+            flex-grow: 1;
+        }
+        /* NOVO: Gradiente laranja moderno */
+        .bg-gradient-orange {
+            background: linear-gradient(135deg, #ff9800 0%, #ffb347 100%);
+        }
+        /* NOVO: Botão laranja */
+        .btn-orange {
+            background-color: #ff9800;
+            color: #fff;
+        }
+        .btn-orange:hover, .btn-orange:focus {
+            background-color: #fb8c00;
+        }
+        /* NOVO: Sombra suave para cards */
+        .modern-shadow {
+            box-shadow: 0 4px 24px 0 rgba(255,152,0,0.10), 0 1.5px 4px 0 rgba(0,0,0,0.04);
+        }
+        /* NOVO: Borda arredondada extra */
+        .rounded-2xl {
+            border-radius: 1.25rem;
         }
     </style>
 </head>
@@ -84,8 +101,33 @@
         function CreatePostModal({ isOpen, onClose, onSavePost, onShowMessage, supabase }) {
           const [title, setTitle] = React.useState('');
           const [content, setContent] = React.useState('');
-          const [image, setImage] = React.useState('');
+          const [image, setImage] = React.useState(''); // URL da imagem
+          const [imageFile, setImageFile] = React.useState(null); // Arquivo selecionado
           const [isLoading, setIsLoading] = React.useState(false);
+          const [uploadProgress, setUploadProgress] = React.useState(0);
+
+          // Função para upload da imagem no Supabase Storage
+          const handleImageUpload = async (file) => {
+            if (!file) return null;
+            try {
+              const fileExt = file.name.split('.').pop();
+              const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+              const { data, error } = await supabase.storage.from('post-images').upload(fileName, file, {
+                cacheControl: '3600',
+                upsert: false
+              });
+              if (error) {
+                onShowMessage('Erro ao fazer upload da imagem: ' + error.message, 'error');
+                return null;
+              }
+              // Gera a URL pública
+              const { data: publicUrlData } = supabase.storage.from('post-images').getPublicUrl(fileName);
+              return publicUrlData.publicUrl;
+            } catch (err) {
+              onShowMessage('Erro inesperado ao fazer upload da imagem.', 'error');
+              return null;
+            }
+          };
 
           const handleSubmit = async (e) => {
             e.preventDefault();
@@ -93,9 +135,15 @@
               onShowMessage('Título e Conteúdo são obrigatórios.', 'error');
               return;
             }
-
             setIsLoading(true);
-
+            let imageUrl = image;
+            if (imageFile) {
+              imageUrl = await handleImageUpload(imageFile);
+              if (!imageUrl) {
+                setIsLoading(false);
+                return;
+              }
+            }
             try {
               const { data: { user } } = await supabase.auth.getUser();
               if (!user) {
@@ -103,29 +151,28 @@
                 setIsLoading(false);
                 return;
               }
-
               const { data, error } = await supabase
                 .from('posts')
                 .insert([
                   {
                     title,
                     content,
-                    image_url: image || null,
+                    image_url: imageUrl || null,
                     author_id: user.id,
                     is_published: true
                   }
                 ])
                 .select();
-
               if (error) {
                 console.error('Erro ao salvar no Supabase:', error);
-                onShowModal(`Erro ao criar publicação: ${error.message}`, 'error');
+                onShowMessage(`Erro ao criar publicação: ${error.message}`, 'error');
               } else {
                 onSavePost(data[0]);
                 onShowMessage('Publicação criada com sucesso!', 'success');
                 setTitle('');
                 setContent('');
                 setImage('');
+                setImageFile(null);
                 onClose();
               }
             } catch (error) {
@@ -136,12 +183,20 @@
             }
           };
 
+          const handleFileChange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+              setImageFile(file);
+              setImage(''); // Limpa campo de URL manual
+            }
+          };
+
           if (!isOpen) return null;
 
           return (
             <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
               <div className="bg-white rounded-lg shadow-xl overflow-hidden max-w-md w-full transform transition-all duration-300 scale-100">
-                <div className="bg-blue-600 text-white px-6 py-4 flex justify-between items-center rounded-t-lg">
+                <div className="bg-orange-500 text-white px-6 py-4 flex justify-between items-center rounded-t-lg">
                   <h3 className="text-xl font-bold font-inter">Criar Nova Publicação</h3>
                   <button
                     onClick={onClose}
@@ -159,7 +214,7 @@
                       <input
                         type="text"
                         id="postTitle"
-                        className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+                        className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition duration-200 font-inter"
                         placeholder="Título da sua publicação"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
@@ -172,7 +227,7 @@
                       <label htmlFor="postContent" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Conteúdo</label>
                       <textarea
                         id="postContent"
-                        className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter h-32 resize-none"
+                        className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition duration-200 font-inter h-32 resize-none"
                         placeholder="Escreva o conteúdo da sua publicação aqui..."
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
@@ -181,15 +236,32 @@
                         disabled={isLoading}
                       ></textarea>
                     </div>
+                    <div className="mb-4">
+                      <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Foto do Post</label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+                        onChange={handleFileChange}
+                        disabled={isLoading}
+                        aria-label="Selecione uma imagem para o post"
+                      />
+                      {imageFile && (
+                        <div className="mt-2 flex items-center space-x-2">
+                          <img src={URL.createObjectURL(imageFile)} alt="Preview" className="w-20 h-20 object-cover rounded-lg border border-orange-200" />
+                          <span className="text-xs text-gray-500">Pré-visualização</span>
+                        </div>
+                      )}
+                    </div>
                     <div className="mb-6">
                       <label htmlFor="postImage" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">URL da Imagem (Opcional)</label>
                       <input
                         type="url"
                         id="postImage"
-                        className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+                        className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition duration-200 font-inter"
                         placeholder="https://exemplo.com/imagem.jpg"
                         value={image}
-                        onChange={(e) => setImage(e.target.value)}
+                        onChange={(e) => { setImage(e.target.value); setImageFile(null); }}
                         aria-label="Campo para a URL da imagem da publicação"
                         disabled={isLoading}
                       />
@@ -206,7 +278,7 @@
                       </button>
                       <button
                         type="submit"
-                        className="py-2 px-6 rounded-lg font-bold text-white bg-green-600 hover:bg-green-700 transition duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75 font-inter"
+                        className="py-2 px-6 rounded-lg font-bold text-white btn-orange transition duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-opacity-75 font-inter"
                         aria-label="Salvar nova publicação"
                         disabled={isLoading}
                       >
@@ -226,6 +298,7 @@
           const [isCreatePostModalOpen, setIsCreatePostModalOpen] = React.useState(false);
           const [isLoadingPosts, setIsLoadingPosts] = React.useState(true);
           const [isSidebarOpen, setIsSidebarOpen] = React.useState(window.innerWidth >= 768);
+          const [isAdmin, setIsAdmin] = React.useState(false);
 
           const fetchPosts = async () => {
             setIsLoadingPosts(true);
@@ -265,6 +338,23 @@
 
           React.useEffect(() => {
             fetchPosts();
+            // Checa se o usuário é admin pelo campo 'admin' (booleano)
+            const checkAdmin = async () => {
+              try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                  const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('admin')
+                    .eq('id', user.id)
+                    .single();
+                  setIsAdmin(profile?.admin === true);
+                }
+              } catch (e) {
+                setIsAdmin(false);
+              }
+            };
+            checkAdmin();
           }, []);
 
           const handleNewPost = (newPost) => {
@@ -301,7 +391,7 @@
 
 
           return (
-            <div className="flex flex-col md:flex-row min-h-screen w-full bg-gradient-to-br from-blue-600 to-purple-700 p-4 sm:p-6 md:p-8">
+            <div className="flex flex-col md:flex-row min-h-screen w-full bg-gradient-orange p-4 sm:p-6 md:p-8">
               {/* Botão de hambúrguer para mobile */}
               <button
                 onClick={toggleSidebar}
@@ -316,7 +406,7 @@
               {/* Barra Lateral */}
               <aside className={`fixed md:static top-0 left-0 h-full z-40
                                 w-64 md:w-64 sidebar-transition
-                                bg-gray-800 text-white p-4 flex flex-col items-center md:items-start space-y-4 rounded-xl shadow-lg
+                                bg-white text-gray-900 p-4 flex flex-col items-center md:items-start space-y-4 rounded-2xl modern-shadow
                                 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
                                 md:mb-0 md:rounded-r-none md:mr-4`}>
                 
@@ -331,9 +421,9 @@
                     </svg>
                 </button>
 
-                <div className="text-3xl font-extrabold mb-6 font-inter text-blue-300 sidebar-item-text">Menu</div>
+                <div className="text-3xl font-extrabold mb-6 font-inter text-orange-500 sidebar-item-text">Menu</div>
                 <div 
-                    className="flex items-center space-x-2 text-xl cursor-pointer hover:text-blue-300 transition duration-200" 
+                    className="flex items-center space-x-2 text-xl cursor-pointer hover:text-orange-500 transition duration-200" 
                     aria-label="Acessar meu perfil"
                     onClick={handleNavigateToProfile}
                 >
@@ -342,74 +432,53 @@
                     </svg>
                     <span className="font-inter sidebar-item-text">Meu Perfil</span>
                 </div>
-                {/* BOTÃO DE IGREJAS AGORA NAVEGA */}
-                <button 
-                    className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" 
-                    aria-label="Navegar para Igrejas"
-                    onClick={handleNavigateToChurch}
-                >
-                    <span className="sidebar-item-text">Igrejas</span>
-                </button>
-                <button 
-                    className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" 
-                    aria-label="Navegar para Eventos"
-                    onClick={() => handleComingSoon('Eventos')} // Aviso de em desenvolvimento
-                    title="Funcionalidade em desenvolvimento"
-                >
-                    <span className="sidebar-item-text">Eventos</span>
-                </button>
-                <button 
-                    className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" 
-                    aria-label="Ver posts de Estudo Bíblico"
-                    onClick={() => handleComingSoon('Estudo Bíblico')} // Aviso de em desenvolvimento
-                    title="Funcionalidade em desenvolvimento"
-                >
-                    Estudo Bíblico
-                </button>
-                <button 
-                    className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" 
-                    aria-label="Ver posts de Ação Social"
-                    onClick={() => handleComingSoon('Ação Social')} // Aviso de em desenvolvimento
-                    title="Funcionalidade em desenvolvimento"
-                >
-                    Ação Social
-                </button>
-                <button 
-                    className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter" 
-                    aria-label="Ver posts de Noite de Louvor"
-                    onClick={() => handleComingSoon('Noite de Louvor')} // Aviso de em desenvolvimento
-                    title="Funcionalidade em desenvolvimento"
-                >
-                    Noite de Louvor
-                </button>
-
                 <button
-                    onClick={() => setIsCreatePostModalOpen(true)}
-                    className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter bg-blue-500 hover:bg-blue-600"
-                    aria-label="Criar uma nova publicação"
+                  className="w-full text-left py-3 px-4 rounded-lg font-bold text-lg font-inter btn-orange shadow-md"
+                  onClick={() => setIsCreatePostModalOpen(true)}
+                  aria-label="Criar uma nova publicação"
                 >
-                    Criar Publicação
+                  Criar Publicação
                 </button>
-                
-                {/* BOTÃO DE CHAT */}
                 <button
-                    onClick={handleNavigateToChat}
-                    className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter bg-purple-500 hover:bg-purple-600"
-                    aria-label="Abrir chat global"
+                  onClick={handleNavigateToChat}
+                  className="w-full text-left py-3 px-4 rounded-lg font-bold text-lg font-inter bg-purple-500 hover:bg-purple-600 text-white shadow-md"
+                  aria-label="Abrir chat global"
                 >
-                    Chat
+                  Chat
                 </button>
-
-                {/* BOTÃO DE ADMINISTRADOR */}
-                <button 
-                    className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-bold text-lg font-inter bg-gray-600 hover:bg-gray-700" 
+                {/* NOVOS BOTÕES DE SESSÃO */}
+                <button
+                  onClick={() => window.location.href = 'estudos.html'}
+                  className="w-full text-left py-3 px-4 rounded-lg font-bold text-lg font-inter btn-orange shadow-md"
+                  aria-label="Acessar Estudos Bíblicos"
+                >
+                  Estudos Bíblicos
+                </button>
+                <button
+                  onClick={() => window.location.href = 'lives.html'}
+                  className="w-full text-left py-3 px-4 rounded-lg font-bold text-lg font-inter bg-pink-500 hover:bg-pink-600 text-white shadow-md"
+                  aria-label="Acessar Lives"
+                >
+                  Lives
+                </button>
+                <button
+                  onClick={() => window.location.href = 'doacoes.html'}
+                  className="w-full text-left py-3 px-4 rounded-lg font-bold text-lg font-inter bg-green-500 hover:bg-green-600 text-white shadow-md"
+                  aria-label="Acessar Doações"
+                >
+                  Doações
+                </button>
+                {/* BOTÃO DE ADMINISTRADOR - visível só para admin */}
+                {isAdmin && (
+                  <button
+                    className="w-full text-left py-3 px-4 rounded-lg font-bold text-lg font-inter bg-gray-600 hover:bg-gray-700 text-white shadow-md"
                     aria-label="Aceder painel de administrador"
-                    onClick={handleNavigateToAdmin} // Direciona para a página admin.html
-                >
+                    onClick={handleNavigateToAdmin}
+                  >
                     <span className="sidebar-item-text">Administrador</span>
-                </button>
-
-                <div className="mt-auto pt-4 w-full border-t border-gray-700 md:border-none">
+                  </button>
+                )}
+                <div className="mt-auto pt-4 w-full border-t border-gray-200 md:border-none">
                   <button
                     onClick={onLogout}
                     className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 transform hover:scale-100 active:scale-95 shadow-md font-inter"
@@ -420,11 +489,20 @@
                 </div>
               </aside>
 
-              <main className={`flex-1 p-6 bg-gray-100 rounded-xl shadow-xl max-w-2xl mx-auto
+              <main className={`flex-1 p-6 bg-white rounded-2xl modern-shadow max-w-2xl mx-auto
                                 md:ml-0 ${isSidebarOpen ? 'md:ml-64' : 'md:ml-20'} sidebar-transition`}>
-                <div className="text-center mb-8">
-                  <h1 className="text-4xl font-extrabold text-gray-800 mb-2 font-inter">Posts e Anúncios</h1>
-                  <p className="text-gray-600 text-lg">Últimas notícias e comunicados da comunidade.</p>
+                <div className="flex flex-col sm:flex-row sm:justify-between items-center mb-8 gap-4">
+                  <div className="text-center sm:text-left">
+                    <h1 className="text-4xl font-extrabold text-orange-600 mb-2 font-inter">Posts e Anúncios</h1>
+                    <p className="text-gray-600 text-lg">Últimas notícias e comunicados da comunidade.</p>
+                  </div>
+                  <button
+                    onClick={fetchPosts}
+                    className="btn-orange hover:bg-orange-600 text-white font-bold py-2 px-6 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 shadow-md"
+                    aria-label="Atualizar feed de publicações"
+                  >
+                    Atualizar Feed
+                  </button>
                 </div>
 
                 {isLoadingPosts ? (
@@ -434,20 +512,30 @@
                 ) : (
                   <div className="flex flex-col space-y-6">
                     {posts.map(post => (
-                      <div key={post.id} className="bg-white p-6 rounded-lg shadow-lg border border-gray-200">
-                        {post.image && (
-                          <img
-                            src={post.image}
-                            alt={`Imagem para o post: ${post.title}`}
-                            className="w-full h-48 object-cover rounded-lg mb-4"
-                            onError={(e) => { e.target.onerror = null; e.target.src = `https://placehold.co/400x200/cccccc/ffffff?text=Imagem+N%C3%A3o+Dispon%C3%ADvel`; }}
-                          />
-                        )}
-                        <h2 className="text-2xl font-bold text-gray-800 mb-2 font-inter">{post.title}</h2>
-                        <p className="text-sm text-gray-500 mb-3 font-inter">
-                          Por {post.author} {post.church && `da ${post.church}`} em {post.date}
-                        </p>
-                        <p className="text-gray-700 leading-relaxed font-inter">{post.content}</p>
+                      <div key={post.id} className="bg-white p-6 rounded-2xl modern-shadow border border-orange-100 flex flex-col sm:flex-row gap-4 items-start">
+                        {/* Avatar do autor */}
+                        <div className="flex-shrink-0 w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-2xl font-inter shadow-sm">
+                          {post.author && post.author[0]}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
+                            <span className="font-inter font-bold text-gray-800 text-lg">{post.author}</span>
+                            <span className="text-xs text-orange-500 font-inter mt-1 sm:mt-0">{post.date}</span>
+                          </div>
+                          <h2 className="text-2xl font-bold text-orange-700 mb-2 font-inter">{post.title}</h2>
+                          {post.image && (
+                            <img
+                              src={post.image}
+                              alt={`Imagem para o post: ${post.title}`}
+                              className="w-full h-48 object-cover rounded-xl mb-4 border border-orange-200 shadow-sm"
+                              onError={(e) => { e.target.onerror = null; e.target.src = `https://placehold.co/400x200/ff9800/ffffff?text=Imagem+N%C3%A3o+Dispon%C3%ADvel`; }}
+                              title="Clique para ampliar"
+                              style={{ cursor: 'pointer' }}
+                              onClick={() => window.open(post.image, '_blank')}
+                            />
+                          )}
+                          <p className="text-gray-700 leading-relaxed font-inter">{post.content}</p>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -475,6 +563,13 @@
 
           // AGORA, ACESSE A INSTÂNCIA GLOBALMENTE
           const supabase = window.globalSupabaseClient;
+          if (!supabase) {
+            return (
+              <div className='min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center'>
+                <div className='text-white text-2xl font-bold font-inter'>Erro ao carregar o Supabase. Recarregue a página.</div>
+              </div>
+            );
+          }
 
           React.useEffect(() => {
             // Inicializa o cliente Supabase globalmente se ainda não foi inicializado e o SDK está disponível
@@ -556,7 +651,7 @@
                 supabase={supabase}
               />
               <div className="text-center text-white text-sm opacity-80 font-inter py-4 bg-gray-800 w-full md:hidden">
-                © {new Date().getFullYear()} CPN Serviços. Todos os direitos reservados. <span className="text-xs ml-2 opacity-70">v1.0.2025.01.4</span>
+                © {new Date().getFullYear()} CPN Serviços. Todos os direitos reservados. <span className="text-xs ml-2 opacity-70">v1.2025.07.1</span>
               </div>
               <Modal
                 isOpen={isModalOpen}
