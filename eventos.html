@@ -13,7 +13,7 @@
 <body class="bg-gradient-to-br from-blue-100 via-white to-purple-100 min-h-screen">
   <div class="flex min-h-screen">
     <!-- Sidebar -->
-    <aside class="w-64 bg-white shadow-lg p-6 flex flex-col space-y-4 fixed md:static z-30 h-full md:h-auto">
+    <aside class="w-full max-w-xs md:w-64 bg-white shadow-lg p-6 flex flex-col space-y-4 fixed md:static z-30 h-full md:h-auto">
       <div class="text-2xl font-extrabold text-blue-600 font-inter mb-8">Conexão Eclesia</div>
       <a href="conexao-eclesia-feed.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-blue-100 transition">Feed</a>
       <a href="chat.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-blue-100 transition">Chat</a>
@@ -25,19 +25,16 @@
       <a href="admin.html" id="admin-link" style="display:none" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-blue-100 transition">Administrador</a>
     </aside>
     <div class="flex-1 ml-0 md:ml-64">
-      <header class="bg-white shadow-sm p-4 flex justify-between items-center sticky top-0 z-20">
+      <header class="bg-white shadow-sm p-4 flex flex-col sm:flex-row justify-between items-center sticky top-0 z-20 gap-2">
         <a href="conexao-eclesia-feed.html" class="text-2xl font-extrabold text-blue-600 font-inter">Conexão Eclesia</a>
         <a href="#" onclick="window.history.back()" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 font-bold font-inter">Voltar</a>
       </header>
-
-      <main class="container mx-auto px-4 py-8 max-w-3xl">
-        <div class="flex justify-between items-center mb-8">
+      <main class="container mx-auto px-2 sm:px-4 py-8 max-w-3xl">
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
           <h1 class="text-3xl font-extrabold text-blue-700 font-inter">Eventos</h1>
           <button id="btn-novo-evento" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow-md font-inter">Novo Evento</button>
         </div>
-        <div id="eventos-lista" class="space-y-6">
-          <div class="text-center text-gray-500">Carregando eventos...</div>
-        </div>
+        <div id="eventos-lista" class="space-y-6"></div>
       </main>
 
       <!-- Modal de criação de evento -->
@@ -138,5 +135,32 @@
 
     carregarEventos();
   </script>
+  <style>
+    @media (max-width: 640px) {
+      aside.fixed {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100vw;
+        max-width: 100vw;
+        z-index: 30;
+        height: auto;
+        min-height: 0;
+        border-radius: 0 0 1.5rem 1.5rem;
+      }
+      .rounded-xl, .rounded-lg, .rounded-3xl, .rounded-2xl {
+        border-radius: 0.75rem !important;
+      }
+      .shadow-2xl, .shadow-xl, .shadow-md {
+        box-shadow: 0 2px 8px 0 rgba(37,99,235,0.10), 0 1.5px 4px 0 rgba(0,0,0,0.04) !important;
+      }
+      .max-w-3xl, .max-w-md {
+        max-width: 100vw !important;
+      }
+      .p-8 {
+        padding: 1rem !important;
+      }
+    }
+  </style>
 </body>
 </html>

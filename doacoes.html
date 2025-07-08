@@ -13,7 +13,7 @@
 <body class="bg-gradient-to-br from-blue-600 to-purple-700 min-h-screen">
     <div class="flex min-h-screen">
       <!-- Sidebar -->
-      <aside class="w-64 bg-white shadow-lg p-6 flex flex-col space-y-4 fixed md:static z-30 h-full md:h-auto">
+      <aside class="w-full max-w-xs md:w-64 bg-white shadow-lg p-6 flex flex-col space-y-4 fixed md:static z-30 h-full md:h-auto">
         <div class="text-2xl font-extrabold text-blue-700 font-inter mb-8">Conexão Eclesia</div>
         <a href="conexao-eclesia-feed.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-blue-100 transition">Feed</a>
         <a href="chat.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-blue-100 transition">Chat</a>
@@ -25,292 +25,320 @@
         <a href="admin.html" id="admin-link" style="display:none" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-blue-100 transition">Administrador</a>
       </aside>
       <div class="flex-1 ml-0 md:ml-64">
-        <header class="bg-white shadow-sm p-4 flex justify-between items-center sticky top-0 z-20 rounded-b-xl">
-            <a href="conexao-eclesia-feed.html" class="text-2xl font-extrabold text-blue-700 font-inter">Conexão Eclesia</a>
-            <a href="conexao-eclesia-feed.html" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-bold font-inter transition">Voltar ao Feed</a>
+        <header class="bg-white shadow-sm p-4 flex flex-col sm:flex-row justify-between items-center sticky top-0 z-20 rounded-b-xl gap-2">
+          <a href="conexao-eclesia-feed.html" class="text-2xl font-extrabold text-blue-700 font-inter">Conexão Eclesia</a>
+          <a href="conexao-eclesia-feed.html" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-bold font-inter transition">Voltar ao Feed</a>
         </header>
-
-        <main class="container mx-auto px-4 py-8 max-w-2xl">
-            <!-- Dashboard de Doações -->
-            <div id="dashboard-doacoes" class="bg-white p-6 rounded-lg shadow-md mb-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-                <div>
-                    <div class="text-lg font-bold text-blue-700 font-inter">Total Arrecadado</div>
-                    <div id="dashboard-total" class="text-2xl font-extrabold text-green-600 font-inter">R$ 0,00</div>
-                </div>
-                <div>
-                    <div class="text-lg font-bold text-blue-700 font-inter">Total de Doadores</div>
-                    <div id="dashboard-donors" class="text-2xl font-extrabold text-blue-600 font-inter">0</div>
-                </div>
+        <main class="container mx-auto px-2 sm:px-4 py-8 max-w-2xl">
+          <!-- Dashboard de Doações -->
+          <div id="dashboard-doacoes" class="bg-white p-6 rounded-lg shadow-md mb-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div>
+              <div class="text-lg font-bold text-blue-700 font-inter">Total Arrecadado</div>
+              <div id="dashboard-total" class="text-2xl font-extrabold text-green-600 font-inter">R$ 0,00</div>
             </div>
-
-            <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-                <h1 class="text-3xl font-extrabold text-white font-inter">Doações</h1>
-                <button id="edit-doacoes-btn" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-bold flex items-center space-x-2 shadow-md transition hidden">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                    <span>Editar Informações</span>
-                </button>
+            <div>
+              <div class="text-lg font-bold text-blue-700 font-inter">Total de Doadores</div>
+              <div id="dashboard-donors" class="text-2xl font-extrabold text-blue-600 font-inter">0</div>
             </div>
-
-            <div id="doacoes-info" class="bg-white p-6 rounded-lg shadow-md">
-                <!-- Informações de doação serão injetadas aqui -->
-                <p class="text-center text-gray-500">A carregar informações de doação...</p>
+          </div>
+          <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+            <h1 class="text-3xl font-extrabold text-white font-inter">Doações</h1>
+            <button id="edit-doacoes-btn" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-bold flex items-center space-x-2 shadow-md transition hidden">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+              <span>Editar Informações</span>
+            </button>
+          </div>
+          <div id="doacoes-info" class="bg-white p-6 rounded-lg shadow-md">
+            <!-- Informações de doação serão injetadas aqui -->
+            <p class="text-center text-gray-500">A carregar informações de doação...</p>
+          </div>
+          <!-- Formulário do doador -->
+          <form id="doador-form" class="bg-white p-6 rounded-lg shadow-md mt-8 space-y-4">
+            <h2 class="text-2xl font-bold text-blue-700 mb-4 font-inter">Faça sua doação</h2>
+            <div>
+              <label for="doador-email" class="block text-sm font-semibold text-gray-700 font-inter">E-mail</label>
+              <input type="email" id="doador-email" required placeholder="Digite seu e-mail" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
             </div>
-
-            <!-- Formulário do doador -->
-            <form id="doador-form" class="bg-white p-6 rounded-lg shadow-md mt-8 space-y-4">
-                <h2 class="text-2xl font-bold text-blue-700 mb-4 font-inter">Faça sua doação</h2>
-                <div>
-                    <label for="doador-email" class="block text-sm font-semibold text-gray-700 font-inter">E-mail</label>
-                    <input type="email" id="doador-email" required placeholder="Digite seu e-mail" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                <div>
-                    <label for="doador-nome" class="block text-sm font-semibold text-gray-700 font-inter">Nome</label>
-                    <input type="text" id="doador-nome" placeholder="Seu nome" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
-                </div>
-                <div>
-                    <label for="doador-telefone" class="block text-sm font-semibold text-gray-700 font-inter">Telefone</label>
-                    <input type="text" id="doador-telefone" placeholder="Seu telefone" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
-                </div>
-                <div>
-                    <label for="doador-valor" class="block text-sm font-semibold text-gray-700 font-inter">Valor da Doação (R$)</label>
-                    <input type="number" id="doador-valor" min="1" step="0.01" required placeholder="Digite o valor" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
-                </div>
-                <div class="flex justify-end space-x-4 mt-6">
-                    <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-lg font-bold font-inter hover:bg-green-700 transition">Doar</button>
-                </div>
-            </form>
-
-            <form id="doacoes-form" class="hidden bg-white p-6 rounded-lg shadow-md mt-8 space-y-4">
-                <h2 class="text-2xl font-bold text-blue-700 mb-4 font-inter">Editar Informações de Doação</h2>
-                <div>
-                    <label for="form-pix-key" class="block text-sm font-semibold text-gray-700 font-inter">Chave Pix</label>
-                    <input type="text" id="form-pix-key" placeholder="Digite a chave Pix" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                <div>
-                    <label for="form-bank" class="block text-sm font-semibold text-gray-700 font-inter">Banco</label>
-                    <input type="text" id="form-bank" placeholder="Banco" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
-                </div>
-                <div>
-                    <label for="form-agency" class="block text-sm font-semibold text-gray-700 font-inter">Agência</label>
-                    <input type="text" id="form-agency" placeholder="Agência" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
-                </div>
-                <div>
-                    <label for="form-account" class="block text-sm font-semibold text-gray-700 font-inter">Conta</label>
-                    <input type="text" id="form-account" placeholder="Conta" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
-                </div>
-                <div>
-                    <label for="form-description" class="block text-sm font-semibold text-gray-700 font-inter">Descrição</label>
-                    <textarea id="form-description" rows="3" placeholder="Descrição" class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></textarea>
-                </div>
-                <div class="flex justify-end space-x-4 mt-6">
-                    <button type="button" id="cancel-doacoes-btn" class="bg-gray-200 px-4 py-2 rounded-lg font-bold hover:bg-gray-300 font-inter">Cancelar</button>
-                    <button type="submit" id="save-doacoes-btn" class="bg-green-600 text-white px-4 py-2 rounded-lg font-bold font-inter hover:bg-green-700 transition">Salvar Alterações</button>
-                </div>
-            </form>
+            <div>
+              <label for="doador-nome" class="block text-sm font-semibold text-gray-700 font-inter">Nome</label>
+              <input type="text" id="doador-nome" placeholder="Seu nome" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+            </div>
+            <div>
+              <label for="doador-telefone" class="block text-sm font-semibold text-gray-700 font-inter">Telefone</label>
+              <input type="text" id="doador-telefone" placeholder="Seu telefone" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+            </div>
+            <div>
+              <label for="doador-valor" class="block text-sm font-semibold text-gray-700 font-inter">Valor da Doação (R$)</label>
+              <input type="number" id="doador-valor" min="1" step="0.01" required placeholder="Digite o valor" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+            </div>
+            <div class="flex justify-end space-x-4 mt-6">
+              <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-lg font-bold font-inter hover:bg-green-700 transition">Doar</button>
+            </div>
+          </form>
+          <form id="doacoes-form" class="hidden bg-white p-6 rounded-lg shadow-md mt-8 space-y-4">
+            <h2 class="text-2xl font-bold text-blue-700 mb-4 font-inter">Editar Informações de Doação</h2>
+            <div>
+              <label for="form-pix-key" class="block text-sm font-semibold text-gray-700 font-inter">Chave Pix</label>
+              <input type="text" id="form-pix-key" placeholder="Digite a chave Pix" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+              <label for="form-bank" class="block text-sm font-semibold text-gray-700 font-inter">Banco</label>
+              <input type="text" id="form-bank" placeholder="Banco" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+            </div>
+            <div>
+              <label for="form-agency" class="block text-sm font-semibold text-gray-700 font-inter">Agência</label>
+              <input type="text" id="form-agency" placeholder="Agência" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+            </div>
+            <div>
+              <label for="form-account" class="block text-sm font-semibold text-gray-700 font-inter">Conta</label>
+              <input type="text" id="form-account" placeholder="Conta" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+            </div>
+            <div>
+              <label for="form-description" class="block text-sm font-semibold text-gray-700 font-inter">Descrição</label>
+              <textarea id="form-description" rows="3" placeholder="Descrição" class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></textarea>
+            </div>
+            <div class="flex justify-end space-x-4 mt-6">
+              <button type="button" id="cancel-doacoes-btn" class="bg-gray-200 px-4 py-2 rounded-lg font-bold hover:bg-gray-300 font-inter">Cancelar</button>
+              <button type="submit" id="save-doacoes-btn" class="bg-green-600 text-white px-4 py-2 rounded-lg font-bold font-inter hover:bg-green-700 transition">Salvar Alterações</button>
+            </div>
+          </form>
         </main>
-
         <footer class="mt-12 text-center text-white text-sm opacity-80 font-inter py-4">
-            © <span id="ano-footer"></span> CPN Serviços. Todos os direitos reservados. <span class="text-xs ml-2 opacity-70">v1.2025.07.1</span>
+          © <span id="ano-footer"></span> CPN Serviços. Todos os direitos reservados. <span class="text-xs ml-2 opacity-70">v1.2025.07.1</span>
         </footer>
       </div>
     </div>
-    <script>
-document.getElementById('ano-footer').textContent = new Date().getFullYear();
-</script>
-    <script type="module">
-    // Configuração do Supabase (URL e ANON KEY)
-    const SUPABASE_URL = window.SUPABASE_URL || localStorage.getItem('SUPABASE_URL');
-    const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || localStorage.getItem('SUPABASE_ANON_KEY');
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    const infoDiv = document.getElementById('doacoes-info');
-    const form = document.getElementById('doacoes-form');
-    const editBtn = document.getElementById('edit-doacoes-btn');
-    const cancelBtn = document.getElementById('cancel-doacoes-btn');
-    const saveBtn = document.getElementById('save-doacoes-btn');
-
-    // Campos do formulário de edição
-    const pixKeyInput = document.getElementById('form-pix-key');
-    const bankInput = document.getElementById('form-bank');
-    const agencyInput = document.getElementById('form-agency');
-    const accountInput = document.getElementById('form-account');
-    const descriptionInput = document.getElementById('form-description');
-
-    // Campos do formulário do doador
-    const doadorForm = document.getElementById('doador-form');
-    const doadorEmail = document.getElementById('doador-email');
-    const doadorNome = document.getElementById('doador-nome');
-    const doadorTelefone = document.getElementById('doador-telefone');
-    const doadorValor = document.getElementById('doador-valor');
-
-    // Dashboard
-    const dashboardTotal = document.getElementById('dashboard-total');
-    const dashboardDonors = document.getElementById('dashboard-donors');
-
-    async function loadDoacoesInfo() {
-        if (!supabase) {
-            infoDiv.innerHTML = "<p class='text-center text-red-500'>Erro ao conectar ao Supabase.</p>";
-            return;
+    <style>
+      @media (max-width: 640px) {
+        aside.fixed {
+          position: fixed;
+          left: 0;
+          top: 0;
+          width: 100vw;
+          max-width: 100vw;
+          z-index: 30;
+          height: auto;
+          min-height: 0;
+          border-radius: 0 0 1.5rem 1.5rem;
         }
-        const { data, error } = await supabase
-            .from('donation_settings')
-            .select('*')
-            .single();
-        let html = '';
-        if (error && error.code !== 'PGRST116') {
-            html = `<p class='text-center text-red-500'>Erro ao carregar informações: ${error.message}</p>`;
-        } else if (data && (data.pixKey || data.bank || data.agency || data.account || data.description)) {
-            html += data.pixKey ? `<div class='mb-4'><span class='font-bold text-blue-700'>Chave Pix:</span> <span class='font-mono'>${data.pixKey}</span></div>` : '';
-            html += data.bank ? `<div class='mb-4'><span class='font-bold text-blue-700'>Banco:</span> <span>${data.bank}</span></div>` : '';
-            html += data.agency ? `<div class='mb-4'><span class='font-bold text-blue-700'>Agência:</span> <span>${data.agency}</span></div>` : '';
-            html += data.account ? `<div class='mb-4'><span class='font-bold text-blue-700'>Conta:</span> <span>${data.account}</span></div>` : '';
-            html += data.description ? `<div class='mb-4'><span class='font-bold text-blue-700'>Descrição:</span><br><pre class='bg-gray-100 p-2 rounded text-gray-800 whitespace-pre-wrap'>${data.description}</pre></div>` : '';
-        } else {
-            html = "<p class='text-center text-gray-500'>Nenhuma informação de doação cadastrada ainda.</p>";
+        .rounded-xl, .rounded-lg, .rounded-3xl, .rounded-2xl {
+          border-radius: 0.75rem !important;
         }
-        infoDiv.innerHTML = html;
-    }
-
-    async function fillForm() {
-        if (!supabase) return;
-        const { data, error } = await supabase
-            .from('donation_settings')
-            .select('*')
-            .single();
-        pixKeyInput.value = data?.pixKey || '';
-        bankInput.value = data?.bank || '';
-        agencyInput.value = data?.agency || '';
-        accountInput.value = data?.account || '';
-        descriptionInput.value = data?.description || '';
-    }
-
-    async function loadDashboard() {
-        if (!supabase) {
-            dashboardTotal.textContent = 'R$ 0,00';
-            dashboardDonors.textContent = '0';
-            return;
+        .shadow-2xl, .shadow-xl, .shadow-md {
+          box-shadow: 0 2px 8px 0 rgba(37,99,235,0.10), 0 1.5px 4px 0 rgba(0,0,0,0.04) !important;
         }
-        // Exemplo: soma e contagem da tabela donations (crie se não existir)
-        const { data, error } = await supabase
-            .from('donations')
-            .select('amount, donor_email');
-        if (error || !data) {
-            dashboardTotal.textContent = 'R$ 0,00';
-            dashboardDonors.textContent = '0';
-            return;
+        .max-w-2xl {
+          max-width: 100vw !important;
         }
-        const total = data.reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
-        const donors = new Set(data.map(d => d.donor_email)).size;
-        dashboardTotal.textContent = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        dashboardDonors.textContent = donors;
-    }
-
-    editBtn.addEventListener('click', async () => {
-        await fillForm();
-        infoDiv.classList.add('hidden');
-        form.classList.remove('hidden');
-        doadorForm.classList.add('hidden');
-    });
-
-    cancelBtn.addEventListener('click', () => {
-        form.classList.add('hidden');
-        infoDiv.classList.remove('hidden');
-        doadorForm.classList.remove('hidden');
-    });
-
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        if (!supabase) return;
-        const updateData = {
-            pixKey: pixKeyInput.value.trim(),
-            bank: bankInput.value.trim(),
-            agency: agencyInput.value.trim(),
-            account: accountInput.value.trim(),
-            description: descriptionInput.value.trim()
-        };
-        // Busca o registro existente para obter o id, se houver
-        let id = null;
-        const { data: existing } = await supabase
-            .from('donation_settings')
-            .select('id')
-            .single();
-        if (existing && existing.id) {
-            updateData.id = existing.id;
-        }
-        // UPSERT: insere se não existir, atualiza se já existir
-        const { error } = await supabase
-            .from('donation_settings')
-            .upsert([updateData], { onConflict: ['id'] });
-        if (error) {
-            alert('Erro ao salvar: ' + error.message);
-        }
-        await loadDoacoesInfo();
-        form.classList.add('hidden');
-        infoDiv.classList.remove('hidden');
-        doadorForm.classList.remove('hidden');
-    });
-
-    // Preenchimento automático do doador pelo e-mail
-    if (doadorEmail) {
-        doadorEmail.addEventListener('blur', async () => {
-            const email = doadorEmail.value.trim();
-            if (!email || !supabase) return;
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('full_name, phone_number')
-                .ilike('email', email)
-                .single();
-            if (data) {
-                doadorNome.value = data.full_name || '';
-                doadorTelefone.value = data.phone_number || '';
-            } else {
-                doadorNome.value = '';
-                doadorTelefone.value = '';
-            }
-        });
-    }
-
-    // No submit doadorForm, registre a doação
-    if (doadorForm) {
-        doadorForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (!supabase) return alert('Erro ao conectar ao Supabase.');
-            const valor = parseFloat(doadorValor.value);
-            if (!valor || valor <= 0) return alert('Informe um valor válido.');
-            // Salva o doador na tabela doacoes
-            await supabase.from('doacoes').insert([
-                {
-                    email: doadorEmail.value.trim(),
-                    nome: doadorNome.value.trim(),
-                    telefone: doadorTelefone.value.trim(),
-                    valor: valor,
-                    data_doacao: new Date().toISOString()
-                }
-            ]);
-            alert('Obrigado por sua doação! Valor: R$ ' + valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }));
-            doadorForm.reset();
-            loadDashboard();
-        });
-    }
-
-    // Checa se o usuário é admin e exibe o link do admin e botão de edição
-    (async () => {
-      if (supabase) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: profile } = await supabase.from('profiles').select('admin, role_in_church').eq('id', user.id).single();
-          if (profile?.admin || profile?.role_in_church === 'admin' || profile?.role_in_church === 'owner') {
-            document.getElementById('admin-link').style.display = '';
-            editBtn.classList.remove('hidden');
-          }
+        .p-6 {
+          padding: 1rem !important;
         }
       }
-    })();
+    </style>
+    <script>
+      document.getElementById('ano-footer').textContent = new Date().getFullYear();
+    </script>
+    <script type="module">
+      // Configuração do Supabase (URL e ANON KEY)
+      const SUPABASE_URL = window.SUPABASE_URL || localStorage.getItem('SUPABASE_URL');
+      const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || localStorage.getItem('SUPABASE_ANON_KEY');
+      import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Inicialização
-    loadDoacoesInfo();
-    loadDashboard();
+      const infoDiv = document.getElementById('doacoes-info');
+      const form = document.getElementById('doacoes-form');
+      const editBtn = document.getElementById('edit-doacoes-btn');
+      const cancelBtn = document.getElementById('cancel-doacoes-btn');
+      const saveBtn = document.getElementById('save-doacoes-btn');
+
+      // Campos do formulário de edição
+      const pixKeyInput = document.getElementById('form-pix-key');
+      const bankInput = document.getElementById('form-bank');
+      const agencyInput = document.getElementById('form-agency');
+      const accountInput = document.getElementById('form-account');
+      const descriptionInput = document.getElementById('form-description');
+
+      // Campos do formulário do doador
+      const doadorForm = document.getElementById('doador-form');
+      const doadorEmail = document.getElementById('doador-email');
+      const doadorNome = document.getElementById('doador-nome');
+      const doadorTelefone = document.getElementById('doador-telefone');
+      const doadorValor = document.getElementById('doador-valor');
+
+      // Dashboard
+      const dashboardTotal = document.getElementById('dashboard-total');
+      const dashboardDonors = document.getElementById('dashboard-donors');
+
+      async function loadDoacoesInfo() {
+          if (!supabase) {
+              infoDiv.innerHTML = "<p class='text-center text-red-500'>Erro ao conectar ao Supabase.</p>";
+              return;
+          }
+          const { data, error } = await supabase
+              .from('donation_settings')
+              .select('*')
+              .single();
+          let html = '';
+          if (error && error.code !== 'PGRST116') {
+              html = `<p class='text-center text-red-500'>Erro ao carregar informações: ${error.message}</p>`;
+          } else if (data && (data.pixKey || data.bank || data.agency || data.account || data.description)) {
+              html += data.pixKey ? `<div class='mb-4'><span class='font-bold text-blue-700'>Chave Pix:</span> <span class='font-mono'>${data.pixKey}</span></div>` : '';
+              html += data.bank ? `<div class='mb-4'><span class='font-bold text-blue-700'>Banco:</span> <span>${data.bank}</span></div>` : '';
+              html += data.agency ? `<div class='mb-4'><span class='font-bold text-blue-700'>Agência:</span> <span>${data.agency}</span></div>` : '';
+              html += data.account ? `<div class='mb-4'><span class='font-bold text-blue-700'>Conta:</span> <span>${data.account}</span></div>` : '';
+              html += data.description ? `<div class='mb-4'><span class='font-bold text-blue-700'>Descrição:</span><br><pre class='bg-gray-100 p-2 rounded text-gray-800 whitespace-pre-wrap'>${data.description}</pre></div>` : '';
+          } else {
+              html = "<p class='text-center text-gray-500'>Nenhuma informação de doação cadastrada ainda.</p>";
+          }
+          infoDiv.innerHTML = html;
+      }
+
+      async function fillForm() {
+          if (!supabase) return;
+          const { data, error } = await supabase
+              .from('donation_settings')
+              .select('*')
+              .single();
+          pixKeyInput.value = data?.pixKey || '';
+          bankInput.value = data?.bank || '';
+          agencyInput.value = data?.agency || '';
+          accountInput.value = data?.account || '';
+          descriptionInput.value = data?.description || '';
+      }
+
+      async function loadDashboard() {
+          if (!supabase) {
+              dashboardTotal.textContent = 'R$ 0,00';
+              dashboardDonors.textContent = '0';
+              return;
+          }
+          // Exemplo: soma e contagem da tabela donations (crie se não existir)
+          const { data, error } = await supabase
+              .from('donations')
+              .select('amount, donor_email');
+          if (error || !data) {
+              dashboardTotal.textContent = 'R$ 0,00';
+              dashboardDonors.textContent = '0';
+              return;
+          }
+          const total = data.reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
+          const donors = new Set(data.map(d => d.donor_email)).size;
+          dashboardTotal.textContent = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          dashboardDonors.textContent = donors;
+      }
+
+      editBtn.addEventListener('click', async () => {
+          await fillForm();
+          infoDiv.classList.add('hidden');
+          form.classList.remove('hidden');
+          doadorForm.classList.add('hidden');
+      });
+
+      cancelBtn.addEventListener('click', () => {
+          form.classList.add('hidden');
+          infoDiv.classList.remove('hidden');
+          doadorForm.classList.remove('hidden');
+      });
+
+      form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          if (!supabase) return;
+          const updateData = {
+              pixKey: pixKeyInput.value.trim(),
+              bank: bankInput.value.trim(),
+              agency: agencyInput.value.trim(),
+              account: accountInput.value.trim(),
+              description: descriptionInput.value.trim()
+          };
+          // Busca o registro existente para obter o id, se houver
+          let id = null;
+          const { data: existing } = await supabase
+              .from('donation_settings')
+              .select('id')
+              .single();
+          if (existing && existing.id) {
+              updateData.id = existing.id;
+          }
+          // UPSERT: insere se não existir, atualiza se já existir
+          const { error } = await supabase
+              .from('donation_settings')
+              .upsert([updateData], { onConflict: ['id'] });
+          if (error) {
+              alert('Erro ao salvar: ' + error.message);
+          }
+          await loadDoacoesInfo();
+          form.classList.add('hidden');
+          infoDiv.classList.remove('hidden');
+          doadorForm.classList.remove('hidden');
+      });
+
+      // Preenchimento automático do doador pelo e-mail
+      if (doadorEmail) {
+          doadorEmail.addEventListener('blur', async () => {
+              const email = doadorEmail.value.trim();
+              if (!email || !supabase) return;
+              const { data, error } = await supabase
+                  .from('profiles')
+                  .select('full_name, phone_number')
+                  .ilike('email', email)
+                  .single();
+              if (data) {
+                  doadorNome.value = data.full_name || '';
+                  doadorTelefone.value = data.phone_number || '';
+              } else {
+                  doadorNome.value = '';
+                  doadorTelefone.value = '';
+              }
+          });
+      }
+
+      // No submit doadorForm, registre a doação
+      if (doadorForm) {
+          doadorForm.addEventListener('submit', async (e) => {
+              e.preventDefault();
+              if (!supabase) return alert('Erro ao conectar ao Supabase.');
+              const valor = parseFloat(doadorValor.value);
+              if (!valor || valor <= 0) return alert('Informe um valor válido.');
+              // Salva o doador na tabela doacoes
+              await supabase.from('doacoes').insert([
+                  {
+                      email: doadorEmail.value.trim(),
+                      nome: doadorNome.value.trim(),
+                      telefone: doadorTelefone.value.trim(),
+                      valor: valor,
+                      data_doacao: new Date().toISOString()
+                  }
+              ]);
+              alert('Obrigado por sua doação! Valor: R$ ' + valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }));
+              doadorForm.reset();
+              loadDashboard();
+          });
+      }
+
+      // Checa se o usuário é admin e exibe o link do admin e botão de edição
+      (async () => {
+        if (supabase) {
+          const { data: { user } } = await supabase.auth.getUser();
+          let isAdmin = false;
+          if (user) {
+            const { data: profile } = await supabase.from('profiles').select('admin, role_in_church').eq('id', user.id).single();
+            if (profile?.admin || profile?.role_in_church === 'admin' || profile?.role_in_church === 'owner') {
+              document.getElementById('admin-link').style.display = '';
+              document.getElementById('edit-doacoes-btn').classList.remove('hidden');
+              isAdmin = true;
+            }
+          }
+          // Bloqueia edição para não-admins
+          if (!isAdmin) {
+            document.getElementById('edit-doacoes-btn').classList.add('hidden');
+            document.getElementById('doacoes-form').classList.add('hidden');
+          }
+        }
+      })();
+
+      // Inicialização
+      loadDoacoesInfo();
+      loadDashboard();
     </script>
 </body>
 </html>

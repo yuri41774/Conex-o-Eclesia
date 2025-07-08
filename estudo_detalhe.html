@@ -16,7 +16,7 @@
 <body class="bg-gradient-to-br from-orange-100 via-orange-50 to-white min-h-screen">
   <div class="flex min-h-screen">
     <!-- Sidebar -->
-    <aside class="w-64 bg-white shadow-lg p-6 flex flex-col space-y-4 fixed md:static z-30 h-full md:h-auto">
+    <aside class="w-full max-w-xs md:w-64 bg-white shadow-lg p-6 flex flex-col space-y-4 fixed md:static z-30 h-full md:h-auto">
       <div class="text-2xl font-extrabold text-orange-600 font-inter mb-8">Conexão Eclesia</div>
       <a href="conexao-eclesia-feed.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-orange-100 transition">Feed</a>
       <a href="chat.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-orange-100 transition">Chat</a>
@@ -28,31 +28,55 @@
       <a href="admin.html" id="admin-link" style="display:none" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-orange-100 transition">Administrador</a>
     </aside>
     <div class="flex-1 ml-0 md:ml-64">
-      <header class="bg-white shadow-sm p-4 flex justify-between items-center sticky top-0 z-20">
-          <a href="conexao-eclesia-feed.html" class="text-2xl font-extrabold text-orange-600 font-inter">Conexão Eclesia</a>
-          <a href="estudos.html" class="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 font-bold font-inter">Voltar aos Estudos</a>
+      <header class="bg-white shadow-sm p-4 flex flex-col sm:flex-row justify-between items-center sticky top-0 z-20 gap-2">
+        <a href="conexao-eclesia-feed.html" class="text-2xl font-extrabold text-orange-600 font-inter">Conexão Eclesia</a>
+        <a href="estudos.html" class="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 font-bold font-inter">Voltar aos Estudos</a>
       </header>
-
-      <main class="container mx-auto px-4 py-8 max-w-4xl">
-          <div id="estudo-content" class="bg-white p-6 rounded-2xl shadow-lg mb-8 border border-orange-100">
-              <!-- Conteúdo do estudo (título, vídeo/texto) será injetado aqui -->
-              <p class="text-center text-gray-500">A carregar estudo...</p>
+      <main class="container mx-auto px-2 sm:px-4 py-8 max-w-4xl">
+        <div id="estudo-content" class="bg-white p-4 sm:p-6 rounded-2xl shadow-lg mb-8 border border-orange-100">
+          <!-- Conteúdo do estudo (título, vídeo/texto) será injetado aqui -->
+          <p class="text-center text-gray-500">A carregar estudo...</p>
+        </div>
+        <section id="forum-section" class="bg-white p-4 sm:p-6 rounded-2xl shadow-lg border border-orange-100">
+          <h2 class="text-2xl font-bold text-gray-800 mb-4 font-inter">Fórum de Discussão</h2>
+          <div id="forum-container" class="space-y-4 max-h-96 overflow-y-auto mb-6 p-2 border border-gray-200 rounded-lg bg-orange-50/30">
+            <!-- Mensagens do fórum serão injetadas aqui -->
+            <p class="text-center text-gray-500">A carregar mensagens do fórum...</p>
           </div>
-
-          <section id="forum-section" class="bg-white p-6 rounded-2xl shadow-lg border border-orange-100">
-              <h2 class="text-2xl font-bold text-gray-800 mb-4 font-inter">Fórum de Discussão</h2>
-              <div id="forum-container" class="space-y-4 max-h-96 overflow-y-auto mb-6 p-2 border border-gray-200 rounded-lg bg-orange-50/30">
-                  <!-- Mensagens do fórum serão injetadas aqui -->
-                  <p class="text-center text-gray-500">A carregar mensagens do fórum...</p>
-              </div>
-
-              <form id="forum-post-form" class="flex flex-col space-y-3">
-                  <textarea id="forum-post-content" rows="3" placeholder="Escreva a sua mensagem para o fórum..." class="w-full p-3 border border-orange-300 rounded-lg focus:ring-orange-500 focus:border-orange-500 font-inter bg-orange-50/50"></textarea>
-                  <button type="submit" class="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-2 rounded-lg font-semibold hover:from-orange-600 hover:to-orange-700 self-end font-inter shadow-md">Publicar Mensagem</button>
-              </form>
-          </section>
+          <form id="forum-post-form" class="flex flex-col space-y-3">
+            <textarea id="forum-post-content" rows="3" placeholder="Escreva a sua mensagem para o fórum..." class="w-full p-3 border border-orange-300 rounded-lg focus:ring-orange-500 focus:border-orange-500 font-inter bg-orange-50/50"></textarea>
+            <button type="submit" class="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-2 rounded-lg font-semibold hover:from-orange-600 hover:to-orange-700 self-end font-inter shadow-md">Publicar Mensagem</button>
+          </form>
+        </section>
       </main>
     </div>
+    <style>
+      @media (max-width: 640px) {
+        aside.fixed {
+          position: fixed;
+          left: 0;
+          top: 0;
+          width: 100vw;
+          max-width: 100vw;
+          z-index: 30;
+          height: auto;
+          min-height: 0;
+          border-radius: 0 0 1.5rem 1.5rem;
+        }
+        .rounded-xl, .rounded-lg, .rounded-3xl, .rounded-2xl {
+          border-radius: 0.75rem !important;
+        }
+        .shadow-2xl, .shadow-xl, .shadow-md {
+          box-shadow: 0 2px 8px 0 rgba(255,152,0,0.10), 0 1.5px 4px 0 rgba(0,0,0,0.04) !important;
+        }
+        .max-w-4xl {
+          max-width: 100vw !important;
+        }
+        .p-6 {
+          padding: 1rem !important;
+        }
+      }
+    </style>
   </div>
 
   <script type="module">

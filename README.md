@@ -10,26 +10,26 @@ O projeto é um Progressive Web App (PWA), podendo ser instalado em smartphones 
 - **Feed de Publicações**: Posts e anúncios dinâmicos, criação de publicações, integração com Supabase.
 - **Barra Lateral de Navegação**: Links para perfil, igrejas, eventos, estudos, doações, chat e painel admin (se autorizado).
 - **Modais de Mensagem**: Notificações amigáveis para sucesso, erro e informações.
-- **Responsividade**: Layout adaptável a qualquer dispositivo com Tailwind CSS.
+- **Responsividade Mobile-First**: Layout 100% adaptável a qualquer dispositivo, com navegação, botões, formulários e modais otimizados para telas pequenas (mobile-first com Tailwind CSS).
 - **PWA**: Instalável e com manifest.json configurado.
 - **Integração Supabase**: Backend, autenticação, banco de dados, RLS.
 
 ## 🚀 Tecnologias Utilizadas
-- **Frontend**: React (via CDN), Babel Standalone, Tailwind CSS
+- **Frontend**: React (via CDN), Babel Standalone, Tailwind CSS (mobile-first)
 - **Backend**: Supabase (Auth, PostgreSQL, Storage)
 
 ## 📁 Estrutura do Projeto
 ```
 conexao-eclesia/
-├── index.html                  # Login e Registro
-├── conexao-eclesia-feed.html   # Feed de Publicações
-├── admin.html                  # Painel de Administração
-├── chat.html                   # Chat Global
-├── estudos.html                # Estudos Bíblicos
-├── eventos.html                # Eventos
-├── doacoes.html                # Doações
-├── igreja.html                 # Página de Igreja
-├── perfil.html                 # Perfil do Usuário
+├── index.html                  # Login e Registro (responsivo)
+├── conexao-eclesia-feed.html   # Feed de Publicações (responsivo)
+├── admin.html                  # Painel de Administração (responsivo)
+├── chat.html                   # Chat Global (responsivo)
+├── estudos.html                # Estudos Bíblicos (responsivo)
+├── eventos.html                # Eventos (responsivo)
+├── doacoes.html                # Doações (responsivo)
+├── igreja.html                 # Página de Igreja (responsivo)
+├── perfil.html                 # Perfil do Usuário (responsivo)
 ├── manifest.json               # Manifesto PWA
 ├── supabaseClientInstance.js   # Inicialização do Supabase
 ├── icons/                      # Ícones PWA
