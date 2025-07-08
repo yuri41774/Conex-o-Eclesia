@@ -69,8 +69,8 @@
 
         <script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-        const SUPABASE_URL = 'https://rahhplphegvvdehrumyp.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJhaGhwbHBoZWd2dmRlaHJ1bXlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3MDk2NDMsImV4cCI6MjA2NjI4NTY0M30.EDM-RotlChTCWiisI4o5okQ6Llee1ZaQEAcLaphBqTs';
+        const SUPABASE_URL = window.SUPABASE_URL || localStorage.getItem('SUPABASE_URL');
+        const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || localStorage.getItem('SUPABASE_ANON_KEY');
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const estudosContainer = document.getElementById('estudos-container');
@@ -223,9 +223,12 @@
         </script>
 
         <footer class="mt-12 text-center text-orange-700 text-sm opacity-80 font-inter py-4">
-          © 2025 CPN Serviços. Todos os direitos reservados. <span class="text-xs ml-2 opacity-70">v1.2025.07.1</span>
+          © <span id="ano-footer"></span> CPN Serviços. Todos os direitos reservados. <span class="text-xs ml-2 opacity-70">v1.2025.07.1</span>
         </footer>
       </div>
     </div>
+<script>
+document.getElementById('ano-footer').textContent = new Date().getFullYear();
+</script>
 </body>
 </html>

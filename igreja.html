@@ -29,6 +29,24 @@
     <!-- Carrega o script verificador de instância Supabase -->
     <script src="supabaseClientInstance.js"></script>
 
+    <script>
+      // Inicializa o Supabase Client global antes do React
+      (function() {
+        if (!window.globalSupabaseClient) {
+          const SUPABASE_URL = window.SUPABASE_URL || localStorage.getItem('SUPABASE_URL');
+          const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || localStorage.getItem('SUPABASE_ANON_KEY');
+          if (window.supabase && SUPABASE_URL && SUPABASE_ANON_KEY) {
+            window.globalSupabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          }
+        }
+      })();
+      // Define o ano atual no rodapé
+      window.addEventListener('DOMContentLoaded', function() {
+        var anoFooter = document.getElementById('ano-footer');
+        if (anoFooter) anoFooter.textContent = new Date().getFullYear();
+      });
+    </script>
+
     <!-- O código React/JSX agora será processado por Babel -->
     <script type="text/babel">
         // Componente Modal (reutilizável, sem alterações)
@@ -368,7 +386,7 @@
                     )}
                     {/* Rodapé da página */}
                     <div className="mt-8 text-center text-white text-sm opacity-80 font-inter py-4">
-                        © {new Date().getFullYear()} CPN Serviços. Todos os direitos reservados. <span className="text-xs ml-2 opacity-70">v1.0.0</span>
+                        © <span id="ano-footer">{new Date().getFullYear()}</span> CPN Serviços. Todos os direitos reservados. <span className="text-xs ml-2 opacity-70">v1.0.0</span>
                     </div>
                     {/* Modal de mensagens */}
                     <Modal
@@ -383,17 +401,5 @@
 
         ReactDOM.render(<App />, document.getElementById('root'));
     </script>
-</body>
+  </body>
 </html>
-" selected code and am asking a query about/based on this code below.
-Instructions to follow:
-  * Don't output/edit the document if the query is Direct/Simple. For example, if the query asks for a simple explanation, output a direct answer.
-  * Make sure to **edit** the document if the query shows the intent of editing the document, in which case output the entire edited document, **not just that section or the edits**.
-    * Don't output the same document/empty document and say that you have edited it.
-    * Don't change unrelated code in the document.
-  * Don't output  and  in your final response.
-  * Any references like "this" or "selected code" refers to the code between  and  tags.
-  * Just acknowledge my request in the introduction.
-  * Make sure to refer to the document as "Canvas" in your response.
-
-vamos adicionar um botao de adcionar igreja para o layout de administrador da igr

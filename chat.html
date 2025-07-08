@@ -50,6 +50,23 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabaseClientInstance.js"></script>
+  <script>
+    // Inicializa o Supabase Client global antes do React
+    (function() {
+      if (!window.globalSupabaseClient) {
+        const SUPABASE_URL = window.SUPABASE_URL || localStorage.getItem('SUPABASE_URL');
+        const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || localStorage.getItem('SUPABASE_ANON_KEY');
+        if (window.supabase && SUPABASE_URL && SUPABASE_ANON_KEY) {
+          window.globalSupabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        }
+      }
+    })();
+    // Define o ano atual no rodapé
+    window.addEventListener('DOMContentLoaded', function() {
+      var anoFooter = document.getElementById('ano-footer');
+      if (anoFooter) anoFooter.textContent = `© ${new Date().getFullYear()} CPN Serviços. Todos os direitos reservados.`;
+    });
+  </script>
   <script type="text/babel">
         // Componente Modal reutilizável para exibir mensagens de sucesso ou erro (mantido, caso seja usado no chat)
         function Modal({ isOpen, message, type, onClose }) {
@@ -415,7 +432,7 @@
                                         </div>
                                     </div>
                                 ))
-                            )}
+                            }
                             <div ref={messagesEndRef} /> {/* Elemento para scroll automático */}
                         </div>
 
@@ -440,9 +457,7 @@
                         </form>
                     </div>
                     {/* Rodapé da página */}
-                    <div className="mt-4 text-center text-white text-sm opacity-80 font-inter">
-                        © {new Date().getFullYear()} CPN Serviços. Todos os direitos reservados.
-                    </div>
+                    <div id="ano-footer" class="mt-4 text-center text-white text-sm opacity-80 font-inter"></div>
                     {/* Modal de mensagens */}
                     <Modal
                         isOpen={isModalOpen}
@@ -463,7 +478,8 @@
         if (user) {
           const { data: profile } = await supabase.from('profiles').select('admin').eq('id', user.id).single();
           if (profile?.admin) {
-            document.getElementById('admin-link').style.display = '';
+            const adminLink = document.getElementById('admin-link');
+            if (adminLink) adminLink.style.display = '';
           }
         }
       }

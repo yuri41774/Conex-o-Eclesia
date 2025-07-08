@@ -58,7 +58,7 @@
       </div>
 
       <footer class="mt-12 text-center text-blue-700 text-sm opacity-80 font-inter py-4">
-        © 2025 CPN Serviços. Todos os direitos reservados. <span class="text-xs ml-2 opacity-70">v1.2025.07.1</span>
+        © <span id="ano-footer"></span> CPN Serviços. Todos os direitos reservados. <span class="text-xs ml-2 opacity-70">v1.2025.07.1</span>
       </footer>
     </div>
   </div>
@@ -133,6 +133,8 @@
         }
       }
     })();
+
+    document.getElementById('ano-footer').textContent = new Date().getFullYear();
 
     carregarEventos();
   </script>

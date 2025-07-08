@@ -1216,9 +1216,9 @@
                     </main>
 
                     {/* Rodapé da página */}
-                    <div className="text-center text-white text-sm opacity-80 font-inter py-4 bg-gray-800 w-full md:hidden">
-                        © {new Date().getFullYear()} CPN Serviços. Todos os direitos reservados. <span className="text-xs ml-2 opacity-70">v1.0.2025.01.4</span>
-                    </div>
+                    <footer class="mt-12 text-center text-blue-700 text-sm opacity-80 font-inter py-4">
+                        © <span id="ano-footer"></span> CPN Serviços. Todos os direitos reservados. <span class="text-xs ml-2 opacity-70">v1.2025.07.1</span>
+                    </footer>
                     {/* Modal de mensagens */}
                     <Modal
                         isOpen={isModalOpen}
@@ -1230,7 +1230,24 @@
             );
         }
 
-        ReactDOM.render(<AdminPanelApp />, document.getElementById('root'));
+        ReactDOM.createRoot(document.getElementById('root')).render(<AdminPanelApp />);
     </script>
-</body>
+    <script>
+      // Inicializa o Supabase Client global antes do React
+      (function() {
+        if (!window.globalSupabaseClient) {
+          const SUPABASE_URL = window.SUPABASE_URL || localStorage.getItem('SUPABASE_URL');
+          const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || localStorage.getItem('SUPABASE_ANON_KEY');
+          if (window.supabase && SUPABASE_URL && SUPABASE_ANON_KEY) {
+            window.globalSupabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          }
+        }
+      })();
+      // Define o ano atual no rodapé
+      window.addEventListener('DOMContentLoaded', function() {
+        var anoFooter = document.getElementById('ano-footer');
+        if (anoFooter) anoFooter.textContent = new Date().getFullYear();
+      });
+    </script>
+  </body>
 </html>

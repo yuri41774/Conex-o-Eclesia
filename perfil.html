@@ -45,6 +45,24 @@
       <div id="root" class="w-full flex flex-col items-center justify-center"></div>
     </div>
   </div>
+  <div id="ano-footer" class="mt-auto text-center text-orange-700 text-sm opacity-80 font-inter py-4"></div>
+  <script>
+    // Inicializa o Supabase Client global antes do React
+    (function() {
+      if (!window.globalSupabaseClient) {
+        const SUPABASE_URL = window.SUPABASE_URL || localStorage.getItem('SUPABASE_URL');
+        const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || localStorage.getItem('SUPABASE_ANON_KEY');
+        if (window.supabase && SUPABASE_URL && SUPABASE_ANON_KEY) {
+          window.globalSupabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        }
+      }
+    })();
+    // Define o ano atual no rodapé
+    window.addEventListener('DOMContentLoaded', function() {
+      var anoFooter = document.getElementById('ano-footer');
+      if (anoFooter) anoFooter.textContent = `© ${new Date().getFullYear()} CPN Serviços. Todos os direitos reservados.`;
+    });
+  </script>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>

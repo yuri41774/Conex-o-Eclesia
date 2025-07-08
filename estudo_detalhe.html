@@ -56,7 +56,6 @@
   </div>
 
   <script type="module">
-  // --- Configuração do Supabase ---
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
   const SUPABASE_URL = window.SUPABASE_URL || localStorage.getItem('SUPABASE_URL');
@@ -181,7 +180,10 @@
   </script>
 
   <footer class="mt-12 text-center text-orange-700 text-sm opacity-80 font-inter py-4">
-        © 2025 CPN Serviços. Todos os direitos reservados. <span class="text-xs ml-2 opacity-70">v1.2025.07.1</span>
-      </footer>
+    © <span id="ano-footer"></span> CPN Serviços. Todos os direitos reservados. <span class="text-xs ml-2 opacity-70">v1.2025.07.1</span>
+  </footer>
 </body>
+<script>
+document.getElementById('ano-footer').textContent = new Date().getFullYear();
+</script>
 </html>

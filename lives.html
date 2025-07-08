@@ -67,19 +67,18 @@
       </div>
 
       <footer class="mt-12 text-center text-white text-sm opacity-80 font-inter py-4">
-          © 2025 CPN Serviços. Todos os direitos reservados. <span class="text-xs ml-2 opacity-70">v1.0.0</span>
+          © <span id="ano-footer">2025</span> CPN Serviços. Todos os direitos reservados. <span class="text-xs ml-2 opacity-70">v1.0.0</span>
       </footer>
 
       <script type="module" src="/js/app.js" defer></script>
     </div>
   </div>
   <script type="module">
-  // Checa se o usuário é admin e exibe o link do admin
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+  const SUPABASE_URL = window.SUPABASE_URL || localStorage.getItem('SUPABASE_URL');
+  const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || localStorage.getItem('SUPABASE_ANON_KEY');
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   (async () => {
-    const SUPABASE_URL = window.SUPABASE_URL || localStorage.getItem('SUPABASE_URL');
-    const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || localStorage.getItem('SUPABASE_ANON_KEY');
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       const { data: profile } = await supabase.from('profiles').select('admin').eq('id', user.id).single();
@@ -87,6 +86,7 @@
         document.getElementById('admin-link').style.display = '';
       }
     }
+    document.getElementById('ano-footer').textContent = new Date().getFullYear();
   })();
   </script>
 </body>
