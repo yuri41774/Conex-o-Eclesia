@@ -56,11 +56,12 @@
     <!-- Importa o SDK do Supabase Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Carrega o script verificador de instância Supabase -->
+    <!-- Este script é esperado para inicializar window.globalSupabaseClient -->
     <script src="supabaseClientInstance.js"></script>
 
     <!-- O código React/JSX agora será processado por Babel -->
     <script type="text/babel">
-        // Componente Modal (sem alterações)
+        // Componente Modal
         function Modal({ isOpen, message, type, onClose }) {
           if (!isOpen) return null;
 
@@ -97,14 +98,14 @@
           );
         }
 
-        // Novo Componente: CreatePostModal (sem alterações)
+        // Componente CreatePostModal
         function CreatePostModal({ isOpen, onClose, onSavePost, onShowMessage, supabase }) {
           const [title, setTitle] = React.useState('');
           const [content, setContent] = React.useState('');
           const [image, setImage] = React.useState(''); // URL da imagem
           const [imageFile, setImageFile] = React.useState(null); // Arquivo selecionado
           const [isLoading, setIsLoading] = React.useState(false);
-          const [uploadProgress, setUploadProgress] = React.useState(0);
+          // const [uploadProgress, setUploadProgress] = React.useState(0); // Não utilizado atualmente
 
           // Função para upload da imagem no Supabase Storage
           const handleImageUpload = async (file) => {
@@ -292,6 +293,34 @@
           );
         }
 
+        // NOVO Componente: AdComponent para exibir anúncios
+        function AdComponent({ adData }) {
+          // adData pode conter propriedades como imageUrl, linkUrl, altText, advertiserName
+          if (!adData) return null; // Não renderiza se não houver dados de anúncio
+
+          return (
+            <div className="bg-white p-6 rounded-2xl modern-shadow border border-blue-100 flex flex-col items-center text-center my-6">
+              <h3 className="text-xl font-bold text-blue-700 mb-4 font-inter">Anúncio</h3>
+              {adData.imageUrl && (
+                <a href={adData.linkUrl} target="_blank" rel="noopener noreferrer">
+                  <img
+                    src={adData.imageUrl}
+                    alt={adData.altText || "Anúncio"}
+                    className="w-full h-48 object-contain rounded-xl mb-4 border border-blue-200 shadow-sm cursor-pointer"
+                    onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/400x200/ADD8E6/000000?text=Ad+Loading+Error'; }}
+                    title="Clique para saber mais"
+                  />
+                </a>
+              )}
+              <p className="text-gray-700 font-inter mb-2">{adData.altText || "Este é um espaço de anúncio."}</p>
+              {adData.advertiserName && (
+                <span className="text-sm text-gray-500">Por: {adData.advertiserName}</span>
+              )}
+            </div>
+          );
+        }
+
+
         // Componente para a tela de Feed
         function FeedScreen({ onShowModal, onLogout, supabase }) {
           const [posts, setPosts] = React.useState([]);
@@ -299,6 +328,8 @@
           const [isLoadingPosts, setIsLoadingPosts] = React.useState(true);
           const [isSidebarOpen, setIsSidebarOpen] = React.useState(window.innerWidth >= 768);
           const [isAdmin, setIsAdmin] = React.useState(false);
+          const [ads, setAds] = React.useState([]); // Estado para armazenar os dados dos anúncios
+          const adDisplayInterval = 3; // Exibir um anúncio a cada 3 publicações
 
           const fetchPosts = async () => {
             setIsLoadingPosts(true);
@@ -319,7 +350,7 @@
                 const formattedPosts = data.map(post => ({
                   id: post.id,
                   author: post.profiles ? post.profiles.full_name : 'Autor Desconhecido',
-                  church: post.church_id ? 'Nome da Igreja Aqui (buscar)' : '',
+                  church: post.church_id ? 'Nome da Igreja Aqui (buscar)' : '', // Placeholder
                   date: new Date(post.created_at).toLocaleDateString('pt-BR'),
                   title: post.title,
                   content: post.content,
@@ -336,8 +367,30 @@
             }
           };
 
+          // NOVO: Função para buscar anúncios
+          const fetchAds = async () => {
+            try {
+              const { data, error } = await supabase
+                .from('advertisements') // Assumindo que você tem uma tabela 'advertisements'
+                .select('*')
+                .eq('is_active', true) // Apenas anúncios ativos
+                .order('created_at', { ascending: false }); // Ou ordenar por prioridade/aleatório
+
+              if (error) {
+                console.error('Erro ao carregar anúncios:', error);
+                // Opcionalmente, mostrar um modal, mas a falha dos anúncios não deve bloquear o feed
+              } else {
+                setAds(data);
+              }
+            } catch (error) {
+              console.error('Erro inesperado ao buscar anúncios:', error);
+            }
+          };
+
           React.useEffect(() => {
             fetchPosts();
+            fetchAds(); // Chamar fetchAds quando o componente é montado
+
             // Checa se o usuário é admin pelo campo 'admin' (booleano)
             const checkAdmin = async () => {
               try {
@@ -355,10 +408,10 @@
               }
             };
             checkAdmin();
-          }, []);
+          }, []); // Dependências vazias para rodar apenas uma vez
 
           const handleNewPost = (newPost) => {
-            fetchPosts();
+            fetchPosts(); // Recarrega os posts após criar um novo
           };
 
           const toggleSidebar = () => {
@@ -373,15 +426,14 @@
             window.location.href = 'chat.html';
           };
 
-          // Função para navegar para a página da igreja
+          // Função para navegar para a página da igreja (exemplo)
           const handleNavigateToChurch = () => {
-            // Este é um ID de igreja de exemplo.
-            // Em uma aplicação real, você teria uma lista de igrejas e passaria o ID da igreja clicada.
-            const exampleChurchId = 'd2c0b1a0-e3f4-5678-90ab-cdef12345678'; // Substitua por um ID real da sua base de dados
+            const exampleChurchId = 'd2c0b1a0-e3f4-5678-90ab-cdef12345678'; // Substitua por um ID real
             window.location.href = `igreja.html?churchId=${exampleChurchId}`;
           };
 
-          const handleComingSoon = (featureName) => { // Nova função para aviso de "Em desenvolvimento"
+          // Função para aviso de "Em desenvolvimento" (não utilizada no código, mas mantida)
+          const handleComingSoon = (featureName) => {
             onShowModal(`${featureName} está em desenvolvimento e estará disponível em breve!`, 'info');
           };
 
@@ -413,7 +465,7 @@
                 {/* Botão de fechar para mobile dentro do sidebar, quando aberto */}
                 <button
                     onClick={toggleSidebar}
-                    className="md:hidden absolute top-4 right-4 p-2 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-300"
+                    className="md:hidden absolute top-4 right-4 p-2 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-300"
                     aria-label="Fechar menu lateral"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
@@ -497,7 +549,7 @@
                     <p className="text-gray-600 text-lg">Últimas notícias e comunicados da comunidade.</p>
                   </div>
                   <button
-                    onClick={fetchPosts}
+                    onClick={() => { fetchPosts(); fetchAds(); }} 
                     className="btn-orange hover:bg-orange-600 text-white font-bold py-2 px-6 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 shadow-md"
                     aria-label="Atualizar feed de publicações"
                   >
@@ -511,32 +563,40 @@
                   <div className="text-center text-gray-600 text-lg font-inter">Nenhuma publicação encontrada.</div>
                 ) : (
                   <div className="flex flex-col space-y-6">
-                    {posts.map(post => (
-                      <div key={post.id} className="bg-white p-6 rounded-2xl modern-shadow border border-orange-100 flex flex-col sm:flex-row gap-4 items-start">
-                        {/* Avatar do autor */}
-                        <div className="flex-shrink-0 w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-2xl font-inter shadow-sm">
-                          {post.author && post.author[0]}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
-                            <span className="font-inter font-bold text-gray-800 text-lg">{post.author}</span>
-                            <span className="text-xs text-orange-500 font-inter mt-1 sm:mt-0">{post.date}</span>
+                    {posts.map((post, index) => (
+                      <React.Fragment key={post.id}>
+                        {/* Renderização do Post Existente */}
+                        <div className="bg-white p-6 rounded-2xl modern-shadow border border-orange-100 flex flex-col sm:flex-row gap-4 items-start">
+                          {/* Avatar do autor */}
+                          <div className="flex-shrink-0 w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-2xl font-inter shadow-sm">
+                            {post.author && post.author[0]}
                           </div>
-                          <h2 className="text-2xl font-bold text-orange-700 mb-2 font-inter">{post.title}</h2>
-                          {post.image && (
-                            <img
-                              src={post.image}
-                              alt={`Imagem para o post: ${post.title}`}
-                              className="w-full h-48 object-cover rounded-xl mb-4 border border-orange-200 shadow-sm"
-                              onError={(e) => { e.target.onerror = null; e.target.src = `https://placehold.co/400x200/ff9800/ffffff?text=Imagem+N%C3%A3o+Dispon%C3%ADvel`; }}
-                              title="Clique para ampliar"
-                              style={{ cursor: 'pointer' }}
-                              onClick={() => window.open(post.image, '_blank')}
-                            />
-                          )}
-                          <p className="text-gray-700 leading-relaxed font-inter">{post.content}</p>
+                          <div className="flex-1">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
+                              <span className="font-inter font-bold text-gray-800 text-lg">{post.author}</span>
+                              <span className="text-xs text-orange-500 font-inter mt-1 sm:mt-0">{post.date}</span>
+                            </div>
+                            <h2 className="text-2xl font-bold text-orange-700 mb-2 font-inter">{post.title}</h2>
+                            {post.image && (
+                              <img
+                                src={post.image}
+                                alt={`Imagem para o post: ${post.title}`}
+                                className="w-full h-48 object-cover rounded-xl mb-4 border border-orange-200 shadow-sm"
+                                onError={(e) => { e.target.onerror = null; e.target.src = `https://placehold.co/400x200/ff9800/ffffff?text=Imagem+N%C3%A3o+Dispon%C3%ADvel`; }}
+                                title="Clique para ampliar"
+                                style={{ cursor: 'pointer' }}
+                                onClick={() => window.open(post.image, '_blank')}
+                              />
+                            )}
+                            <p className="text-gray-700 leading-relaxed font-inter">{post.content}</p>
+                          </div>
                         </div>
-                      </div>
+
+                        {/* Lógica de Integração de Anúncios */}
+                        {(index + 1) % adDisplayInterval === 0 && ads.length > 0 && (
+                          <AdComponent adData={ads[((index + 1) / adDisplayInterval - 1) % ads.length]} />
+                        )}
+                      </React.Fragment>
                     ))}
                   </div>
                 )}
@@ -563,24 +623,41 @@
 
           // AGORA, ACESSE A INSTÂNCIA GLOBALMENTE
           const supabase = window.globalSupabaseClient;
-          if (!supabase) {
-            return (
-              <div className='min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center'>
-                <div className='text-white text-2xl font-bold font-inter'>Erro ao carregar o Supabase. Recarregue a página.</div>
-              </div>
-            );
+          if (!supabase && !isSupabaseClientReady) { // Adicionado !isSupabaseClientReady para evitar renderização precoce
+            // Este bloco será executado se supabase ainda não estiver pronto
+            // e o estado indicar que não está pronto.
+            // A lógica de inicialização via setTimeout ou supabaseClientInstance.js deve lidar com isso.
+            console.log("Supabase client não está pronto na renderização inicial do App.");
           }
 
           React.useEffect(() => {
-            // Inicializa o cliente Supabase globalmente se ainda não foi inicializado e o SDK está disponível
-            if (!supabase && window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
-                window.globalSupabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-                console.log("Supabase client initialized globally within App component.");
-            }
-            
-            // Agora, usa a instância garantida para a verificação de sessão
+            // Verifica se o cliente Supabase global já foi inicializado
             if (window.globalSupabaseClient) {
                 setIsSupabaseClientReady(true);
+                console.log("Supabase client já está pronto.");
+            } else if (window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+                // Se o SDK e as chaves estão disponíveis, inicializa o cliente globalmente
+                window.globalSupabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                setIsSupabaseClientReady(true);
+                console.log("Supabase client inicializado globalmente dentro do App component.");
+            } else {
+                console.warn("Variáveis de ambiente Supabase ou SDK não disponíveis. Tentando novamente...");
+                // Tenta inicializar após um pequeno atraso caso o script externo ainda não tenha carregado
+                const timeoutId = setTimeout(() => {
+                    if (window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+                        window.globalSupabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                        setIsSupabaseClientReady(true);
+                        console.log("Supabase client inicializado após timeout.");
+                    } else {
+                        console.error("Falha ao inicializar o cliente Supabase após timeout. Verifique 'supabaseClientInstance.js' e variáveis.");
+                        // Pode-se adicionar um estado de erro para exibir uma mensagem ao usuário
+                    }
+                }, 500); // Pequeno atraso para garantir que supabaseClientInstance.js tenha chance de rodar
+                return () => clearTimeout(timeoutId); // Limpa o timeout se o componente for desmontado
+            }
+
+            // Agora, usa a instância garantida para a verificação de sessão
+            if (isSupabaseClientReady && window.globalSupabaseClient) {
                 const checkUserSession = async () => {
                     try {
                         const { data: { session } } = await window.globalSupabaseClient.auth.getSession();
@@ -595,17 +672,8 @@
                     }
                 };
                 checkUserSession();
-            } else {
-                console.log("Aguardando Supabase client ficar pronto...");
-                setTimeout(() => {
-                    if (!window.globalSupabaseClient && window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
-                         window.globalSupabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-                         setIsSupabaseClientReady(true);
-                         console.log("Supabase client initialized after timeout.");
-                    }
-                }, 500);
             }
-          }, [supabase]);
+          }, [isSupabaseClientReady]); // Depende de isSupabaseClientReady para garantir que o cliente esteja pronto
 
           const showModal = (message, type) => {
             setModalMessage(message);
