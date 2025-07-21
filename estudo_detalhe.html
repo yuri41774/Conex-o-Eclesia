@@ -119,7 +119,7 @@
                         <p class="text-center text-gray-500">A carregar mensagens do fórum...</p>
                     </div>
                     <form id="forum-post-form" class="flex flex-col space-y-3">
-                        <textarea id="forum-post-content" rows="3" placeholder="Escreva a sua mensagem para o fórum..." 
+                        <textarea id="forum-post-content" rows="3" placeholder="Faça login para postar no fórum." 
                             class="w-full p-3 border border-orange-300 rounded-lg focus:ring-orange-500 focus:border-orange-500 font-inter bg-orange-50/50"
                             aria-label="Campo para escrever a mensagem do fórum" disabled></textarea>
                         <button type="submit" id="forum-submit-btn"
@@ -142,25 +142,22 @@
     <script type="module">
         // ---------- Inicialização do Supabase Client ----------
         let supabase;
-        // Tenta usar a instância global já criada por supabaseClientInstance.js
         if (window.globalSupabaseClient) {
             supabase = window.globalSupabaseClient;
             console.log("[estudo_detalhe] Supabase client obtido da instância global.");
         } else {
-            // Fallback: se o supabaseClientInstance.js não carregou a tempo, tente criar aqui.
             const SUPABASE_URL = window.SUPABASE_URL || localStorage.getItem('SUPABASE_URL');
             const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || localStorage.getItem('SUPABASE_ANON_KEY');
 
             if (SUPABASE_URL && SUPABASE_ANON_KEY) {
                 supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                window.globalSupabaseClient = supabase; // Define para uso futuro
+                window.globalSupabaseClient = supabase;
                 console.log("[estudo_detalhe] Supabase client inicializado como fallback.");
             } else {
                 console.error("[estudo_detalhe] Erro: SUPABASE_URL ou SUPABASE_ANON_KEY não estão definidos. Verifique supabaseClientInstance.js ou localStorage.");
                 displayMessage("Erro grave: Não foi possível conectar ao serviço. Por favor, recarregue a página.", "error");
-                // Impede a execução de código que depende do Supabase
                 document.getElementById('estudo-content').innerHTML = '<p class="text-center text-red-500">Erro: Não foi possível carregar o conteúdo. Recarregue a página.</p>';
-                document.getElementById('forum-section').style.display = 'none'; // Oculta o fórum se não há conexão
+                document.getElementById('forum-section').style.display = 'none';
                 return;
             }
         }
@@ -176,14 +173,9 @@
         const forumPostContentTextarea = document.getElementById('forum-post-content');
         const forumSubmitBtn = document.getElementById('forum-submit-btn');
 
-        let forumReloadTimer; // Variável para o timer de recarga do fórum
+        let forumReloadTimer;
 
-        // ---------- Utilitários ----------
-        function getQueryParam(name) {
-            const url = new URL(window.location.href);
-            return url.searchParams.get(name);
-        }
-
+        // ---------- Funções Utilitárias ----------
         function displayMessage(message, type = 'info') {
             const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
             const messageDiv = document.createElement('div');
@@ -195,19 +187,23 @@
             }, 3000);
         }
 
+        function getQueryParam(name) {
+            const url = new URL(window.location.href);
+            return url.searchParams.get(name);
+        }
+
         function sanitizeAndFormatText(text) {
             if (!text) return '';
             const div = document.createElement('div');
-            div.textContent = text; // Escapa o HTML
-            return div.innerHTML.replace(/\n/g, '<br>'); // Converte quebras de linha para <br>
+            div.textContent = text;
+            return div.innerHTML.replace(/\n/g, '<br>');
         }
 
         function isValidYouTubeUrl(url) {
             const regExp = /(?:https?:\/\/)?(?:www\.)?(?:m\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/|v\/|)([\w-]{11})(?:\S+)?/;
             const match = url.match(regExp);
             if (match && match[1]) {
-                // rel=0 para não mostrar vídeos relacionados ao final, modestbranding para não mostrar o logo do youtube
-                return `http://googleusercontent.com/youtube.com/4${match[1]}?rel=0&modestbranding=1`;
+                return `http://www.youtube.com/embed/${match[1]}?rel=0&modestbranding=1`;
             }
             return null;
         }
@@ -229,7 +225,7 @@
 
         // ---------- Verificação de Permissões e UI do Fórum ----------
         async function checkUserPermissionsAndForumUI() {
-            if (!supabase) return; // Garante que o supabase esteja inicializado
+            if (!supabase) return;
 
             const { data: { user } } = await supabase.auth.getUser();
             const isLoggedIn = !!user;
@@ -240,10 +236,8 @@
                 isAdmin = profile?.admin === true;
             }
 
-            // Controla a visibilidade do link Admin na sidebar
             adminLink.style.display = isAdmin ? '' : 'none';
 
-            // Controla a UI do fórum para usuários logados/deslogados
             if (isLoggedIn) {
                 forumPostContentTextarea.disabled = false;
                 forumPostContentTextarea.placeholder = "Escreva a sua mensagem para o fórum...";
@@ -330,7 +324,7 @@
                 </div>
             `).join('');
             
-            scrollToBottom(forumContainerDiv); // Rola para a última mensagem
+            scrollToBottom(forumContainerDiv);
         }
 
         // ---------- Event Listener de Envio do Fórum ----------
@@ -369,7 +363,7 @@
             } else {
                 forumPostContentTextarea.value = '';
                 displayMessage('Mensagem publicada com sucesso!', 'success');
-                loadForum(); // Recarrega o fórum para ver a nova mensagem
+                loadForum();
             }
 
             forumPostContentTextarea.disabled = false;
@@ -380,23 +374,17 @@
 
         // ---------- Inicialização da Página ----------
         document.addEventListener('DOMContentLoaded', () => {
-            // Define o ano atual no rodapé
             document.getElementById('ano-footer').textContent = new Date().getFullYear();
 
-            // Carrega o estudo e o fórum
             loadEstudo();
             loadForum();
             
-            // Verifica permissões do usuário e atualiza UI
             checkUserPermissionsAndForumUI();
 
-            // Opcional: recarregar fórum a cada 30s
-            // Limpa qualquer timer anterior para evitar múltiplos timers ao recarregar a página
             if (forumReloadTimer) clearInterval(forumReloadTimer);
-            forumReloadTimer = setInterval(loadForum, 30000); // Recarrega a cada 30 segundos
+            forumReloadTimer = setInterval(loadForum, 30000);
         });
 
-        // Limpa o timer quando o usuário sai da página para evitar vazamentos de memória
         window.addEventListener('beforeunload', () => {
             if (forumReloadTimer) clearInterval(forumReloadTimer);
         });
