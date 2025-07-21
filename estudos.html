@@ -9,31 +9,53 @@
     <style>
         body { 
             font-family: 'Inter', sans-serif; 
-            background: linear-gradient(135deg, #ff9800 0%, #ffb347 100%); /* Cor de fundo consistente com o feed */
+            background: linear-gradient(135deg, #ff9800 0%, #ffb347 100%);
         }
         .sidebar-transition {
             transition: width 0.3s ease-in-out, left 0.3s, box-shadow 0.3s, transform 0.3s ease-in-out;
         }
-        .estudo-card, #estudo-modal { 
+        .estudo-card, #estudo-modal, #estudo-detail-view { 
             animation: fadeIn 0.3s ease-out; 
         }
         @keyframes fadeIn { 
             from { opacity: 0; transform: translateY(10px); } 
             to { opacity: 1; transform: translateY(0); } 
         }
-        /* Estilos para o botão Criar/Salvar */
+        /* Estilos para botões primários (Criar/Salvar) */
         .btn-green-primary {
-            background-color: #22c55e; /* green-500 */
+            background-color: #22c55e;
             color: #ffffff;
             box-shadow: 0 2px 8px rgba(34, 197, 94, 0.1);
             transition: background-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
         }
         .btn-green-primary:hover {
-            background-color: #16a34a; /* green-600 */
+            background-color: #16a34a;
         }
         .btn-green-primary:focus {
             outline: none;
             box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.4);
+        }
+        /* Estilos para o conteúdo "prose" (se você não usa o plugin @tailwindcss/typography) */
+        .prose { 
+            line-height: 1.75;
+            color: #374151;
+        }
+        .prose h1, .prose h2, .prose h3, .prose h4 {
+            color: #1f2937;
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+            font-weight: 700;
+        }
+        .prose p {
+            margin-bottom: 1em;
+        }
+        .prose ul, .prose ol {
+            margin-top: 1em;
+            margin-bottom: 1em;
+            padding-left: 1.5em;
+        }
+        .prose ul li, .prose ol li {
+            margin-bottom: 0.5em;
         }
 
         /* Responsividade Sidebar */
@@ -44,11 +66,11 @@
                 top: 0;
                 width: 100vw;
                 max-width: 100vw;
-                z-index: 40; /* Maior que o modal, menor que o hambúrguer */
+                z-index: 40;
                 height: auto;
                 min-height: 0;
                 border-radius: 0 0 1.5rem 1.5rem;
-                padding-bottom: 1rem; /* Espaçamento extra na parte inferior em mobile */
+                padding-bottom: 1rem;
             }
             .rounded-xl, .rounded-lg, .rounded-3xl, .rounded-2xl {
                 border-radius: 0.75rem !important;
@@ -56,14 +78,14 @@
             .shadow-2xl, .shadow-xl, .shadow-md {
                 box-shadow: 0 2px 8px 0 rgba(255,152,0,0.10), 0 1.5px 4px 0 rgba(0,0,0,0.04) !important;
             }
-            .max-w-lg {
+            .max-w-lg, .max-w-4xl {
                 max-width: 100vw !important;
             }
             .p-6 {
                 padding: 1rem !important;
             }
             .main-content {
-                padding-top: 5rem; /* Espaço para o botão hambúrguer fixo */
+                padding-top: 5rem;
             }
         }
     </style>
@@ -95,7 +117,7 @@
             <div class="text-2xl font-extrabold text-orange-600 font-inter mb-8">Conexão Eclesia</div>
             <a href="conexao-eclesia-feed.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-orange-100 transition">Feed</a>
             <a href="chat.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-orange-100 transition">Chat</a>
-            <a href="estudos.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter bg-orange-500 text-white hover:bg-orange-600 transition" aria-current="page">Estudos Bíblicos</a>
+            <a href="#list" id="sidebar-link-estudos" class="py-3 px-4 rounded-lg font-bold text-lg font-inter bg-orange-500 text-white hover:bg-orange-600 transition" aria-current="page">Estudos Bíblicos</a>
             <a href="lives.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-orange-100 transition">Lives</a>
             <a href="doacoes.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-orange-100 transition">Doações</a>
             <a href="eventos.html" class="py-3 px-4 rounded-lg font-bold text-lg font-inter text-gray-700 hover:bg-orange-100 transition">Eventos</a>
@@ -104,7 +126,12 @@
         </aside>
 
         <div class="flex-1 ml-0 md:ml-64 main-content">
-            <main class="container mx-auto px-2 sm:px-4 py-8">
+            <header class="bg-white shadow-sm p-4 flex flex-col sm:flex-row justify-between items-center sticky top-0 z-20 gap-2">
+                <a href="conexao-eclesia-feed.html" class="text-2xl font-extrabold text-orange-600 font-inter">Conexão Eclesia</a>
+                <a href="#list" id="back-to-list-btn" class="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 font-bold font-inter hidden" aria-label="Voltar para a lista de Estudos Bíblicos">Voltar aos Estudos</a>
+            </header>
+
+            <section id="estudos-list-view" class="container mx-auto px-2 sm:px-4 py-8 max-w-4xl">
                 <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
                     <h1 class="text-3xl font-bold text-gray-800">Estudos Bíblicos</h1>
                     <button id="create-estudo-btn" class="btn-green-primary px-6 py-2 rounded-lg font-semibold flex items-center space-x-2" style="display:none;" aria-label="Criar um novo estudo bíblico">
@@ -115,7 +142,29 @@
                 <div id="estudos-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div class="text-center text-gray-500 col-span-full">Carregando estudos...</div>
                 </div>
-            </main>
+            </section>
+
+            <section id="estudo-detail-view" class="container mx-auto px-2 sm:px-4 py-8 max-w-4xl hidden">
+                <div id="estudo-content" class="bg-white p-4 sm:p-6 rounded-2xl shadow-lg mb-8 border border-orange-100">
+                    <p class="text-center text-gray-500">A carregar estudo...</p>
+                </div>
+                <section id="forum-section" class="bg-white p-4 sm:p-6 rounded-2xl shadow-lg border border-orange-100">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4 font-inter">Fórum de Discussão</h2>
+                    <div id="forum-container" class="space-y-4 max-h-96 overflow-y-auto mb-6 p-2 border border-gray-200 rounded-lg bg-orange-50/30">
+                        <p class="text-center text-gray-500">A carregar mensagens do fórum...</p>
+                    </div>
+                    <form id="forum-post-form" class="flex flex-col space-y-3">
+                        <textarea id="forum-post-content" rows="3" placeholder="Faça login para postar no fórum." 
+                            class="w-full p-3 border border-orange-300 rounded-lg focus:ring-orange-500 focus:border-orange-500 font-inter bg-orange-50/50"
+                            aria-label="Campo para escrever a mensagem do fórum" disabled></textarea>
+                        <button type="submit" id="forum-submit-btn"
+                            class="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-2 rounded-lg font-semibold hover:from-orange-600 hover:to-orange-700 self-end font-inter shadow-md opacity-50 cursor-not-allowed"
+                            aria-label="Publicar mensagem no fórum" disabled>
+                            Publicar Mensagem
+                        </button>
+                    </form>
+                </section>
+            </section>
 
             <div id="estudo-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                 <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg">
@@ -159,13 +208,13 @@
     <script src="supabaseClientInstance.js"></script>
 
     <script type="module">
-        // Função principal que inicializa e executa a lógica da página
-        async function initEstudosPage() {
+        // Função principal que inicializa e executa a lógica da página unificada
+        async function initEstudosUnifiedPage() {
             // ---------- Inicialização do Supabase Client ----------
             let supabase;
             if (window.globalSupabaseClient) {
                 supabase = window.globalSupabaseClient;
-                console.log("[estudos.html] Supabase client obtido da instância global.");
+                console.log("[Unified Studies] Supabase client obtido da instância global.");
             } else {
                 const SUPABASE_URL = window.SUPABASE_URL || localStorage.getItem('SUPABASE_URL');
                 const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || localStorage.getItem('SUPABASE_ANON_KEY');
@@ -173,13 +222,16 @@
                 if (SUPABASE_URL && SUPABASE_ANON_KEY) {
                     supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                     window.globalSupabaseClient = supabase;
-                    console.log("[estudos.html] Supabase client inicializado como fallback.");
+                    console.log("[Unified Studies] Supabase client inicializado como fallback.");
                 } else {
-                    console.error("[estudos.html] Erro: SUPABASE_URL ou SUPABASE_ANON_KEY não estão definidos. Verifique supabaseClientInstance.js ou localStorage.");
+                    console.error("[Unified Studies] Erro: SUPABASE_URL ou SUPABASE_ANON_KEY não estão definidos. Verifique supabaseClientInstance.js ou localStorage.");
                     displayMessage("Erro grave: Não foi possível conectar ao serviço. Por favor, recarregue a página.", "error");
-                    document.getElementById('estudos-container').innerHTML = '<p class="text-center text-red-500">Erro: Não foi possível carregar os estudos. Recarregue a página.</p>';
+                    // Desabilita funcionalidades e mostra erro em ambas as views
+                    document.getElementById('estudos-list-view').innerHTML = '<p class="text-center text-red-500">Erro: Não foi possível carregar o conteúdo. Recarregue a página.</p>';
+                    document.getElementById('estudo-detail-view').innerHTML = '<p class="text-center text-red-500">Erro: Não foi possível carregar o conteúdo. Recarregue a página.</p>';
                     document.getElementById('create-estudo-btn').style.display = 'none';
-                    return; // Retorna da função initEstudosPage
+                    document.getElementById('forum-section').style.display = 'none';
+                    return;
                 }
             }
 
@@ -188,7 +240,13 @@
             const mobileMenuBtn = document.getElementById('mobile-menu-btn');
             const closeSidebarBtn = document.getElementById('close-sidebar-btn');
             const adminLink = document.getElementById('admin-link');
+            const sidebarLinkEstudos = document.getElementById('sidebar-link-estudos');
+
+            const estudosListView = document.getElementById('estudos-list-view');
+            const estudoDetailView = document.getElementById('estudo-detail-view');
             const createEstudoBtn = document.getElementById('create-estudo-btn');
+            const backToListBtn = document.getElementById('back-to-list-btn');
+
             const estudosContainer = document.getElementById('estudos-container');
             const modal = document.getElementById('estudo-modal');
             const form = document.getElementById('estudo-form');
@@ -202,6 +260,15 @@
             const videoField = document.getElementById('estudo-video-field');
             const textField = document.getElementById('estudo-text-field');
 
+            const estudoContentDiv = document.getElementById('estudo-content');
+            const forumContainerDiv = document.getElementById('forum-container');
+            const forumPostForm = document.getElementById('forum-post-form');
+            const forumPostContentTextarea = document.getElementById('forum-post-content');
+            const forumSubmitBtn = document.getElementById('forum-submit-btn');
+
+            let forumReloadTimer;
+            let currentEstudoId = null; // Para manter o ID do estudo atual no modo detalhe
+
             // ---------- Funções Utilitárias ----------
             function displayMessage(message, type = 'info') {
                 const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
@@ -214,6 +281,12 @@
                 }, 3000);
             }
 
+            function getQueryParam(name, urlString = window.location.hash) {
+                // Adaptação para pegar parâmetro da hash (ex: #estudo=ID_DO_ESTUDO)
+                const params = new URLSearchParams(urlString.split('?')[1] || urlString.split('=')[1] ? `${name}=${urlString.split('=')[1]}` : '');
+                return params.get(name);
+            }
+            
             function sanitizeAndFormatText(text) {
                 if (!text) return '';
                 const div = document.createElement('div');
@@ -225,10 +298,25 @@
                 const regExp = /(?:https?:\/\/)?(?:www\.)?(?:m\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/|v\/|)([\w-]{11})(?:\S+)?/;
                 const match = url.match(regExp);
                 if (match && match[1]) {
-                    return `https://www.youtube.com/embed/${match[1]}?rel=0&modestbranding=1`;
+                    return `http://www.youtube.com/embed/${match[1]}?rel=0&modestbranding=1`;
                 }
                 return null;
             }
+
+            function scrollToBottom(element) {
+                element.scrollTop = element.scrollHeight;
+            }
+
+            // ---------- Funções de UI da Sidebar e Header ----------
+            mobileMenuBtn.onclick = () => {
+                sidebar.classList.remove('-translate-x-full');
+                sidebar.classList.add('translate-x-0');
+            };
+
+            closeSidebarBtn.onclick = () => {
+                sidebar.classList.add('-translate-x-full');
+                sidebar.classList.remove('translate-x-0');
+            };
 
             // ---------- Funções de UI do Modal ----------
             function showModal(isEdit = false, estudo = null) {
@@ -290,38 +378,7 @@
                 cancelBtn.classList.toggle('cursor-not-allowed', isLoading);
             }
 
-            // ---------- Event Listeners de UI ----------
-            mobileMenuBtn.onclick = () => {
-                sidebar.classList.remove('-translate-x-full');
-                sidebar.classList.add('translate-x-0');
-            };
-
-            closeSidebarBtn.onclick = () => {
-                sidebar.classList.add('-translate-x-full');
-                sidebar.classList.remove('translate-x-0');
-            };
-
-            createEstudoBtn.onclick = () => showModal(false);
-            btnCancel.onclick = hideModal;
-            modal.onclick = (e) => { 
-                if (e.target === modal) hideModal(); 
-            };
-
-            selectTipo.addEventListener('change', () => {
-                if (selectTipo.value === 'Video') {
-                    videoField.classList.remove('hidden');
-                    textField.classList.add('hidden');
-                    inputTexto.removeAttribute('required');
-                    inputVideo.setAttribute('required', 'required');
-                } else {
-                    videoField.classList.add('hidden');
-                    textField.classList.remove('hidden');
-                    inputVideo.removeAttribute('required');
-                    inputTexto.setAttribute('required', 'required');
-                }
-            });
-
-            // ---------- Funções de CRUD do Supabase ----------
+            // ---------- Funções de CRUD (Lista) ----------
             async function carregarEstudos() {
                 estudosContainer.innerHTML = '<div class="text-center text-gray-500 col-span-full">Carregando estudos...</div>';
                 
@@ -358,14 +415,14 @@
                     
                     const adminButtons = isAdminUser ? `
                         <div class="flex gap-2">
-                            <button type="button" class="text-xs text-blue-600 hover:underline" onclick="event.stopPropagation(); window.editarEstudo('${estudo.id}')" aria-label="Editar estudo ${sanitizeAndFormatText(estudo.titulo)}">Editar</button>
-                            <button type="button" class="text-xs text-red-600 hover:underline" onclick="event.stopPropagation(); window.deletarEstudo('${estudo.id}')" aria-label="Excluir estudo ${sanitizeAndFormatText(estudo.titulo)}">Excluir</button>
+                            <button type="button" class="text-xs text-blue-600 hover:underline" onclick="event.stopPropagation(); window.unifiedPage_editarEstudo('${estudo.id}')" aria-label="Editar estudo ${sanitizeAndFormatText(estudo.titulo)}">Editar</button>
+                            <button type="button" class="text-xs text-red-600 hover:underline" onclick="event.stopPropagation(); window.unifiedPage_deletarEstudo('${estudo.id}')" aria-label="Excluir estudo ${sanitizeAndFormatText(estudo.titulo)}">Excluir</button>
                         </div>
                     ` : '';
 
                     return `
                         <div class="estudo-card bg-white rounded-xl shadow-md p-6 border border-orange-100 flex flex-col gap-2 cursor-pointer hover:shadow-lg transition" 
-                            onclick="window.location.href='estudo_detalhe.html?id=${estudo.id}'"
+                            onclick="window.location.hash='#estudo=${estudo.id}';"
                             role="link" tabindex="0" aria-label="Ver detalhes do estudo: ${sanitizeAndFormatText(estudo.titulo)}">
                             <h2 class="text-xl font-bold text-orange-700 font-inter mb-2">${sanitizeAndFormatText(estudo.titulo)}</h2>
                             ${displayContent}
@@ -378,7 +435,7 @@
                 }).join('');
             }
 
-            window.editarEstudo = async (id) => {
+            window.unifiedPage_editarEstudo = async (id) => {
                 setFormLoading(true);
                 const { data, error } = await supabase.from('estudos').select('*').eq('id', id).single();
                 if (error || !data) {
@@ -390,7 +447,7 @@
                 showModal(true, data);
             };
 
-            window.deletarEstudo = async (id) => {
+            window.unifiedPage_deletarEstudo = async (id) => {
                 if (!confirm('Tem certeza que deseja excluir este estudo? Esta ação não pode ser desfeita.')) return;
                 
                 const targetButton = event.target;
@@ -405,7 +462,7 @@
                     console.error('Erro ao excluir estudo:', error);
                 } else {
                     displayMessage('Estudo excluído com sucesso!', 'success');
-                    carregarEstudos();
+                    carregarEstudos(); // Recarrega a lista
                 }
                 targetButton.disabled = false;
                 targetButton.textContent = 'Excluir';
@@ -453,20 +510,209 @@
                 } else {
                     displayMessage(`Estudo ${id ? 'atualizado' : 'criado'} com sucesso!`, 'success');
                     hideModal();
-                    carregarEstudos();
+                    carregarEstudos(); // Recarrega a lista após salvar
                 }
                 setFormLoading(false);
             };
 
-            // ---------- Inicialização da Página ----------
+            // ---------- Funções de Carregamento de Dados (Detalhe) ----------
+            async function loadEstudoDetail(estudoId) {
+                estudoContentDiv.innerHTML = '<p class="text-center text-gray-500">Carregando estudo...</p>';
+                
+                const { data, error } = await supabase.from('estudos').select('*').eq('id', estudoId).single();
+                
+                if (error || !data) {
+                    estudoContentDiv.innerHTML = '<p class="text-center text-red-500 font-bold">Erro ao carregar estudo ou estudo não existe.</p>';
+                    console.error("Erro ao carregar estudo:", error);
+                    displayMessage("Erro ao carregar estudo.", "error");
+                    return;
+                }
+
+                let html = `<h1 class="text-3xl font-extrabold text-orange-600 mb-2 font-inter">${sanitizeAndFormatText(data.titulo)}</h1>`;
+                if (data.video_url) {
+                    const embedUrl = isValidYouTubeUrl(data.video_url);
+                    if (embedUrl) {
+                        html += `<div class="my-4 aspect-video"><iframe src="${embedUrl}" class="w-full h-full rounded-xl border" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
+                    } else {
+                        html += `<div class="my-4 text-red-500">URL de vídeo inválida: ${sanitizeAndFormatText(data.video_url)}</div>`;
+                    }
+                }
+                html += `<div class="prose prose-orange max-w-none text-gray-700">${sanitizeAndFormatText(data.conteudo || '')}</div>`;
+                estudoContentDiv.innerHTML = html;
+
+                currentEstudoId = estudoId; // Salva o ID do estudo que está sendo exibido
+                loadForum(); // Carrega o fórum para o estudo atual
+            }
+
+            async function loadForum() {
+                const estudoId = currentEstudoId; // Usa o ID do estudo atualmente exibido
+                if (!estudoId) {
+                    forumContainerDiv.innerHTML = '<p class="text-center text-red-500">ID do estudo ausente para o fórum.</p>';
+                    return;
+                }
+                
+                forumContainerDiv.innerHTML = '<p class="text-center text-gray-500">Carregando mensagens do fórum...</p>';
+                
+                const { data, error } = await supabase
+                    .from('estudo_forum')
+                    .select('id, conteudo, created_at, profiles(full_name, avatar_url)')
+                    .eq('estudo_id', estudoId)
+                    .order('created_at', { ascending: true });
+                
+                if (error) {
+                    forumContainerDiv.innerHTML = '<p class="text-center text-red-500">Erro ao carregar mensagens do fórum.</p>';
+                    console.error("Erro ao carregar fórum:", error);
+                    displayMessage("Erro ao carregar fórum.", "error");
+                    return;
+                }
+                
+                if (!data || data.length === 0) {
+                    forumContainerDiv.innerHTML = '<p class="text-center text-gray-500">Nenhuma mensagem ainda. Seja o primeiro a comentar!</p>';
+                    return;
+                }
+                
+                forumContainerDiv.innerHTML = data.map(msg => `
+                    <div class="flex gap-3 items-start">
+                        <img src="${msg.profiles?.avatar_url || 'https://i.ibb.co/Vt2W1d1/user-profile-default-image.png'}" 
+                             alt="Avatar de ${sanitizeAndFormatText(msg.profiles?.full_name || 'Usuário Desconhecido')}" 
+                             class="w-10 h-10 rounded-full border border-orange-200 object-cover flex-shrink-0" />
+                        <div class="flex-1 bg-gray-50 rounded-lg p-3 shadow-sm">
+                            <div class="flex items-center flex-wrap gap-x-2 mb-1">
+                                <span class="font-bold text-orange-700 font-inter text-sm sm:text-base">${sanitizeAndFormatText(msg.profiles?.full_name || 'Usuário Anônimo')}</span>
+                                <span class="text-xs text-gray-500">${new Date(msg.created_at).toLocaleString('pt-BR')}</span>
+                            </div>
+                            <p class="text-gray-800 text-sm sm:text-base">${sanitizeAndFormatText(msg.conteudo)}</p>
+                        </div>
+                    </div>
+                `).join('');
+                
+                scrollToBottom(forumContainerDiv);
+            }
+
+            // ---------- Event Listener de Envio do Fórum ----------
+            forumPostForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const conteudo = forumPostContentTextarea.value.trim();
+                
+                if (!conteudo) {
+                    displayMessage('A mensagem não pode estar vazia.', 'info');
+                    return;
+                }
+
+                forumPostContentTextarea.disabled = true;
+                forumSubmitBtn.disabled = true;
+                forumSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                forumSubmitBtn.textContent = 'Publicando...';
+
+                const estudoId = currentEstudoId; // Usa o ID do estudo atualmente exibido
+                const { data: { user } } = await supabase.auth.getUser();
+
+                if (!user) {
+                    displayMessage('Você precisa estar logado para postar no fórum.', 'error');
+                    checkUserPermissionsAndForumUI();
+                    return;
+                }
+
+                const { error } = await supabase.from('estudo_forum').insert({
+                    estudo_id: estudoId,
+                    user_id: user.id,
+                    conteudo
+                });
+
+                if (error) {
+                    displayMessage('Erro ao postar mensagem: ' + error.message, 'error');
+                    console.error("Erro ao postar mensagem:", error);
+                } else {
+                    forumPostContentTextarea.value = '';
+                    displayMessage('Mensagem publicada com sucesso!', 'success');
+                    loadForum();
+                }
+
+                forumPostContentTextarea.disabled = false;
+                forumSubmitBtn.disabled = false;
+                forumSubmitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                forumSubmitBtn.textContent = 'Publicar Mensagem';
+            });
+
+            // ---------- Verificação de Permissões e UI do Fórum ----------
+            async function checkUserPermissionsAndForumUI() {
+                if (!supabase) return;
+
+                const { data: { user } } = await supabase.auth.getUser();
+                const isLoggedIn = !!user;
+                let isAdmin = false;
+
+                if (isLoggedIn) {
+                    const { data: profile } = await supabase.from('profiles').select('admin').eq('id', user.id).single();
+                    isAdmin = profile?.admin === true;
+                }
+
+                adminLink.style.display = isAdmin ? '' : 'none';
+
+                if (isLoggedIn) {
+                    forumPostContentTextarea.disabled = false;
+                    forumPostContentTextarea.placeholder = "Escreva a sua mensagem para o fórum...";
+                    forumSubmitBtn.disabled = false;
+                    forumSubmitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                } else {
+                    forumPostContentTextarea.disabled = true;
+                    forumPostContentTextarea.placeholder = "Faça login para postar no fórum.";
+                    forumSubmitBtn.disabled = true;
+                    forumSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            }
+
+            // ---------- Gerenciamento de Conteúdo da Página (Routing) ----------
+            function renderPageContent() {
+                const hash = window.location.hash; // Pega a parte da âncora da URL (ex: #estudo=123)
+                const estudoIdMatch = hash.match(/^#estudo=([a-f0-9-]+)$/); // Verifica se a hash é do tipo #estudo=ID
+
+                if (estudoIdMatch) {
+                    const estudoId = estudoIdMatch[1];
+                    estudosListView.classList.add('hidden'); // Esconde a lista
+                    estudoDetailView.classList.remove('hidden'); // Mostra os detalhes
+                    backToListBtn.classList.remove('hidden'); // Mostra o botão de voltar
+                    createEstudoBtn.classList.add('hidden'); // Esconde o botão de criar
+                    sidebarLinkEstudos.setAttribute('href', '#list'); // Link da sidebar aponta para a lista
+                    loadEstudoDetail(estudoId); // Carrega o estudo específico
+                    // O fórum é carregado dentro de loadEstudoDetail para garantir o ID
+                    
+                    // Inicia/Reinicia o timer de recarga do fórum
+                    if (forumReloadTimer) clearInterval(forumReloadTimer);
+                    forumReloadTimer = setInterval(loadForum, 30000);
+
+                } else {
+                    // Default: mostra a lista de estudos
+                    estudosListView.classList.remove('hidden'); // Mostra a lista
+                    estudoDetailView.classList.add('hidden'); // Esconde os detalhes
+                    backToListBtn.classList.add('hidden'); // Esconde o botão de voltar
+                    createEstudoBtn.style.display = ''; // O botão de criar é controlado por checkUserPermissionsAndForumUI
+                    sidebarLinkEstudos.setAttribute('href', '#list'); // Garante que a sidebar aponte para a lista
+                    carregarEstudos(); // Carrega todos os estudos
+                    
+                    // Limpa o timer de recarga do fórum quando na view de lista
+                    if (forumReloadTimer) clearInterval(forumReloadTimer);
+                }
+                checkUserPermissionsAndForumUI(); // Atualiza permissões em ambas as views
+            }
+
+            // ---------- Event Listeners de Nível de Página ----------
+            window.addEventListener('hashchange', renderPageContent); // Escuta mudanças na âncora da URL
+            
+            // Limpa o timer quando o usuário sai da página (ou fecha a aba)
+            window.addEventListener('beforeunload', () => {
+                if (forumReloadTimer) clearInterval(forumReloadTimer);
+            });
+
+            // ---------- Inicialização Principal ----------
             document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('ano-footer').textContent = new Date().getFullYear();
-                carregarEstudos();
+                renderPageContent(); // Renderiza o conteúdo inicial com base na URL
             });
         }
 
-        // Chama a função principal para iniciar a aplicação
-        initEstudosPage();
+        // Chama a função principal para iniciar a aplicação unificada
+        initEstudosUnifiedPage();
     </script>
 </body>
 </html>
