@@ -267,7 +267,7 @@
             const forumSubmitBtn = document.getElementById('forum-submit-btn');
 
             let forumReloadTimer;
-            let currentEstudoId = null; // Para manter o ID do estudo atual no modo detalhe
+            let currentEstudoId = null;
 
             // ---------- Funções Utilitárias ----------
             function displayMessage(message, type = 'info') {
@@ -279,12 +279,6 @@
                 setTimeout(() => {
                     messageDiv.remove();
                 }, 3000);
-            }
-
-            function getQueryParam(name, urlString = window.location.hash) {
-                // Adaptação para pegar parâmetro da hash (ex: #estudo=ID_DO_ESTUDO)
-                const params = new URLSearchParams(urlString.split('?')[1] || urlString.split('=')[1] ? `${name}=${urlString.split('=')[1]}` : '');
-                return params.get(name);
             }
             
             function sanitizeAndFormatText(text) {
@@ -298,7 +292,7 @@
                 const regExp = /(?:https?:\/\/)?(?:www\.)?(?:m\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/|v\/|)([\w-]{11})(?:\S+)?/;
                 const match = url.match(regExp);
                 if (match && match[1]) {
-                    return `http://www.youtube.com/embed/${match[1]}?rel=0&modestbranding=1`;
+                    return `http://www.youtube.com/embed/${match[1]}?rel=0&modestbranding=1`; // Corrigido para URL de embed padrão do YouTube
                 }
                 return null;
             }
@@ -508,7 +502,7 @@
                     displayMessage('Erro ao salvar estudo: ' + error.message, 'error');
                     console.error('Erro ao salvar estudo:', error);
                 } else {
-                    displayMessage(`Estudo ${id ? 'atualizado' : 'criado'} com sucesso!`, 'success');
+                    displayMessage(`Estudo ${id ? 'atualizado' : 'criado'} com sucesso!', 'success');
                     hideModal();
                     carregarEstudos(); // Recarrega a lista após salvar
                 }
@@ -540,12 +534,12 @@
                 html += `<div class="prose prose-orange max-w-none text-gray-700">${sanitizeAndFormatText(data.conteudo || '')}</div>`;
                 estudoContentDiv.innerHTML = html;
 
-                currentEstudoId = estudoId; // Salva o ID do estudo que está sendo exibido
-                loadForum(); // Carrega o fórum para o estudo atual
+                currentEstudoId = estudoId;
+                loadForum();
             }
 
             async function loadForum() {
-                const estudoId = currentEstudoId; // Usa o ID do estudo atualmente exibido
+                const estudoId = currentEstudoId;
                 if (!estudoId) {
                     forumContainerDiv.innerHTML = '<p class="text-center text-red-500">ID do estudo ausente para o fórum.</p>';
                     return;
@@ -604,7 +598,7 @@
                 forumSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
                 forumSubmitBtn.textContent = 'Publicando...';
 
-                const estudoId = currentEstudoId; // Usa o ID do estudo atualmente exibido
+                const estudoId = currentEstudoId;
                 const { data: { user } } = await supabase.auth.getUser();
 
                 if (!user) {
@@ -664,42 +658,39 @@
 
             // ---------- Gerenciamento de Conteúdo da Página (Routing) ----------
             function renderPageContent() {
-                const hash = window.location.hash; // Pega a parte da âncora da URL (ex: #estudo=123)
-                const estudoIdMatch = hash.match(/^#estudo=([a-f0-9-]+)$/); // Verifica se a hash é do tipo #estudo=ID
+                const hash = window.location.hash;
+                // Regex para capturar IDs de UUID (formato 8-4-4-4-12)
+                const estudoIdMatch = hash.match(/^#estudo=([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$/);
 
                 if (estudoIdMatch) {
                     const estudoId = estudoIdMatch[1];
-                    estudosListView.classList.add('hidden'); // Esconde a lista
-                    estudoDetailView.classList.remove('hidden'); // Mostra os detalhes
-                    backToListBtn.classList.remove('hidden'); // Mostra o botão de voltar
-                    createEstudoBtn.classList.add('hidden'); // Esconde o botão de criar
-                    sidebarLinkEstudos.setAttribute('href', '#list'); // Link da sidebar aponta para a lista
-                    loadEstudoDetail(estudoId); // Carrega o estudo específico
-                    // O fórum é carregado dentro de loadEstudoDetail para garantir o ID
+                    estudosListView.classList.add('hidden');
+                    estudoDetailView.classList.remove('hidden');
+                    backToListBtn.classList.remove('hidden');
+                    createEstudoBtn.classList.add('hidden');
+                    sidebarLinkEstudos.setAttribute('href', '#list');
+                    loadEstudoDetail(estudoId);
                     
-                    // Inicia/Reinicia o timer de recarga do fórum
                     if (forumReloadTimer) clearInterval(forumReloadTimer);
                     forumReloadTimer = setInterval(loadForum, 30000);
 
                 } else {
-                    // Default: mostra a lista de estudos
-                    estudosListView.classList.remove('hidden'); // Mostra a lista
-                    estudoDetailView.classList.add('hidden'); // Esconde os detalhes
-                    backToListBtn.classList.add('hidden'); // Esconde o botão de voltar
-                    createEstudoBtn.style.display = ''; // O botão de criar é controlado por checkUserPermissionsAndForumUI
-                    sidebarLinkEstudos.setAttribute('href', '#list'); // Garante que a sidebar aponte para a lista
-                    carregarEstudos(); // Carrega todos os estudos
+                    estudosListView.classList.remove('hidden');
+                    estudoDetailView.classList.add('hidden');
+                    backToListBtn.classList.add('hidden');
+                    // O display do botão de criar é controlado por checkUserPermissionsAndForumUI
+                    createEstudoBtn.style.display = ''; 
+                    sidebarLinkEstudos.setAttribute('href', '#list');
+                    carregarEstudos();
                     
-                    // Limpa o timer de recarga do fórum quando na view de lista
                     if (forumReloadTimer) clearInterval(forumReloadTimer);
                 }
-                checkUserPermissionsAndForumUI(); // Atualiza permissões em ambas as views
+                checkUserPermissionsAndForumUI();
             }
 
             // ---------- Event Listeners de Nível de Página ----------
-            window.addEventListener('hashchange', renderPageContent); // Escuta mudanças na âncora da URL
+            window.addEventListener('hashchange', renderPageContent);
             
-            // Limpa o timer quando o usuário sai da página (ou fecha a aba)
             window.addEventListener('beforeunload', () => {
                 if (forumReloadTimer) clearInterval(forumReloadTimer);
             });
@@ -707,7 +698,7 @@
             // ---------- Inicialização Principal ----------
             document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('ano-footer').textContent = new Date().getFullYear();
-                renderPageContent(); // Renderiza o conteúdo inicial com base na URL
+                renderPageContent();
             });
         }
 
