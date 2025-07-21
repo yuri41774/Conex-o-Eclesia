@@ -4,36 +4,40 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Conexão Eclesia - Acesso</title>
-    <!-- Incluindo Tailwind CSS para estilização (via CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Incluindo a fonte Inter do Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         /* Define a fonte Inter como padrão para o corpo da página */
         body {
             font-family: 'Inter', sans-serif;
+            /* Adicionei um background sutil para a página de acesso para que não fique completamente branca no gradiente principal */
+            background: linear-gradient(135deg, #a7b7eb 0%, #b3c2f0 100%); /* Um azul claro suave */
+        }
+        /* Responsividade para telas menores */
+        @media (max-width: 640px) {
+            #root > div {
+                padding: 0.5rem !important;
+                border-radius: 0.75rem !important;
+            }
+            .rounded-xl, .rounded-lg, .rounded-3xl, .rounded-2xl {
+                border-radius: 0.75rem !important;
+            }
+            .shadow-2xl, .shadow-xl, .shadow-md {
+                box-shadow: 0 2px 8px 0 rgba(37,99,235,0.10), 0 1.5px 4px 0 rgba(0,0,0,0.04) !important;
+            }
         }
     </style>
-    <!-- Início das Adições para PWA (Progressive Web App) -->
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#2563eb"> <!-- Cor de tema para a barra de status do navegador (azul principal do Tailwind) -->
-    <!-- Fim das Adições para PWA -->
-</head>
+    <meta name="theme-color" content="#2563eb"> </head>
 <body>
     <div id="root"></div>
 
-    <!-- Importa React e ReactDOM a partir de um CDN (unpkg.com) -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Importa Babel para transpilar JSX diretamente no navegador -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Importa o SDK do Supabase Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Carrega o script verificador de instância Supabase -->
     <script src="supabaseClientInstance.js"></script>
 
-
-    <!-- O código React/JSX agora será processado por Babel -->
     <script type="text/babel">
         // Componente Modal (sem alterações)
         function Modal({ isOpen, message, type, onClose }) {
@@ -72,105 +76,8 @@
           );
         }
 
-        // LoginAfterRegisterModal (mantido mas não é chamado no fluxo de registo atual)
-        function LoginAfterRegisterModal({ isOpen, registeredEmail, onLoginSuccess, onClose, onShowMessage, supabase }) {
-          const [password, setPassword] = React.useState('');
-          const [isLoading, setIsLoading] = React.useState(false);
-
-          const handleLogin = async (e) => {
-            e.preventDefault();
-            setIsLoading(true);
-
-            try {
-              const { data, error } = await supabase.auth.signInWithPassword({
-                email: registeredEmail,
-                password: password,
-              });
-
-              if (error) {
-                console.error('Erro de login pós-registo:', error);
-                onShowMessage(`Erro ao fazer login: ${error.message}`, 'error');
-              } else if (data.user) {
-                onShowMessage('Login bem-sucedido!', 'success');
-                onLoginSuccess(); // Redireciona para o feed
-              } else {
-                onShowMessage('Credenciais inválidas. Tente novamente.', 'error');
-              }
-            } catch (error) {
-              console.error('Erro inesperado ao tentar fazer login pós-registo:', error);
-              onShowMessage('Ocorreu um erro inesperado ao fazer login.', 'error');
-            } finally {
-              setIsLoading(false);
-            }
-          };
-
-          if (!isOpen) return null;
-
-          return (
-            <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
-              <div className="bg-white rounded-lg shadow-xl overflow-hidden max-w-sm w-full transform transition-all duration-300 scale-100">
-                <div className="bg-blue-600 text-white px-6 py-4 flex justify-between items-center rounded-t-lg">
-                  <h3 className="text-xl font-bold font-inter">Confirme o seu Login</h3>
-                  <button
-                    onClick={onClose}
-                    className="text-white hover:text-gray-200 focus:outline-none text-2xl font-bold"
-                    aria-label="Fechar modal de login"
-                    disabled={isLoading}
-                  >
-                    &times;
-                  </button>
-                </div>
-                <div className="p-6">
-                  <p className="text-gray-700 text-base mb-4 font-inter">
-                    O seu registo foi concluído com sucesso.
-                    Por favor, insira a sua palavra-passe para fazer login.
-                  </p>
-                  <form onSubmit={handleLogin}>
-                    <div className="mb-4">
-                      <label htmlFor="modalLoginEmail" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Email</label>
-                      <input
-                        type="email"
-                        id="modalLoginEmail"
-                        className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter bg-gray-100"
-                        value={registeredEmail}
-                        readOnly // Email is pre-filled and not editable
-                        aria-label="O seu email registado"
-                        disabled={isLoading}
-                      />
-                    </div>
-                    <div className="mb-6">
-                      <label htmlFor="modalLoginPassword" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Palavra-passe</label>
-                      <input
-                        type="password"
-                        id="modalLoginPassword"
-                        className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter"
-                        placeholder="Insira a sua palavra-passe"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        aria-label="Insira a sua palavra-passe para login"
-                        disabled={isLoading}
-                      />
-                    </div>
-                    <div className="flex justify-end">
-                      <button
-                        type="submit"
-                        className="py-2 px-6 rounded-lg font-bold text-white bg-blue-600 hover:bg-blue-700 transition duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 font-inter"
-                        aria-label="Fazer login agora"
-                        disabled={isLoading}
-                      >
-                        {isLoading ? 'A iniciar sessão...' : 'Iniciar sessão'}
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            </div>
-          );
-        }
-
         // Modal para cadastro de igreja
-        function ChurchRegisterModal({ isOpen, onClose, onShowMessage, supabase }) {
+        function ChurchRegisterModal({ isOpen, onClose, onShowMessage, supabase, onSwitchToRegister }) { // Adicionado onSwitchToRegister
           const [churchName, setChurchName] = React.useState('');
           const [churchEmail, setChurchEmail] = React.useState('');
           const [churchCity, setChurchCity] = React.useState('');
@@ -195,16 +102,9 @@
                 setChurchEmail('');
                 setChurchCity('');
                 onClose();
-                // Força o usuário a ir para a tela de registro de conta
-                if (typeof setCurrentView === 'function') {
-                  setCurrentView('register');
-                } else if (window.setCurrentView) {
-                  window.setCurrentView('register');
-                } else {
-                  // fallback: recarrega a página e orienta
-                  setTimeout(() => {
-                    window.location.reload();
-                  }, 1000);
+                // Redireciona diretamente para a tela de registro de conta
+                if (onSwitchToRegister) {
+                    onSwitchToRegister();
                 }
               }
             } catch (err) {
@@ -293,7 +193,6 @@
           const [email, setEmail] = React.useState('');
           const [password, setPassword] = React.useState('');
           const [isLoading, setIsLoading] = React.useState(false);
-          // Novo estado para modal de igreja
           const [isChurchModalOpen, setIsChurchModalOpen] = React.useState(false);
           const [showForgotModal, setShowForgotModal] = React.useState(false);
 
@@ -408,6 +307,7 @@
                 onClose={() => setIsChurchModalOpen(false)}
                 onShowMessage={onShowModal}
                 supabase={supabase}
+                onSwitchToRegister={onSwitchToRegister} {/* Passa a função para o modal */}
               />
               <ForgotPasswordModal isOpen={showForgotModal} onClose={() => setShowForgotModal(false)} onShowMessage={onShowModal} supabase={supabase} />
             </div>
@@ -423,8 +323,10 @@
             e.preventDefault();
             setIsLoading(true);
             try {
+              // Certifique-se de que redirectTo está correto.
+              // Use window.location.origin para garantir que o caminho base está correto
               const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: window.location.origin + '/index.html',
+                redirectTo: `${window.location.origin}/index.html`, // Redireciona de volta para esta página
               });
               if (error) {
                 onShowMessage('Erro ao solicitar redefinição: ' + error.message, 'error');
@@ -472,12 +374,12 @@
         }
 
         // Componente para a tela de Registro
-        function RegisterScreen({ onSwitchToLogin, onShowModal, onLoginAfterRegister, supabase }) { // Adicionado onLoginAfterRegister
+        function RegisterScreen({ onSwitchToLogin, onShowModal, supabase }) { // Removido onLoginAfterRegister, já que o modal não será usado
           const [fullName, setFullName] = React.useState('');
           const [dateOfBirth, setDateOfBirth] = React.useState('');
           const [phoneNumber, setPhoneNumber] = React.useState('');
           const [roleInChurch, setRoleInChurch] = React.useState('');
-          const [churchName, setChurchName] = React.useState('');
+          const [churchName, setChurchName] = React.useState(''); // Este campo pode ser opcional ou preenchido de outra forma
           const [registerEmail, setRegisterEmail] = React.useState('');
           const [registerPassword, setRegisterPassword] = React.useState('');
           const [confirmPassword, setConfirmPassword] = React.useState('');
@@ -493,12 +395,17 @@
             setIsLoading(true);
 
             try {
+                // Ao usar signUp com options.data, o Supabase já associa os dados do perfil ao usuário
                 const { data: authData, error: authError } = await supabase.auth.signUp({
                     email: registerEmail,
                     password: registerPassword,
                     options: {
                         data: {
-                            full_name_from_signup: fullName,
+                            full_name: fullName, // Mapeia para 'full_name' na tabela profiles
+                            phone_number: phoneNumber,
+                            date_of_birth: dateOfBirth,
+                            role_in_church: roleInChurch,
+                            // church_name: churchName, // Se 'church_name' não for uma FK, pode ser salvo aqui
                         },
                     },
                 });
@@ -507,24 +414,32 @@
                     console.error('Erro de registo no Supabase Auth:', authError);
                     onShowModal(`Erro ao registar: ${authError.message}`, 'error');
                 } else if (authData.user) {
-                    const { error: profileError } = await supabase
-                        .from('profiles')
-                        .insert([
-                            {
-                                id: authData.user.id,
-                                full_name: fullName,
-                                phone_number: phoneNumber,
-                                date_of_birth: dateOfBirth,
-                                role_in_church: roleInChurch,
-                            }
-                        ]);
+                    // Se o usuário foi criado, o webhook ou o trigger do Supabase deve popular a tabela 'profiles'
+                    // com base nas 'options.data'. Se não estiver configurado, você precisará fazer o insert aqui.
+                    // No seu código anterior, você já faz o insert manual, o que é bom como fallback.
+                    // O campo church_name pode ser tratado de forma diferente se for um relacionamento com a tabela 'churches'
 
-                    if (profileError) {
-                        console.error('Erro ao criar perfil:', profileError);
-                        onShowModal(`Registo de utilizador OK, mas erro ao criar perfil: ${profileError.message}. Por favor, tente novamente.`, 'error');
-                    } else {
+                    // Se a tabela 'profiles' não for automaticamente populada por trigger, mantenha este bloco:
+                    // const { error: profileError } = await supabase
+                    //     .from('profiles')
+                    //     .insert([
+                    //         {
+                    //             id: authData.user.id,
+                    //             full_name: fullName,
+                    //             phone_number: phoneNumber,
+                    //             date_of_birth: dateOfBirth,
+                    //             role_in_church: roleInChurch,
+                    //             // Remova ou adapte churchName dependendo de como você gerencia igrejas
+                    //         }
+                    //     ]);
+
+                    // if (profileError) {
+                    //     console.error('Erro ao criar perfil:', profileError);
+                    //     onShowModal(`Registo de utilizador OK, mas erro ao criar perfil: ${profileError.message}. Por favor, tente novamente.`, 'error');
+                    // } else {
                         onShowModal('Registo bem-sucedido! Por favor, verifique o seu e-mail para confirmar a conta e depois faça login.', 'success');
-                        setFullName(''); // Limpa o formulário
+                        // Limpa o formulário
+                        setFullName('');
                         setDateOfBirth('');
                         setPhoneNumber('');
                         setRoleInChurch('');
@@ -533,7 +448,7 @@
                         setRegisterPassword('');
                         setConfirmPassword('');
                         onSwitchToLogin(); // Volta para a tela de login
-                    }
+                    // }
                 } else {
                     onShowModal('Registo falhou. Por favor, tente novamente.', 'error');
                 }
@@ -605,7 +520,7 @@
 
                 <div className="mb-6">
                   <label htmlFor="roleInChurch" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
-                    Cargo/Função na Igreja
+                    Cargo/Função na Igreja (Opcional)
                   </label>
                   <input
                     type="text"
@@ -621,7 +536,7 @@
 
                 <div className="mb-6">
                   <label htmlFor="churchName" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
-                    Nome da Igreja/Comunidade
+                    Nome da Igreja/Comunidade (Opcional)
                   </label>
                   <input
                     type="text"
@@ -710,7 +625,7 @@
           );
         }
 
-        // Função utilitária para buscar igrejas e tentar corrigir erro de coluna automaticamente
+        // Função utilitária para buscar igrejas e tentar corrigir erro de coluna automaticamente (mantida)
         async function fetchChurchesWithAutoFix(supabase, onShowMessage) {
           let { data: churches, error } = await supabase
             .from('churches')
@@ -742,9 +657,6 @@
           const [isModalOpen, setIsModalOpen] = React.useState(false);
           const [modalMessage, setModalMessage] = React.useState('');
           const [modalType, setModalType] = React.useState('info');
-          // Variáveis para o modal de login após registo (AGORA NÃO SÃO MAIS USADAS PARA ESTE FLUXO)
-          const [showLoginAfterRegisterModal, setShowLoginAfterRegisterModal] = React.useState(false);
-          const [registeredEmailForLogin, setRegisteredEmailForLogin] = React.useState('');
 
           // Inicializa a instância do Supabase globalmente se ainda não foi inicializada
           const [supabase, setSupabase] = React.useState(() => window.globalSupabaseClient || null);
@@ -757,8 +669,11 @@
                 if (window.globalSupabaseClient) {
                   setSupabase(window.globalSupabaseClient);
                   clearInterval(interval);
-                } else if (tries > 10) {
+                } else if (tries > 10) { // Tenta por 1 segundo (10 * 100ms)
                   clearInterval(interval);
+                  // Opcional: mostrar um erro grave se o Supabase não carregar
+                  console.error("Supabase client não carregou após 1 segundo. Verifique 'supabaseClientInstance.js'.");
+                  showModal("Erro crítico: O sistema não pôde se conectar. Por favor, recarregue a página.", "error");
                 }
                 tries++;
               }, 100);
@@ -767,7 +682,7 @@
           }, [supabase]);
 
           React.useEffect(() => {
-            if (!supabase) return;
+            if (!supabase) return; // Garante que o supabase esteja inicializado antes de verificar a sessão
             const checkUserSession = async () => {
                 try {
                     const { data: { session } = {} } = await supabase.auth.getSession();
@@ -776,10 +691,26 @@
                     }
                 } catch (error) {
                     console.error('Erro ao verificar sessão inicial:', error);
+                    // Não é crítico aqui, pois estamos na tela de login/registro
                 }
             };
             checkUserSession();
-          }, [supabase]);
+
+            // Adiciona listener para mudanças de estado de autenticação (ex: login bem-sucedido)
+            const { data: authListener } = supabase.auth.onAuthStateChange(
+                (event, session) => {
+                    if (event === 'SIGNED_IN' && session) {
+                        handleLoginSuccess(); // Redireciona ao fazer login com sucesso
+                    }
+                    // Outros eventos (SIGNED_OUT, USER_UPDATED) podem ser tratados aqui, se necessário
+                }
+            );
+            return () => {
+                if (authListener && authListener.unsubscribe) {
+                    authListener.unsubscribe();
+                }
+            };
+          }, [supabase]); // Dependência em 'supabase' para garantir que o listener seja configurado após a inicialização
 
           const showModal = (message, type) => {
             setModalMessage(message);
@@ -801,7 +732,7 @@
             if (!supabase) {
               return (
                 <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
-                  <div className="text-white text-2xl font-bold font-inter">Carregando dependências...<br/>Se demorar, recarregue a página.<br/>Se persistir, verifique o arquivo supabaseClientInstance.js.</div>
+                  <div className="text-white text-2xl font-bold font-inter text-center">Carregando dependências...<br/>Se demorar, recarregue a página.<br/>Se persistir, verifique o arquivo <code className="bg-gray-800 p-1 rounded">supabaseClientInstance.js</code>.</div>
                 </div>
               );
             }
@@ -809,7 +740,8 @@
               case 'login':
                 return <LoginScreen onSwitchToRegister={() => setCurrentView('register')} onShowModal={showModal} onLoginSuccess={handleLoginSuccess} supabase={supabase} />;
               case 'register':
-                return <RegisterScreen onSwitchToLogin={() => setCurrentView('login')} onShowModal={showModal} onLoginAfterRegister={() => setShowLoginAfterRegisterModal(true)} supabase={supabase} />;
+                // Passa 'supabase' diretamente para o RegisterScreen
+                return <RegisterScreen onSwitchToLogin={() => setCurrentView('login')} onShowModal={showModal} supabase={supabase} />;
               default:
                 return <LoginScreen onSwitchToRegister={() => setCurrentView('register')} onShowModal={showModal} onLoginSuccess={handleLoginSuccess} supabase={supabase} />;
             }
@@ -829,38 +761,14 @@
         const rootElement = document.getElementById('root');
         ReactDOM.render(<App />, rootElement);
     </script>
-    <div id="ano-footer" class="mt-8 text-center text-blue-700 text-sm opacity-80 font-inter py-4"></div>
-    <style>
-      @media (max-width: 640px) {
-        #root > div {
-          padding: 0.5rem !important;
-          border-radius: 0.75rem !important;
-        }
-        .rounded-xl, .rounded-lg, .rounded-3xl, .rounded-2xl {
-          border-radius: 0.75rem !important;
-        }
-        .shadow-2xl, .shadow-xl, .shadow-md {
-          box-shadow: 0 2px 8px 0 rgba(37,99,235,0.10), 0 1.5px 4px 0 rgba(0,0,0,0.04) !important;
-        }
-      }
-    </style>
+    <div id="ano-footer" class="mt-8 text-center text-white text-sm opacity-80 font-inter py-4"></div>
     <script>
-      // Inicializa o Supabase Client global antes do React
-      (function() {
-        if (!window.globalSupabaseClient) {
-          const SUPABASE_URL = window.SUPABASE_URL || localStorage.getItem('SUPABASE_URL');
-          const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || localStorage.getItem('SUPABASE_ANON_KEY');
-          if (window.supabase && SUPABASE_URL && SUPABASE_ANON_KEY) {
-            window.globalSupabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-          }
-        }
-      })();
-      // Define o ano atual no rodapé
+      // Este bloco de script pode ser removido ou otimizado se o supabaseClientInstance.js já lida com tudo.
+      // Mantido apenas a parte do rodapé para evitar duplicação em outros lugares.
       window.addEventListener('DOMContentLoaded', function() {
         var anoFooter = document.getElementById('ano-footer');
-        if (anoFooter) anoFooter.textContent = `© ${new Date().getFullYear()} CPN Serviços. Todos os direitos reservados.`;
+        if (anoFooter) anoFooter.textContent = `© ${new Date().getFullYear()} CPN Serviços. Todos os direitos reservados. v1.2025.07.1`;
       });
     </script>
   </body>
 </html>
-
