@@ -1,791 +1,845 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Conexão Eclesia - Feed</title>
-    <!-- Incluindo Tailwind CSS para estilização (via CDN) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Incluindo a fonte Inter do Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <style>
-      body {
-        font-family: 'Inter', sans-serif;
-        text-size-adjust: none;
-        -webkit-text-size-adjust: none;
-        background: linear-gradient(135deg, #ff9800 0%, #ffb347 100%);
-      }
-      .sidebar-transition {
-        transition: width 0.3s ease-in-out, left 0.3s, box-shadow 0.3s;
-      }
-      .sidebar-collapsed .sidebar-item-text {
-        display: none;
-      }
-      .main-content-expanded {
-        flex-grow: 1;
-      }
-      .modern-shadow {
-        box-shadow: 0 4px 24px 0 rgba(255,152,0,0.10), 0 1.5px 4px 0 rgba(0,0,0,0.04);
-      }
-      .rounded-2xl {
-        border-radius: 1.25rem;
-      }
-      .btn-orange {
-        background: linear-gradient(90deg, #ff9800 0%, #fb8c00 100%);
-        color: #fff;
-        box-shadow: 0 2px 8px 0 rgba(255,152,0,0.10);
-      }
-      .btn-orange:hover, .btn-orange:focus {
-        background: linear-gradient(90deg, #fb8c00 0%, #ff9800 100%);
-      }
-      /* Responsividade Sidebar */
-      @media (max-width: 768px) {
-        aside.fixed {
-          position: fixed;
-          left: 0;
-          top: 0;
-          width: 100vw;
-          max-width: 100vw;
-          z-index: 40;
-          height: auto;
-          min-height: 0;
-          border-radius: 0 0 1.5rem 1.5rem;
-        }
-        .rounded-2xl {
-          border-radius: 0.75rem !important;
-        }
-        .modern-shadow {
-          box-shadow: 0 2px 8px 0 rgba(255,152,0,0.10), 0 1.5px 4px 0 rgba(0,0,0,0.04) !important;
-        }
-        .max-w-2xl {
-          max-width: 100vw !important;
-        }
-        .p-6 {
-          padding: 1rem !important;
-        }
-      }
-      /* Melhorias visuais para posts */
-      .post-card {
-        transition: box-shadow 0.2s, transform 0.2s;
-      }
-      .post-card:hover {
-        box-shadow: 0 8px 32px 0 rgba(255,152,0,0.18), 0 3px 8px 0 rgba(0,0,0,0.08);
-        transform: translateY(-2px) scale(1.01);
-      }
-      .post-title {
-        letter-spacing: -0.5px;
-      }
-      .post-content {
-        font-size: 1.08rem;
-        line-height: 1.7;
-      }
-    </style>
-</head>
-<body>
-    <div id="root"></div>
+// Garanta que este script esteja no seu HTML antes do código React principal
+// <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+// <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+// <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+// <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+// <script src="supabaseClientInstance.js"></script>
 
-    <!-- Importa React e ReactDOM a partir de um CDN (unpkg.com) -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Importa Babel para transpilar JSX diretamente no navegador -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Importa o SDK do Supabase Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Carrega o script verificador de instância Supabase -->
-    <!-- Este script é esperado para inicializar window.globalSupabaseClient -->
-    <script src="supabaseClientInstance.js"></script>
+// Adicione este script para garantir que SUPABASE_URL e SUPABASE_ANON_KEY estejam acessíveis
+// Se eles já estão sendo definidos em supabaseClientInstance.js, você pode pular
+// window.SUPABASE_URL = "SUA_URL_SUPABASE"; // Substitua pela sua URL do Supabase
+// window.SUPABASE_ANON_KEY = "SUA_CHAVE_SUPABASE_ANON"; // Substitua pela sua chave anon do Supabase
 
-    <script>
-      // Inicializa o Supabase Client global antes do React
-      (function() {
-        if (!window.globalSupabaseClient) {
-          const SUPABASE_URL = window.SUPABASE_URL || localStorage.getItem('SUPABASE_URL');
-          const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || localStorage.getItem('SUPABASE_ANON_KEY');
-          if (window.supabase && SUPABASE_URL && SUPABASE_ANON_KEY) {
-            window.globalSupabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-          }
-        }
-      })();
-      // Define o ano atual no rodapé
-      window.addEventListener('DOMContentLoaded', function() {
-        var anoFooter = document.getElementById('ano-footer');
-        if (anoFooter) anoFooter.textContent = new Date().getFullYear();
-      });
-    </script>
+// Inicializa o Supabase Client globalmente (se já não estiver em supabaseClientInstance.js)
+// (function() {
+//   if (!window.globalSupabaseClient) {
+//     const SUPABASE_URL = window.SUPABASE_URL || localStorage.getItem('SUPABASE_URL');
+//     const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || localStorage.getItem('SUPABASE_ANON_KEY');
+//     if (window.supabase && SUPABASE_URL && SUPABASE_ANON_KEY) {
+//       window.globalSupabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+//     }
+//   }
+// })();
 
-    <!-- O código React/JSX agora será processado por Babel -->
-    <script type="text/babel">
-        // Componente Modal
-        function Modal({ isOpen, message, type, onClose }) {
-          if (!isOpen) return null;
+<script type="text/babel">
+    // Componente Modal (Mantido como está)
+    function Modal({ isOpen, message, type, onClose }) {
+      if (!isOpen) return null;
 
-          const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
-          const headerText = type === 'success' ? 'Sucesso!' : 'Erro!';
+      const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+      const headerText = type === 'success' ? 'Sucesso!' : 'Erro!';
 
-          return (
-            <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
-              <div className="bg-white rounded-lg shadow-xl overflow-hidden max-w-sm w-full transform transition-all duration-300 scale-100">
-                <div className={`${bgColor} text-white px-6 py-4 flex justify-between items-center rounded-t-lg`}>
-                  <h3 className="text-xl font-bold font-inter">{headerText}</h3>
-                  <button
-                    onClick={onClose}
-                    className="text-white hover:text-gray-200 focus:outline-none text-2xl font-bold"
-                    aria-label="Fechar modal de mensagem"
-                  >
-                    &times;
-                  </button>
-                </div>
-                <div className="p-6">
-                  <p className="text-gray-700 text-lg mb-4 font-inter">{message}</p>
-                  <div className="flex justify-end">
-                    <button
-                      onClick={onClose}
-                      className={`py-2 px-6 rounded-lg font-bold text-white transition duration-300 shadow-md ${bgColor} hover:${bgColor.replace('500', '600')} focus:outline-none focus:ring-2 focus:ring-opacity-75`}
-                      aria-label="Entendido, fechar mensagem"
-                    >
-                      OK
-                    </button>
-                  </div>
-                </div>
+      return (
+        <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl overflow-hidden max-w-sm w-full transform transition-all duration-300 scale-100">
+            <div className={`${bgColor} text-white px-6 py-4 flex justify-between items-center rounded-t-lg`}>
+              <h3 className="text-xl font-bold font-inter">{headerText}</h3>
+              <button
+                onClick={onClose}
+                className="text-white hover:text-gray-200 focus:outline-none text-2xl font-bold"
+                aria-label="Fechar modal de mensagem"
+              >
+                &times;
+              </button>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-700 text-lg mb-4 font-inter">{message}</p>
+              <div className="flex justify-end">
+                <button
+                  onClick={onClose}
+                  className={`py-2 px-6 rounded-lg font-bold text-white transition duration-300 shadow-md ${bgColor} hover:${bgColor.replace('500', '600')} focus:outline-none focus:ring-2 focus:ring-opacity-75`}
+                  aria-label="Entendido, fechar mensagem"
+                >
+                  OK
+                </button>
               </div>
             </div>
-          );
+          </div>
+        </div>
+      );
+    }
+
+    // Componente CreatePostModal (Mantido como está)
+    function CreatePostModal({ isOpen, onClose, onSavePost, onShowMessage, supabase }) {
+      const [title, setTitle] = React.useState('');
+      const [content, setContent] = React.useState('');
+      const [image, setImage] = React.useState(''); // URL da imagem
+      const [imageFile, setImageFile] = React.useState(null); // Arquivo selecionado
+      const [isLoading, setIsLoading] = React.useState(false);
+
+      const handleImageUpload = async (file) => {
+        if (!file) return null;
+        try {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+          const { data, error } = await supabase.storage.from('post-images').upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: false
+          });
+          if (error) {
+            onShowMessage('Erro ao fazer upload da imagem: ' + error.message, 'error');
+            return null;
+          }
+          const { data: publicUrlData } = supabase.storage.from('post-images').getPublicUrl(fileName);
+          return publicUrlData.publicUrl;
+        } catch (err) {
+          onShowMessage('Erro inesperado ao fazer upload da imagem.', 'error');
+          return null;
         }
+      };
 
-        // Componente CreatePostModal
-        function CreatePostModal({ isOpen, onClose, onSavePost, onShowMessage, supabase }) {
-          const [title, setTitle] = React.useState('');
-          const [content, setContent] = React.useState('');
-          const [image, setImage] = React.useState(''); // URL da imagem
-          const [imageFile, setImageFile] = React.useState(null); // Arquivo selecionado
-          const [isLoading, setIsLoading] = React.useState(false);
-          // const [uploadProgress, setUploadProgress] = React.useState(0); // Não utilizado atualmente
-
-          // Função para upload da imagem no Supabase Storage
-          const handleImageUpload = async (file) => {
-            if (!file) return null;
-            try {
-              const fileExt = file.name.split('.').pop();
-              const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
-              const { data, error } = await supabase.storage.from('post-images').upload(fileName, file, {
-                cacheControl: '3600',
-                upsert: false
-              });
-              if (error) {
-                onShowMessage('Erro ao fazer upload da imagem: ' + error.message, 'error');
-                return null;
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!title || !content) {
+          onShowMessage('Título e Conteúdo são obrigatórios.', 'error');
+          return;
+        }
+        setIsLoading(true);
+        let imageUrl = image;
+        if (imageFile) {
+          imageUrl = await handleImageUpload(imageFile);
+          if (!imageUrl) {
+            setIsLoading(false);
+            return;
+          }
+        }
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) {
+            onShowMessage('Você precisa estar logado para criar uma publicação.', 'error');
+            setIsLoading(false);
+            return;
+          }
+          const { data, error } = await supabase
+            .from('posts')
+            .insert([
+              {
+                title,
+                content,
+                image_url: imageUrl || null,
+                author_id: user.id,
+                is_published: true
               }
-              // Gera a URL pública
-              const { data: publicUrlData } = supabase.storage.from('post-images').getPublicUrl(fileName);
-              return publicUrlData.publicUrl;
-            } catch (err) {
-              onShowMessage('Erro inesperado ao fazer upload da imagem.', 'error');
-              return null;
-            }
-          };
+            ])
+            .select();
+          if (error) {
+            console.error('Erro ao salvar no Supabase:', error);
+            onShowMessage(`Erro ao criar publicação: ${error.message}`, 'error');
+          } else {
+            onSavePost(data[0]);
+            onShowMessage('Publicação criada com sucesso!', 'success');
+            setTitle('');
+            setContent('');
+            setImage('');
+            setImageFile(null);
+            onClose();
+          }
+        } catch (error) {
+          console.error('Erro inesperado:', error);
+          onShowMessage('Ocorreu um erro inesperado ao criar a publicação.', 'error');
+        } finally {
+          setIsLoading(false);
+        }
+      };
 
-          const handleSubmit = async (e) => {
-            e.preventDefault();
-            if (!title || !content) {
-              onShowMessage('Título e Conteúdo são obrigatórios.', 'error');
-              return;
-            }
-            setIsLoading(true);
-            let imageUrl = image;
-            if (imageFile) {
-              imageUrl = await handleImageUpload(imageFile);
-              if (!imageUrl) {
-                setIsLoading(false);
-                return;
-              }
-            }
-            try {
-              const { data: { user } } = await supabase.auth.getUser();
-              if (!user) {
-                onShowMessage('Você precisa estar logado para criar uma publicação.', 'error');
-                setIsLoading(false);
-                return;
-              }
-              const { data, error } = await supabase
-                .from('posts')
-                .insert([
-                  {
-                    title,
-                    content,
-                    image_url: imageUrl || null,
-                    author_id: user.id,
-                    is_published: true
-                  }
-                ])
-                .select();
-              if (error) {
-                console.error('Erro ao salvar no Supabase:', error);
-                onShowMessage(`Erro ao criar publicação: ${error.message}`, 'error');
-              } else {
-                onSavePost(data[0]);
-                onShowMessage('Publicação criada com sucesso!', 'success');
-                setTitle('');
-                setContent('');
-                setImage('');
-                setImageFile(null);
-                onClose();
-              }
-            } catch (error) {
-              console.error('Erro inesperado:', error);
-              onShowMessage('Ocorreu um erro inesperado ao criar a publicação.', 'error');
-            } finally {
-              setIsLoading(false);
-            }
-          };
+      const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          setImageFile(file);
+          setImage(''); // Limpa campo de URL manual
+        }
+      };
 
-          const handleFileChange = (e) => {
-            const file = e.target.files[0];
-            if (file) {
-              setImageFile(file);
-              setImage(''); // Limpa campo de URL manual
-            }
-          };
+      if (!isOpen) return null;
 
-          if (!isOpen) return null;
-
-          return (
-            <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
-              <div className="bg-white rounded-lg shadow-xl overflow-hidden max-w-md w-full transform transition-all duration-300 scale-100">
-                <div className="bg-orange-500 text-white px-6 py-4 flex justify-between items-center rounded-t-lg">
-                  <h3 className="text-xl font-bold font-inter">Criar Nova Publicação</h3>
+      return (
+        <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl overflow-hidden max-w-md w-full transform transition-all duration-300 scale-100">
+            <div className="bg-orange-500 text-white px-6 py-4 flex justify-between items-center rounded-t-lg">
+              <h3 className="text-xl font-bold font-inter">Criar Nova Publicação</h3>
+              <button
+                onClick={onClose}
+                className="text-white hover:text-gray-200 focus:outline-none text-2xl font-bold"
+                aria-label="Fechar modal de criação de publicação"
+                disabled={isLoading}
+              >
+                &times;
+              </button>
+            </div>
+            <div className="p-6">
+              <form onSubmit={handleSubmit}>
+                <div className="mb-4">
+                  <label htmlFor="postTitle" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Título</label>
+                  <input
+                    type="text"
+                    id="postTitle"
+                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition duration-200 font-inter"
+                    placeholder="Título da sua publicação"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    required
+                    aria-label="Campo para o título da publicação"
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="mb-4">
+                  <label htmlFor="postContent" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Conteúdo</label>
+                  <textarea
+                    id="postContent"
+                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition duration-200 font-inter h-32 resize-none"
+                    placeholder="Escreva o conteúdo da sua publicação aqui..."
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    required
+                    aria-label="Campo para o conteúdo da publicação"
+                    disabled={isLoading}
+                  ></textarea>
+                </div>
+                <div className="mb-4">
+                  <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Foto do Post</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+                    onChange={handleFileChange}
+                    disabled={isLoading}
+                    aria-label="Selecione uma imagem para o post"
+                  />
+                  {imageFile && (
+                    <div className="mt-2 flex items-center space-x-2">
+                      <img src={URL.createObjectURL(imageFile)} alt="Preview" className="w-20 h-20 object-cover rounded-lg border border-orange-200" />
+                      <span className="text-xs text-gray-500">Pré-visualização</span>
+                    </div>
+                  )}
+                </div>
+                <div className="mb-6">
+                  <label htmlFor="postImage" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">URL da Imagem (Opcional)</label>
+                  <input
+                    type="url"
+                    id="postImage"
+                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition duration-200 font-inter"
+                    placeholder="https://exemplo.com/imagem.jpg"
+                    value={image}
+                    onChange={(e) => { setImage(e.target.value); setImageFile(null); }}
+                    aria-label="Campo para a URL da imagem da publicação"
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="flex justify-end">
                   <button
+                    type="button"
                     onClick={onClose}
-                    className="text-white hover:text-gray-200 focus:outline-none text-2xl font-bold"
-                    aria-label="Fechar modal de criação de publicação"
+                    className="mr-4 py-2 px-6 rounded-lg font-bold text-gray-700 bg-gray-200 hover:bg-gray-300 transition duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75 font-inter"
+                    aria-label="Cancelar criação da publicação"
                     disabled={isLoading}
                   >
-                    &times;
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="py-2 px-6 rounded-lg font-bold text-white btn-orange transition duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-opacity-75 font-inter"
+                    aria-label="Salvar nova publicação"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Publicando...' : 'Publicar'}
                   </button>
                 </div>
-                <div className="p-6">
-                  <form onSubmit={handleSubmit}>
-                    <div className="mb-4">
-                      <label htmlFor="postTitle" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Título</label>
-                      <input
-                        type="text"
-                        id="postTitle"
-                        className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition duration-200 font-inter"
-                        placeholder="Título da sua publicação"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        required
-                        aria-label="Campo para o título da publicação"
-                        disabled={isLoading}
-                      />
-                    </div>
-                    <div className="mb-4">
-                      <label htmlFor="postContent" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Conteúdo</label>
-                      <textarea
-                        id="postContent"
-                        className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition duration-200 font-inter h-32 resize-none"
-                        placeholder="Escreva o conteúdo da sua publicação aqui..."
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                        required
-                        aria-label="Campo para o conteúdo da publicação"
-                        disabled={isLoading}
-                      ></textarea>
-                    </div>
-                    <div className="mb-4">
-                      <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Foto do Post</label>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
-                        onChange={handleFileChange}
-                        disabled={isLoading}
-                        aria-label="Selecione uma imagem para o post"
-                      />
-                      {imageFile && (
-                        <div className="mt-2 flex items-center space-x-2">
-                          <img src={URL.createObjectURL(imageFile)} alt="Preview" className="w-20 h-20 object-cover rounded-lg border border-orange-200" />
-                          <span className="text-xs text-gray-500">Pré-visualização</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="mb-6">
-                      <label htmlFor="postImage" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">URL da Imagem (Opcional)</label>
-                      <input
-                        type="url"
-                        id="postImage"
-                        className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition duration-200 font-inter"
-                        placeholder="https://exemplo.com/imagem.jpg"
-                        value={image}
-                        onChange={(e) => { setImage(e.target.value); setImageFile(null); }}
-                        aria-label="Campo para a URL da imagem da publicação"
-                        disabled={isLoading}
-                      />
-                    </div>
-                    <div className="flex justify-end">
-                      <button
-                        type="button"
-                        onClick={onClose}
-                        className="mr-4 py-2 px-6 rounded-lg font-bold text-gray-700 bg-gray-200 hover:bg-gray-300 transition duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75 font-inter"
-                        aria-label="Cancelar criação da publicação"
-                        disabled={isLoading}
-                      >
-                        Cancelar
-                      </button>
-                      <button
-                        type="submit"
-                        className="py-2 px-6 rounded-lg font-bold text-white btn-orange transition duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-opacity-75 font-inter"
-                        aria-label="Salvar nova publicação"
-                        disabled={isLoading}
-                      >
-                        {isLoading ? 'Publicando...' : 'Publicar'}
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </div>
+              </form>
             </div>
-          );
-        }
+          </div>
+        </div>
+      );
+    }
 
-        // NOVO Componente: AdComponent para exibir anúncios
-        function AdComponent({ adData }) {
-          // adData pode conter propriedades como imageUrl, linkUrl, altText, advertiserName
-          if (!adData) return null; // Não renderiza se não houver dados de anúncio
+    // Componente AdComponent (Mantido como está)
+    function AdComponent({ adData }) {
+      if (!adData) return null;
 
-          return (
-            <div className="bg-white p-6 rounded-2xl modern-shadow border border-blue-100 flex flex-col items-center text-center my-6">
-              <h3 className="text-xl font-bold text-blue-700 mb-4 font-inter">Anúncio</h3>
-              {adData.imageUrl && (
-                <a href={adData.linkUrl} target="_blank" rel="noopener noreferrer">
-                  <img
-                    src={adData.imageUrl}
-                    alt={adData.altText || "Anúncio"}
-                    className="w-full h-48 object-contain rounded-xl mb-4 border border-blue-200 shadow-sm cursor-pointer"
-                    onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/400x200/ADD8E6/000000?text=Ad+Loading+Error'; }}
-                    title="Clique para saber mais"
-                  />
-                </a>
-              )}
-              <p className="text-gray-700 font-inter mb-2">{adData.altText || "Este é um espaço de anúncio."}</p>
-              {adData.advertiserName && (
-                <span className="text-sm text-gray-500">Por: {adData.advertiserName}</span>
-              )}
-            </div>
-          );
-        }
+      return (
+        <div className="bg-white p-6 rounded-2xl modern-shadow border border-blue-100 flex flex-col items-center text-center my-6">
+          <h3 className="text-xl font-bold text-blue-700 mb-4 font-inter">Anúncio</h3>
+          {adData.imageUrl && (
+            <a href={adData.linkUrl} target="_blank" rel="noopener noreferrer">
+              <img
+                src={adData.imageUrl}
+                alt={adData.altText || "Anúncio"}
+                className="w-full h-48 object-contain rounded-xl mb-4 border border-blue-200 shadow-sm cursor-pointer"
+                onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/400x200/ADD8E6/000000?text=Ad+Loading+Error'; }}
+                title="Clique para saber mais"
+              />
+            </a>
+          )}
+          <p className="text-gray-700 font-inter mb-2">{adData.altText || "Este é um espaço de anúncio."}</p>
+          {adData.advertiserName && (
+            <span className="text-sm text-gray-500">Por: {adData.advertiserName}</span>
+          )}
+        </div>
+      );
+    }
 
+    // NOVO Componente: PostCard - Para exibir um post individualmente e gerenciar curtidas
+    function PostCard({ post, currentUserId, onToggleLike, onShowMessage }) {
+        const [isLiked, setIsLiked] = React.useState(post.isLikedByCurrentUser);
+        const [likesCount, setLikesCount] = React.useState(post.likesCount);
+        const [isLiking, setIsLiking] = React.useState(false); // Para desabilitar o botão enquanto curte
 
-        // Componente para a tela de Feed
-        function FeedScreen({ onShowModal, onLogout, supabase }) {
-          const [posts, setPosts] = React.useState([]);
-          const [isCreatePostModalOpen, setIsCreatePostModalOpen] = React.useState(false);
-          const [isLoadingPosts, setIsLoadingPosts] = React.useState(true);
-          const [isSidebarOpen, setIsSidebarOpen] = React.useState(window.innerWidth >= 768);
-          const [isAdmin, setIsAdmin] = React.useState(false);
-          const [ads, setAds] = React.useState([]); // Estado para armazenar os dados dos anúncios
-          const adDisplayInterval = 3; // Exibir um anúncio a cada 3 publicações
+        // Atualiza os estados internos quando as props de post mudam (útil após um novo like/unlike)
+        React.useEffect(() => {
+            setIsLiked(post.isLikedByCurrentUser);
+            setLikesCount(post.likesCount);
+        }, [post.isLikedByCurrentUser, post.likesCount]);
 
-          const fetchPosts = async () => {
-            setIsLoadingPosts(true);
+        const handleLikeClick = async () => {
+            if (isLiking) return; // Evita cliques múltiplos
+            setIsLiking(true);
+
+            const previousIsLiked = isLiked;
+            const previousLikesCount = likesCount;
+
+            // Otimização de UI: atualiza a interface antes da chamada da API
+            setIsLiked(!previousIsLiked);
+            setLikesCount(previousIsLiked ? previousLikesCount - 1 : previousLikesCount + 1);
+
             try {
-              const { data, error } = await supabase
-                .from('posts')
-                .select(`
-                  *,
-                  profiles (full_name)
-                `)
-                .order('created_at', { ascending: false });
-
-              if (error) {
-                console.error('Erro ao carregar posts:', error);
-                onShowModal(`Erro ao carregar publicações: ${error.message || 'Erro desconhecido'}`, 'error');
-                setPosts([]);
-              } else {
-                const formattedPosts = data.map(post => ({
-                  id: post.id,
-                  author: post.profiles ? post.profiles.full_name : 'Autor Desconhecido',
-                  church: post.church_id ? 'Nome da Igreja Aqui (buscar)' : '', // Placeholder
-                  date: new Date(post.created_at).toLocaleDateString('pt-BR'),
-                  title: post.title,
-                  content: post.content,
-                  image: post.image_url
-                }));
-                setPosts(formattedPosts);
-              }
+                await onToggleLike(post.id, !previousIsLiked); // Passa o novo estado desejado
             } catch (error) {
-              console.error('Erro inesperado ao buscar posts:', error);
-              onShowModal('Ocorreu um erro inesperado ao carregar as publicações.', 'error');
-              setPosts([]);
+                // Em caso de erro, reverte a UI
+                setIsLiked(previousIsLiked);
+                setLikesCount(previousLikesCount);
+                onShowMessage(`Erro ao ${!previousIsLiked ? 'curtir' : 'descurtir'} o post: ${error.message || 'Erro desconhecido'}`, 'error');
             } finally {
-              setIsLoadingPosts(false);
+                setIsLiking(false);
             }
-          };
+        };
 
-          // NOVO: Função para buscar anúncios
-          const fetchAds = async () => {
-            try {
-              const { data, error } = await supabase
-                .from('advertisements') // Assumindo que você tem uma tabela 'advertisements'
-                .select('*')
-                .eq('is_active', true) // Apenas anúncios ativos
-                .order('created_at', { ascending: false }); // Ou ordenar por prioridade/aleatório
-
-              if (error) {
-                console.error('Erro ao carregar anúncios:', error);
-                // Opcionalmente, mostrar um modal, mas a falha dos anúncios não deve bloquear o feed
-              } else {
-                setAds(data);
-              }
-            } catch (error) {
-              console.error('Erro inesperado ao buscar anúncios:', error);
-            }
-          };
-
-          React.useEffect(() => {
-            fetchPosts();
-            fetchAds(); // Chamar fetchAds quando o componente é montado
-
-            // Checa se o usuário é admin pelo campo 'admin' (booleano)
-            const checkAdmin = async () => {
-              try {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (user) {
-                  const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('admin')
-                    .eq('id', user.id)
-                    .single();
-                  setIsAdmin(profile?.admin === true);
-                }
-              } catch (e) {
-                setIsAdmin(false);
-              }
-            };
-            checkAdmin();
-          }, []); // Dependências vazias para rodar apenas uma vez
-
-          const handleNewPost = (newPost) => {
-            fetchPosts(); // Recarrega os posts após criar um novo
-          };
-
-          const toggleSidebar = () => {
-            setIsSidebarOpen(!isSidebarOpen);
-          };
-
-          const handleNavigateToProfile = () => {
-            window.location.href = 'perfil.html';
-          };
-
-          const handleNavigateToChat = () => {
-            window.location.href = 'chat.html';
-          };
-
-          // Função para navegar para a página da igreja (exemplo)
-          const handleNavigateToChurch = () => {
-            const exampleChurchId = 'd2c0b1a0-e3f4-5678-90ab-cdef12345678'; // Substitua por um ID real
-            window.location.href = `igreja.html?churchId=${exampleChurchId}`;
-          };
-
-          // Função para aviso de "Em desenvolvimento" (não utilizada no código, mas mantida)
-          const handleComingSoon = (featureName) => {
-            onShowModal(`${featureName} está em desenvolvimento e estará disponível em breve!`, 'info');
-          };
-
-          const handleNavigateToAdmin = () => { // Nova função para navegar para o admin
-            window.location.href = 'admin.html'; // Direciona para a página admin.html
-          };
-
-
-          return (
-            <div className="flex flex-col md:flex-row min-h-screen w-full bg-gradient-orange p-4 sm:p-6 md:p-8">
-              {/* Botão de hambúrguer para mobile */}
-              <button
-                onClick={toggleSidebar}
-                className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-300"
-                aria-label={isSidebarOpen ? "Fechar menu lateral" : "Abrir menu lateral"}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                </svg>
-              </button>
-
-              {/* Barra Lateral */}
-              <aside className={`fixed md:static top-0 left-0 h-full z-40
-                                w-64 md:w-64 sidebar-transition
-                                bg-white text-gray-900 p-4 flex flex-col items-center md:items-start space-y-4 rounded-2xl modern-shadow
-                                ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-                                md:mb-0 md:rounded-r-none md:mr-4`}>
-                
-                {/* Botão de fechar para mobile dentro do sidebar, quando aberto */}
-                <button
-                    onClick={toggleSidebar}
-                    className="md:hidden absolute top-4 right-4 p-2 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-300"
-                    aria-label="Fechar menu lateral"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-
-                <div className="text-3xl font-extrabold mb-6 font-inter text-orange-500 sidebar-item-text">Menu</div>
-                <div 
-                    className="flex items-center space-x-2 text-xl cursor-pointer hover:text-orange-500 transition duration-200" 
-                    aria-label="Acessar meu perfil"
-                    onClick={handleNavigateToProfile}
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                    </svg>
-                    <span className="font-inter sidebar-item-text">Meu Perfil</span>
+        return (
+            <div className="post-card bg-white p-6 rounded-2xl modern-shadow border border-orange-100 flex flex-col sm:flex-row gap-4 items-start">
+                {/* Avatar do autor */}
+                <div className="flex-shrink-0 w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-2xl font-inter shadow-sm">
+                    {post.author && post.author[0]}
                 </div>
-                <button
-                  className="w-full text-left py-3 px-4 rounded-lg font-bold text-lg font-inter btn-orange shadow-md"
-                  onClick={() => setIsCreatePostModalOpen(true)}
-                  aria-label="Criar uma nova publicação"
-                >
-                  Criar Publicação
-                </button>
-                <button
-                  onClick={handleNavigateToChat}
-                  className="w-full text-left py-3 px-4 rounded-lg font-bold text-lg font-inter bg-purple-500 hover:bg-purple-600 text-white shadow-md"
-                  aria-label="Abrir chat global"
-                >
-                  Chat
-                </button>
-                {/* NOVOS BOTÕES DE SESSÃO */}
-                <button
-                  onClick={() => window.location.href = 'estudos.html'}
-                  className="w-full text-left py-3 px-4 rounded-lg font-bold text-lg font-inter btn-orange shadow-md"
-                  aria-label="Acessar Estudos Bíblicos"
-                >
-                  Estudos Bíblicos
-                </button>
-                <button
-                  onClick={() => window.location.href = 'lives.html'}
-                  className="w-full text-left py-3 px-4 rounded-lg font-bold text-lg font-inter bg-pink-500 hover:bg-pink-600 text-white shadow-md"
-                  aria-label="Acessar Lives"
-                >
-                  Lives
-                </button>
-                <button
-                  onClick={() => window.location.href = 'doacoes.html'}
-                  className="w-full text-left py-3 px-4 rounded-lg font-bold text-lg font-inter bg-green-500 hover:bg-green-600 text-white shadow-md"
-                  aria-label="Acessar Doações"
-                >
-                  Doações
-                </button>
-                {/* BOTÃO DE ADMINISTRADOR - visível só para admin */}
-                {isAdmin && (
-                  <button
-                    className="w-full text-left py-3 px-4 rounded-lg font-bold text-lg font-inter bg-gray-600 hover:bg-gray-700 text-white shadow-md"
-                    aria-label="Aceder painel de administrador"
-                    onClick={handleNavigateToAdmin}
-                  >
-                    <span className="sidebar-item-text">Administrador</span>
-                  </button>
-                )}
-                <div className="mt-auto pt-4 w-full border-t border-gray-200 md:border-none">
-                  <button
-                    onClick={onLogout}
-                    className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 transform hover:scale-100 active:scale-95 shadow-md font-inter"
-                    aria-label="Sair da sua conta"
-                  >
-                    Sair
-                  </button>
+                <div className="flex-1">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
+                        <span className="font-inter font-bold text-gray-800 text-lg">{post.author}</span>
+                        <span className="text-xs text-orange-500 font-inter mt-1 sm:mt-0">{post.date}</span>
+                    </div>
+                    <h2 className="post-title text-2xl font-bold text-orange-700 mb-2 font-inter">{post.title}</h2>
+                    {post.image && (
+                        <img
+                            src={post.image}
+                            alt={`Imagem para o post: ${post.title}`}
+                            className="w-full h-48 object-cover rounded-xl mb-4 border border-orange-200 shadow-sm hover:scale-105 transition-transform duration-200"
+                            onError={(e) => { e.target.onerror = null; e.target.src = `https://placehold.co/400x200/ff9800/ffffff?text=Imagem+N%C3%A3o+Dispon%C3%ADvel`; }}
+                            title="Clique para ampliar"
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => window.open(post.image, '_blank')}
+                        />
+                    )}
+                    <p className="post-content text-gray-700 leading-relaxed font-inter">{post.content}</p>
+
+                    {/* Seção de Curtidas */}
+                    <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                        <button
+                            onClick={currentUserId ? handleLikeClick : () => onShowMessage('Faça login para curtir posts!', 'info')}
+                            className={`flex items-center space-x-2 p-2 rounded-lg transition duration-200
+                                ${isLiked ? 'bg-red-100 text-red-600 hover:bg-red-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}
+                                ${isLiking ? 'opacity-70 cursor-not-allowed' : ''}`}
+                            aria-label={isLiked ? "Descurtir post" : "Curtir post"}
+                            disabled={isLiking}
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill={isLiked ? "currentColor" : "none"}
+                                viewBox="0 0 24 24"
+                                strokeWidth={1.5}
+                                stroke="currentColor"
+                                className="w-6 h-6"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"
+                                />
+                            </svg>
+                            <span className="font-semibold font-inter">{isLiked ? 'Curtido' : 'Curtir'}</span>
+                        </button>
+                        <span className="text-gray-500 text-sm font-inter">
+                            {likesCount} {likesCount === 1 ? 'curtida' : 'curtidas'}
+                        </span>
+                    </div>
                 </div>
-              </aside>
-
-              <main className={`flex-1 p-6 bg-white rounded-2xl modern-shadow max-w-2xl mx-auto
-                                md:ml-0 ${isSidebarOpen ? 'md:ml-64' : 'md:ml-20'} sidebar-transition`}>
-                <div className="flex flex-col sm:flex-row sm:justify-between items-center mb-8 gap-4">
-                  <div className="text-center sm:text-left">
-                    <h1 className="text-4xl font-extrabold text-orange-600 mb-2 font-inter drop-shadow-lg">Posts e Anúncios</h1>
-                    <p className="text-gray-600 text-lg font-inter">Últimas notícias e comunicados da comunidade.</p>
-                  </div>
-                  <button
-                    onClick={() => { fetchPosts(); fetchAds(); }}
-                    className="btn-orange hover:bg-orange-600 text-white font-bold py-2 px-6 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 shadow-md drop-shadow-md"
-                    aria-label="Atualizar feed de publicações"
-                  >
-                    Atualizar Feed
-                  </button>
-                </div>
-                {isLoadingPosts ? (
-                  <div className="text-center text-gray-600 text-lg font-inter animate-pulse">Carregando publicações...</div>
-                ) : posts.length === 0 ? (
-                  <div className="text-center text-gray-600 text-lg font-inter">Nenhuma publicação encontrada.</div>
-                ) : (
-                  <div className="flex flex-col space-y-6">
-                    {posts.map((post, index) => (
-                      <React.Fragment key={post.id}>
-                        {/* Renderização do Post Existente */}
-                        <div className="post-card bg-white p-6 rounded-2xl modern-shadow border border-orange-100 flex flex-col sm:flex-row gap-4 items-start">
-                          {/* Avatar do autor */}
-                          <div className="flex-shrink-0 w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-2xl font-inter shadow-sm">
-                            {post.author && post.author[0]}
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
-                              <span className="font-inter font-bold text-gray-800 text-lg">{post.author}</span>
-                              <span className="text-xs text-orange-500 font-inter mt-1 sm:mt-0">{post.date}</span>
-                            </div>
-                            <h2 className="post-title text-2xl font-bold text-orange-700 mb-2 font-inter">{post.title}</h2>
-                            {post.image && (
-                              <img
-                                src={post.image}
-                                alt={`Imagem para o post: ${post.title}`}
-                                className="w-full h-48 object-cover rounded-xl mb-4 border border-orange-200 shadow-sm hover:scale-105 transition-transform duration-200"
-                                onError={(e) => { e.target.onerror = null; e.target.src = `https://placehold.co/400x200/ff9800/ffffff?text=Imagem+N%C3%A3o+Dispon%C3%ADvel`; }}
-                                title="Clique para ampliar"
-                                style={{ cursor: 'pointer' }}
-                                onClick={() => window.open(post.image, '_blank')}
-                              />
-                            )}
-                            <p className="post-content text-gray-700 leading-relaxed font-inter">{post.content}</p>
-                          </div>
-                        </div>
-
-                        {/* Lógica de Integração de Anúncios */}
-                        {(index + 1) % adDisplayInterval === 0 && ads.length > 0 && (
-                          <AdComponent adData={ads[((index + 1) / adDisplayInterval - 1) % ads.length]} />
-                        )}
-                      </React.Fragment>
-                    ))}
-                  </div>
-                )}
-              </main>
-
-              <CreatePostModal
-                isOpen={isCreatePostModalOpen}
-                onClose={() => setIsCreatePostModalOpen(false)}
-                onSavePost={handleNewPost}
-                onShowMessage={onShowModal}
-                supabase={supabase}
-              />
             </div>
-          );
-        }
+        );
+    }
 
-        // Componente principal para a página de feed
-        function App() {
-          const [isModalOpen, setIsModalOpen] = React.useState(false);
-          const [modalMessage, setModalMessage] = React.useState('');
-          const [modalType, setModalType] = React.useState('info');
-          const [isAuthChecking, setIsAuthChecking] = React.useState(true);
-          const [isSupabaseClientReady, setIsSupabaseClientReady] = React.useState(false);
 
-          // AGORA, ACESSE A INSTÂNCIA GLOBALMENTE
-          const supabase = window.globalSupabaseClient;
-          if (!supabase && !isSupabaseClientReady) { // Adicionado !isSupabaseClientReady para evitar renderização precoce
-            // Este bloco será executado se supabase ainda não estiver pronto
-            // e o estado indicar que não está pronto.
-            // A lógica de inicialização via setTimeout ou supabaseClientInstance.js deve lidar com isso.
-            console.log("Supabase client não está pronto na renderização inicial do App.");
-          }
+    // Componente para a tela de Feed
+    function FeedScreen({ onShowModal, onLogout, supabase }) {
+      const [posts, setPosts] = React.useState([]);
+      const [isCreatePostModalOpen, setIsCreatePostModalOpen] = React.useState(false);
+      const [isLoadingPosts, setIsLoadingPosts] = React.useState(true);
+      const [isSidebarOpen, setIsSidebarOpen] = React.useState(window.innerWidth >= 768);
+      const [isAdmin, setIsAdmin] = React.useState(false);
+      const [ads, setAds] = React.useState([]);
+      const [currentUserId, setCurrentUserId] = React.useState(null); // Estado para armazenar o ID do usuário logado
+      const adDisplayInterval = 3;
 
-          React.useEffect(() => {
-            // Verifica se o cliente Supabase global já foi inicializado
-            if (window.globalSupabaseClient) {
-                setIsSupabaseClientReady(true);
-                console.log("Supabase client já está pronto.");
-            } else if (window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
-                // Se o SDK e as chaves estão disponíveis, inicializa o cliente globalmente
-                window.globalSupabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-                setIsSupabaseClientReady(true);
-                console.log("Supabase client inicializado globalmente dentro do App component.");
-            } else {
-                console.warn("Variáveis de ambiente Supabase ou SDK não disponíveis. Tentando novamente...");
-                // Tenta inicializar após um pequeno atraso caso o script externo ainda não tenha carregado
-                const timeoutId = setTimeout(() => {
-                    if (window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
-                        window.globalSupabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-                        setIsSupabaseClientReady(true);
-                        console.log("Supabase client inicializado após timeout.");
-                    } else {
-                        console.error("Falha ao inicializar o cliente Supabase após timeout. Verifique 'supabaseClientInstance.js' e variáveis.");
-                        // Pode-se adicionar um estado de erro para exibir uma mensagem ao usuário
-                    }
-                }, 500); // Pequeno atraso para garantir que supabaseClientInstance.js tenha chance de rodar
-                return () => clearTimeout(timeoutId); // Limpa o timeout se o componente for desmontado
-            }
+      // Função para buscar posts e informações de curtidas
+      const fetchPosts = async () => {
+        setIsLoadingPosts(true);
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          setCurrentUserId(user ? user.id : null); // Armazena o ID do usuário
+          const userId = user ? user.id : null;
 
-            // Agora, usa a instância garantida para a verificação de sessão
-            if (isSupabaseClientReady && window.globalSupabaseClient) {
-                const checkUserSession = async () => {
-                    try {
-                        const { data: { session } } = await window.globalSupabaseClient.auth.getSession();
-                        if (!session) {
-                            window.location.href = 'index.html';
-                        } else {
-                            setIsAuthChecking(false);
-                        }
-                    } catch (error) {
-                        console.error('Erro ao verificar sessão:', error);
-                        window.location.href = 'index.html';
-                    }
+          const { data, error } = await supabase
+            .from('posts')
+            .select(`
+              *,
+              profiles (full_name),
+              likes(user_id) // Adiciona a contagem de curtidas e verifica se o usuário atual curtiu
+            `)
+            .order('created_at', { ascending: false });
+
+          if (error) {
+            console.error('Erro ao carregar posts:', error);
+            onShowModal(`Erro ao carregar publicações: ${error.message || 'Erro desconhecido'}`, 'error');
+            setPosts([]);
+          } else {
+            const formattedPosts = data.map(post => {
+                const likesForThisPost = post.likes || [];
+                const likesCount = likesForThisPost.length;
+                const isLikedByCurrentUser = userId ? likesForThisPost.some(like => like.user_id === userId) : false;
+
+                return {
+                    id: post.id,
+                    author: post.profiles ? post.profiles.full_name : 'Autor Desconhecido',
+                    church: post.church_id ? 'Nome da Igreja Aqui (buscar)' : '', // Placeholder
+                    date: new Date(post.created_at).toLocaleDateString('pt-BR'),
+                    title: post.title,
+                    content: post.content,
+                    image: post.image_url,
+                    likesCount: likesCount,
+                    isLikedByCurrentUser: isLikedByCurrentUser,
                 };
-                checkUserSession();
-            }
-          }, [isSupabaseClientReady]); // Depende de isSupabaseClientReady para garantir que o cliente esteja pronto
+            });
+            setPosts(formattedPosts);
+          }
+        } catch (error) {
+          console.error('Erro inesperado ao buscar posts:', error);
+          onShowModal('Ocorreu um erro inesperado ao carregar as publicações.', 'error');
+          setPosts([]);
+        } finally {
+          setIsLoadingPosts(false);
+        }
+      };
 
-          const showModal = (message, type) => {
-            setModalMessage(message);
-            setModalType(type);
-            setIsModalOpen(true);
-          };
-
-          const closeModal = () => {
-            setIsModalOpen(false);
-            setModalMessage('');
-            setModalType('info');
-          };
-
-          const handleLogout = async () => {
-            try {
-              const { error } = await supabase.auth.signOut();
-              if (error) {
-                console.error('Erro ao fazer logout:', error);
-                showModal(`Erro ao fazer logout: ${error.message}`, 'error');
-              } else {
-                showModal('Logout realizado com sucesso!', 'success');
-                window.location.href = 'index.html';
-              }
-            } catch (error) {
-              console.error('Erro inesperado ao fazer logout:', error);
-              showModal('Ocorreu um erro inesperado ao fazer logout.', 'error');
-            }
-          };
-
-          if (!isSupabaseClientReady || isAuthChecking) {
-            return (
-              <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
-                <div className="text-white text-2xl font-bold font-inter">A carregar...</div>
-              </div>
-            );
+      // NOVO: Função para curtir/descurtir um post
+      const handleToggleLike = async (postId, shouldLike) => {
+          if (!currentUserId) {
+              onShowModal('Você precisa estar logado para curtir posts!', 'info');
+              return;
           }
 
-          return (
-            <div className="min-h-screen flex flex-col md:flex-row items-stretch justify-center p-0">
-              <FeedScreen
-                onShowModal={showModal}
-                onLogout={handleLogout}
-                supabase={supabase}
-              />
-              <div className="text-center text-white text-sm opacity-80 font-inter py-4 bg-gray-800 w-full md:hidden">
-                © {new Date().getFullYear()} CPN Serviços. Todos os direitos reservados. <span className="text-xs ml-2 opacity-70">v1.2025.07.1</span>
-              </div>
-              <Modal
-                isOpen={isModalOpen}
-                message={modalMessage}
-                type={modalType}
-                onClose={closeModal}
-              />
-            </div>
-          );
-        }
+          try {
+              if (shouldLike) {
+                  // Curtir o post
+                  const { error } = await supabase
+                      .from('likes')
+                      .insert([{ post_id: postId, user_id: currentUserId }]);
 
-        // Inicialização do Supabase e renderização do App
-        ReactDOM.render(<App />, document.getElementById('root'));
-  </script>
-</body>
-</html>
+                  if (error) {
+                      if (error.code === '23505') { // Código de erro para violação de unique constraint (já curtiu)
+                          console.warn('Usuário já curtiu este post.');
+                          // Apenas atualize o estado local para "curtido" se a UI já não refletir isso
+                          setPosts(prevPosts => prevPosts.map(p =>
+                              p.id === postId ? { ...p, isLikedByCurrentUser: true, likesCount: p.likesCount + (p.isLikedByCurrentUser ? 0 : 1) } : p
+                          ));
+                      } else {
+                          throw error;
+                      }
+                  } else {
+                      // Sucesso ao curtir, atualiza o estado local
+                      setPosts(prevPosts => prevPosts.map(p =>
+                          p.id === postId ? { ...p, isLikedByCurrentUser: true, likesCount: p.likesCount + 1 } : p
+                      ));
+                  }
+              } else {
+                  // Descurtir o post
+                  const { error } = await supabase
+                      .from('likes')
+                      .delete()
+                      .eq('post_id', postId)
+                      .eq('user_id', currentUserId);
+
+                  if (error) {
+                      throw error;
+                  } else {
+                      // Sucesso ao descurtir, atualiza o estado local
+                      setPosts(prevPosts => prevPosts.map(p =>
+                          p.id === postId ? { ...p, isLikedByCurrentUser: false, likesCount: p.likesCount - 1 } : p
+                      ));
+                  }
+              }
+          } catch (error) {
+              console.error(`Erro ao ${shouldLike ? 'curtir' : 'descurtir'} post:`, error);
+              onShowModal(`Erro ao ${shouldLike ? 'curtir' : 'descurtir'} post: ${error.message}`, 'error');
+              // Reverter UI se der erro (já é feito no PostCard)
+          }
+      };
+
+
+      const fetchAds = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('advertisements')
+            .select('*')
+            .eq('is_active', true)
+            .order('created_at', { ascending: false });
+
+          if (error) {
+            console.error('Erro ao carregar anúncios:', error);
+          } else {
+            setAds(data);
+          }
+        } catch (error) {
+          console.error('Erro inesperado ao buscar anúncios:', error);
+        }
+      };
+
+      React.useEffect(() => {
+        fetchPosts();
+        fetchAds();
+
+        const checkAdmin = async () => {
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('admin')
+                .eq('id', user.id)
+                .single();
+              setIsAdmin(profile?.admin === true);
+            }
+          } catch (e) {
+            setIsAdmin(false);
+          }
+        };
+        checkAdmin();
+      }, []);
+
+      const handleNewPost = (newPost) => {
+        fetchPosts(); // Recarrega os posts após criar um novo
+      };
+
+      const toggleSidebar = () => {
+        setIsSidebarOpen(!isSidebarOpen);
+      };
+
+      const handleNavigateToProfile = () => {
+        window.location.href = 'perfil.html';
+      };
+
+      const handleNavigateToChat = () => {
+        window.location.href = 'chat.html';
+      };
+
+      const handleNavigateToChurch = () => {
+        const exampleChurchId = 'd2c0b1a0-e3f4-5678-90ab-cdef12345678';
+        window.location.href = `igreja.html?churchId=${exampleChurchId}`;
+      };
+
+      const handleComingSoon = (featureName) => {
+        onShowModal(`${featureName} está em desenvolvimento e estará disponível em breve!`, 'info');
+      };
+
+      const handleNavigateToAdmin = () => {
+        window.location.href = 'admin.html';
+      };
+
+
+      return (
+        <div className="flex flex-col md:flex-row min-h-screen w-full bg-gradient-orange p-4 sm:p-6 md:p-8">
+          {/* Botão de hambúrguer para mobile */}
+          <button
+            onClick={toggleSidebar}
+            className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-300"
+            aria-label={isSidebarOpen ? "Fechar menu lateral" : "Abrir menu lateral"}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+          </button>
+
+          {/* Barra Lateral */}
+          <aside className={`fixed md:static top-0 left-0 h-full z-40
+                            w-64 md:w-64 sidebar-transition
+                            bg-white text-gray-900 p-4 flex flex-col items-center md:items-start space-y-4 rounded-2xl modern-shadow
+                            ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+                            md:mb-0 md:rounded-r-none md:mr-4`}>
+            
+            {/* Botão de fechar para mobile dentro do sidebar, quando aberto */}
+            <button
+                onClick={toggleSidebar}
+                className="md:hidden absolute top-4 right-4 p-2 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                aria-label="Fechar menu lateral"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+
+            <div className="text-3xl font-extrabold mb-6 font-inter text-orange-500 sidebar-item-text">Menu</div>
+            <div 
+                className="flex items-center space-x-2 text-xl cursor-pointer hover:text-orange-500 transition duration-200" 
+                aria-label="Acessar meu perfil"
+                onClick={handleNavigateToProfile}
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                </svg>
+                <span className="font-inter sidebar-item-text">Meu Perfil</span>
+            </div>
+            <button
+              className="w-full text-left py-3 px-4 rounded-lg font-bold text-lg font-inter btn-orange shadow-md"
+              onClick={() => setIsCreatePostModalOpen(true)}
+              aria-label="Criar uma nova publicação"
+            >
+              Criar Publicação
+            </button>
+            <button
+              onClick={handleNavigateToChat}
+              className="w-full text-left py-3 px-4 rounded-lg font-bold text-lg font-inter bg-purple-500 hover:bg-purple-600 text-white shadow-md"
+              aria-label="Abrir chat global"
+            >
+              Chat
+            </button>
+            {/* NOVOS BOTÕES DE SESSÃO */}
+            <button
+              onClick={() => window.location.href = 'estudos.html'}
+              className="w-full text-left py-3 px-4 rounded-lg font-bold text-lg font-inter btn-orange shadow-md"
+              aria-label="Acessar Estudos Bíblicos"
+            >
+              Estudos Bíblicos
+            </button>
+            <button
+              onClick={() => window.location.href = 'lives.html'}
+              className="w-full text-left py-3 px-4 rounded-lg font-bold text-lg font-inter bg-pink-500 hover:bg-pink-600 text-white shadow-md"
+              aria-label="Acessar Lives"
+            >
+              Lives
+            </button>
+            <button
+              onClick={() => window.location.href = 'doacoes.html'}
+              className="w-full text-left py-3 px-4 rounded-lg font-bold text-lg font-inter bg-green-500 hover:bg-green-600 text-white shadow-md"
+              aria-label="Acessar Doações"
+            >
+              Doações
+            </button>
+            {/* BOTÃO DE ADMINISTRADOR - visível só para admin */}
+            {isAdmin && (<
+              button
+                className="w-full text-left py-3 px-4 rounded-lg font-bold text-lg font-inter bg-gray-600 hover:bg-gray-700 text-white shadow-md"
+                aria-label="Aceder painel de administrador"
+                onClick={handleNavigateToAdmin}
+              >
+                <span className="sidebar-item-text">Administrador</span>
+              </button>
+            )}
+            <div className="mt-auto pt-4 w-full border-t border-gray-200 md:border-none">
+              <button
+                onClick={onLogout}
+                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 transform hover:scale-100 active:scale-95 shadow-md font-inter"
+                aria-label="Sair da sua conta"
+              >
+                Sair
+              </button>
+            </div>
+          </aside>
+
+          <main className={`flex-1 p-6 bg-white rounded-2xl modern-shadow max-w-2xl mx-auto
+                            md:ml-0 ${isSidebarOpen ? 'md:ml-64' : 'md:ml-20'} sidebar-transition`}>
+            <div className="flex flex-col sm:flex-row sm:justify-between items-center mb-8 gap-4">
+              <div className="text-center sm:text-left">
+                <h1 className="text-4xl font-extrabold text-orange-600 mb-2 font-inter drop-shadow-lg">Posts e Anúncios</h1>
+                <p className="text-gray-600 text-lg font-inter">Últimas notícias e comunicados da comunidade.</p>
+              </div>
+              <button
+                onClick={() => { fetchPosts(); fetchAds(); }}
+                className="btn-orange hover:bg-orange-600 text-white font-bold py-2 px-6 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 shadow-md drop-shadow-md"
+                aria-label="Atualizar feed de publicações"
+              >
+                Atualizar Feed
+              </button>
+            </div>
+            {isLoadingPosts ? (
+              <div className="text-center text-gray-600 text-lg font-inter animate-pulse">Carregando publicações...</div>
+            ) : posts.length === 0 ? (
+              <div className="text-center text-gray-600 text-lg font-inter">Nenhuma publicação encontrada.</div>
+            ) : (
+              <div className="flex flex-col space-y-6">
+                {posts.map((post, index) => (
+                  <React.Fragment key={post.id}>
+                    {/* Renderiza o novo componente PostCard */}
+                    <PostCard
+                        post={post}
+                        currentUserId={currentUserId}
+                        onToggleLike={handleToggleLike}
+                        onShowMessage={onShowModal}
+                    />
+
+                    {/* Lógica de Integração de Anúncios */}
+                    {(index + 1) % adDisplayInterval === 0 && ads.length > 0 && (
+                      <AdComponent adData={ads[((index + 1) / adDisplayInterval - 1) % ads.length]} />
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+            )}
+          </main>
+
+          <CreatePostModal
+            isOpen={isCreatePostModalOpen}
+            onClose={() => setIsCreatePostModalOpen(false)}
+            onSavePost={handleNewPost}
+            onShowMessage={onShowModal}
+            supabase={supabase}
+          />
+        </div>
+      );
+    }
+
+    // Componente principal para a página de feed (Mantido como está, com pequenas correções)
+    function App() {
+      const [isModalOpen, setIsModalOpen] = React.useState(false);
+      const [modalMessage, setModalMessage] = React.useState('');
+      const [modalType, setModalType] = React.useState('info');
+      const [isAuthChecking, setIsAuthChecking] = React.useState(true);
+      const [isSupabaseClientReady, setIsSupabaseClientReady] = React.useState(false);
+
+      const supabase = window.globalSupabaseClient;
+
+      React.useEffect(() => {
+        const initializeSupabase = async () => {
+          if (window.globalSupabaseClient) {
+              setIsSupabaseClientReady(true);
+              console.log("Supabase client já está pronto.");
+          } else if (window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+              window.globalSupabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+              setIsSupabaseClientReady(true);
+              console.log("Supabase client inicializado globalmente dentro do App component.");
+          } else {
+              console.warn("Variáveis de ambiente Supabase ou SDK não disponíveis. Tentando novamente...");
+              const timeoutId = setTimeout(() => {
+                  if (window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+                      window.globalSupabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                      setIsSupabaseClientReady(true);
+                      console.log("Supabase client inicializado após timeout.");
+                  } else {
+                      console.error("Falha ao inicializar o cliente Supabase após timeout. Verifique 'supabaseClientInstance.js' e variáveis.");
+                  }
+              }, 500);
+              return () => clearTimeout(timeoutId);
+          }
+        };
+
+        initializeSupabase();
+      }, []); // Executa apenas uma vez na montagem do componente
+
+      React.useEffect(() => {
+        if (isSupabaseClientReady && window.globalSupabaseClient) {
+          const checkUserSession = async () => {
+              try {
+                  const { data: { session } } = await window.globalSupabaseClient.auth.getSession();
+                  if (!session) {
+                      window.location.href = 'index.html';
+                  } else {
+                      setIsAuthChecking(false);
+                  }
+              } catch (error) {
+                  console.error('Erro ao verificar sessão:', error);
+                  window.location.href = 'index.html';
+              }
+          };
+          checkUserSession();
+
+          // Lida com mudanças de autenticação em tempo real
+          const { data: authListener } = window.globalSupabaseClient.auth.onAuthStateChange(
+            (event, session) => {
+              if (event === 'SIGNED_OUT' || !session) {
+                window.location.href = 'index.html';
+              } else if (event === 'SIGNED_IN') {
+                setIsAuthChecking(false);
+              }
+            }
+          );
+          // Cleanup do listener
+          return () => {
+            if (authListener && authListener.unsubscribe) {
+                authListener.unsubscribe();
+            }
+          };
+        }
+      }, [isSupabaseClientReady]);
+
+
+      const showModal = (message, type) => {
+        setModalMessage(message);
+        setModalType(type);
+        setIsModalOpen(true);
+      };
+
+      const closeModal = () => {
+        setIsModalOpen(false);
+        setModalMessage('');
+        setModalType('info');
+      };
+
+      const handleLogout = async () => {
+        try {
+          const { error } = await supabase.auth.signOut();
+          if (error) {
+            console.error('Erro ao fazer logout:', error);
+            showModal(`Erro ao fazer logout: ${error.message}`, 'error');
+          } else {
+            showModal('Logout realizado com sucesso!', 'success');
+            window.location.href = 'index.html';
+          }
+        } catch (error) {
+          console.error('Erro inesperado ao fazer logout:', error);
+          showModal('Ocorreu um erro inesperado ao fazer logout.', 'error');
+        }
+      };
+
+      if (!isSupabaseClientReady || isAuthChecking) {
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
+            <div className="text-white text-2xl font-bold font-inter">A carregar...</div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="min-h-screen flex flex-col md:flex-row items-stretch justify-center p-0">
+          <FeedScreen
+            onShowModal={showModal}
+            onLogout={handleLogout}
+            supabase={supabase}
+          />
+          <div className="text-center text-white text-sm opacity-80 font-inter py-4 bg-gray-800 w-full md:hidden">
+            © {new Date().getFullYear()} CPN Serviços. Todos os direitos reservados. <span className="text-xs ml-2 opacity-70">v1.2025.07.1</span>
+          </div>
+          <Modal
+            isOpen={isModalOpen}
+            message={modalMessage}
+            type={modalType}
+            onClose={closeModal}
+          />
+        </div>
+      );
+    }
+
+    // Inicialização do Supabase e renderização do App
+    ReactDOM.render(<App />, document.getElementById('root'));
+</script>
