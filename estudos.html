@@ -135,7 +135,7 @@
                         </div>
                         <div id="estudo-video-field" class="hidden">
                             <label for="estudo-link-video" class="block text-sm font-medium text-gray-700">Link do Vídeo (YouTube)</label>
-                            <input type="url" id="estudo-link-video" placeholder="Ex: https://www.youtube.com/watch?v=XXXXXXXXXXX" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" aria-label="Link do vídeo do YouTube">
+                            <input type="url" id="estudo-link-video" placeholder="Ex: https://www.youtube.com/watch?v=VIDEO_ID" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" aria-label="Link do vídeo do YouTube">
                         </div>
                         <div id="estudo-text-field">
                             <label for="estudo-conteudo-texto" class="block text-sm font-medium text-gray-700">Conteúdo do Texto</label>
@@ -159,314 +159,314 @@
     <script src="supabaseClientInstance.js"></script>
 
     <script type="module">
-        // ---------- Inicialização do Supabase Client ----------
-        let supabase;
-        // Tenta usar a instância global já criada por supabaseClientInstance.js
-        if (window.globalSupabaseClient) {
-            supabase = window.globalSupabaseClient;
-            console.log("[estudos.html] Supabase client obtido da instância global.");
-        } else {
-            // Fallback: se o supabaseClientInstance.js não carregou a tempo, tente criar aqui.
-            const SUPABASE_URL = window.SUPABASE_URL || localStorage.getItem('SUPABASE_URL');
-            const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || localStorage.getItem('SUPABASE_ANON_KEY');
-
-            if (SUPABASE_URL && SUPABASE_ANON_KEY) {
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                window.globalSupabaseClient = supabase; // Define para uso futuro
-                console.log("[estudos.html] Supabase client inicializado como fallback.");
+        // Função principal que inicializa e executa a lógica da página
+        async function initEstudosPage() {
+            // ---------- Inicialização do Supabase Client ----------
+            let supabase;
+            if (window.globalSupabaseClient) {
+                supabase = window.globalSupabaseClient;
+                console.log("[estudos.html] Supabase client obtido da instância global.");
             } else {
-                console.error("[estudos.html] Erro: SUPABASE_URL ou SUPABASE_ANON_KEY não estão definidos. Verifique supabaseClientInstance.js ou localStorage.");
-                displayMessage("Erro grave: Não foi possível conectar ao serviço. Por favor, recarregue a página.", "error");
-                // Impede a execução de código que depende do Supabase
-                document.getElementById('estudos-container').innerHTML = '<p class="text-center text-red-500">Erro: Não foi possível carregar os estudos. Recarregue a página.</p>';
-                document.getElementById('create-estudo-btn').style.display = 'none';
-                return;
+                const SUPABASE_URL = window.SUPABASE_URL || localStorage.getItem('SUPABASE_URL');
+                const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || localStorage.getItem('SUPABASE_ANON_KEY');
+
+                if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    window.globalSupabaseClient = supabase;
+                    console.log("[estudos.html] Supabase client inicializado como fallback.");
+                } else {
+                    console.error("[estudos.html] Erro: SUPABASE_URL ou SUPABASE_ANON_KEY não estão definidos. Verifique supabaseClientInstance.js ou localStorage.");
+                    displayMessage("Erro grave: Não foi possível conectar ao serviço. Por favor, recarregue a página.", "error");
+                    document.getElementById('estudos-container').innerHTML = '<p class="text-center text-red-500">Erro: Não foi possível carregar os estudos. Recarregue a página.</p>';
+                    document.getElementById('create-estudo-btn').style.display = 'none';
+                    return; // Retorna da função initEstudosPage
+                }
             }
-        }
 
-        // ---------- Referências aos elementos do DOM ----------
-        const sidebar = document.getElementById('sidebar');
-        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-        const closeSidebarBtn = document.getElementById('close-sidebar-btn');
-        const adminLink = document.getElementById('admin-link');
-        const createEstudoBtn = document.getElementById('create-estudo-btn');
-        const estudosContainer = document.getElementById('estudos-container');
-        const modal = document.getElementById('estudo-modal');
-        const form = document.getElementById('estudo-form');
-        const btnCancel = document.getElementById('cancel-estudo-btn');
-        const modalTitle = document.getElementById('estudo-modal-title');
-        const inputId = document.getElementById('estudo-id');
-        const inputTitulo = document.getElementById('estudo-titulo');
-        const selectTipo = document.getElementById('estudo-tipo');
-        const inputVideo = document.getElementById('estudo-link-video');
-        const inputTexto = document.getElementById('estudo-conteudo-texto');
-        const videoField = document.getElementById('estudo-video-field');
-        const textField = document.getElementById('estudo-text-field');
+            // ---------- Referências aos elementos do DOM ----------
+            const sidebar = document.getElementById('sidebar');
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+            const adminLink = document.getElementById('admin-link');
+            const createEstudoBtn = document.getElementById('create-estudo-btn');
+            const estudosContainer = document.getElementById('estudos-container');
+            const modal = document.getElementById('estudo-modal');
+            const form = document.getElementById('estudo-form');
+            const btnCancel = document.getElementById('cancel-estudo-btn');
+            const modalTitle = document.getElementById('estudo-modal-title');
+            const inputId = document.getElementById('estudo-id');
+            const inputTitulo = document.getElementById('estudo-titulo');
+            const selectTipo = document.getElementById('estudo-tipo');
+            const inputVideo = document.getElementById('estudo-link-video');
+            const inputTexto = document.getElementById('estudo-conteudo-texto');
+            const videoField = document.getElementById('estudo-video-field');
+            const textField = document.getElementById('estudo-text-field');
 
-        // ---------- Funções Utilitárias ----------
-        function displayMessage(message, type = 'info') {
-            const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `fixed bottom-4 right-4 p-4 rounded-lg text-white shadow-lg z-50`;
-            messageDiv.textContent = message;
-            document.body.appendChild(messageDiv);
-            setTimeout(() => {
-                messageDiv.remove();
-            }, 3000); // Remove a mensagem após 3 segundos
-        }
-
-        function sanitizeAndFormatText(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text; // Usa textContent para escapar HTML
-            return div.innerHTML.replace(/\n/g, '<br>'); // Retorna o texto escapado como HTML, com <br>
-        }
-
-        function isValidYouTubeUrl(url) {
-            const regExp = /(?:https?:\/\/)?(?:www\.)?(?:m\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/|v\/|)([\w-]{11})(?:\S+)?/;
-            const match = url.match(regExp);
-            if (match && match[1]) {
-                return `http://www.youtube.com/embed/${match[1]}?rel=0&modestbranding=1`; // rel=0 para não mostrar vídeos relacionados ao final
+            // ---------- Funções Utilitárias ----------
+            function displayMessage(message, type = 'info') {
+                const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `fixed bottom-4 right-4 p-4 rounded-lg text-white shadow-lg z-50`;
+                messageDiv.textContent = message;
+                document.body.appendChild(messageDiv);
+                setTimeout(() => {
+                    messageDiv.remove();
+                }, 3000);
             }
-            return null;
-        }
 
-        // ---------- Funções de UI do Modal ----------
-        function showModal(isEdit = false, estudo = null) {
-            modal.classList.remove('hidden');
-            modalTitle.textContent = isEdit ? 'Editar Estudo' : 'Criar Novo Estudo';
-            form.reset();
-            inputId.value = '';
-            
-            setFormLoading(false); // Garante que o formulário não esteja em estado de carregamento ao abrir
+            function sanitizeAndFormatText(text) {
+                if (!text) return '';
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML.replace(/\n/g, '<br>');
+            }
 
-            if (isEdit && estudo) {
-                inputId.value = estudo.id;
-                inputTitulo.value = estudo.titulo;
-                if (estudo.video_url) {
-                    selectTipo.value = 'Video';
-                    inputVideo.value = estudo.video_url;
-                    videoField.classList.remove('hidden');
-                    textField.classList.add('hidden');
-                    inputTexto.removeAttribute('required');
-                    inputVideo.setAttribute('required', 'required');
+            function isValidYouTubeUrl(url) {
+                const regExp = /(?:https?:\/\/)?(?:www\.)?(?:m\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/|v\/|)([\w-]{11})(?:\S+)?/;
+                const match = url.match(regExp);
+                if (match && match[1]) {
+                    return `https://www.youtube.com/embed/${match[1]}?rel=0&modestbranding=1`;
+                }
+                return null;
+            }
+
+            // ---------- Funções de UI do Modal ----------
+            function showModal(isEdit = false, estudo = null) {
+                modal.classList.remove('hidden');
+                modalTitle.textContent = isEdit ? 'Editar Estudo' : 'Criar Novo Estudo';
+                form.reset();
+                inputId.value = '';
+                
+                setFormLoading(false);
+
+                if (isEdit && estudo) {
+                    inputId.value = estudo.id;
+                    inputTitulo.value = estudo.titulo;
+                    if (estudo.video_url) {
+                        selectTipo.value = 'Video';
+                        inputVideo.value = estudo.video_url;
+                        videoField.classList.remove('hidden');
+                        textField.classList.add('hidden');
+                        inputTexto.removeAttribute('required');
+                        inputVideo.setAttribute('required', 'required');
+                    } else {
+                        selectTipo.value = 'Texto';
+                        inputTexto.value = estudo.conteudo || '';
+                        videoField.classList.add('hidden');
+                        textField.classList.remove('hidden');
+                        inputVideo.removeAttribute('required');
+                        inputTexto.setAttribute('required', 'required');
+                    }
                 } else {
                     selectTipo.value = 'Texto';
-                    inputTexto.value = estudo.conteudo || '';
                     videoField.classList.add('hidden');
                     textField.classList.remove('hidden');
                     inputVideo.removeAttribute('required');
                     inputTexto.setAttribute('required', 'required');
                 }
-            } else { // Novo estudo
-                selectTipo.value = 'Texto'; // Padrão para texto
-                videoField.classList.add('hidden');
-                textField.classList.remove('hidden');
-                inputVideo.removeAttribute('required');
-                inputTexto.setAttribute('required', 'required');
-            }
-        }
-
-        function hideModal() { 
-            modal.classList.add('hidden'); 
-            form.reset(); 
-            setFormLoading(false); // Garante que o estado de requisição está desligado ao fechar
-        }
-
-        function setFormLoading(isLoading) {
-            const saveBtn = document.getElementById('save-estudo-btn');
-            const cancelBtn = document.getElementById('cancel-estudo-btn');
-            const inputs = form.querySelectorAll('input, textarea, select');
-            
-            inputs.forEach(input => {
-                input.disabled = isLoading;
-            });
-            saveBtn.disabled = isLoading;
-            cancelBtn.disabled = isLoading;
-
-            saveBtn.textContent = isLoading ? 'Salvando...' : 'Salvar';
-            saveBtn.classList.toggle('opacity-70', isLoading);
-            saveBtn.classList.toggle('cursor-not-allowed', isLoading);
-            cancelBtn.classList.toggle('opacity-70', isLoading);
-            cancelBtn.classList.toggle('cursor-not-allowed', isLoading);
-        }
-
-        // ---------- Event Listeners de UI ----------
-        mobileMenuBtn.onclick = () => {
-            sidebar.classList.remove('-translate-x-full');
-            sidebar.classList.add('translate-x-0');
-        };
-
-        closeSidebarBtn.onclick = () => {
-            sidebar.classList.add('-translate-x-full');
-            sidebar.classList.remove('translate-x-0');
-        };
-
-        createEstudoBtn.onclick = () => showModal(false);
-        btnCancel.onclick = hideModal;
-        modal.onclick = (e) => { 
-            if (e.target === modal) hideModal(); 
-        };
-
-        selectTipo.addEventListener('change', () => {
-            if (selectTipo.value === 'Video') {
-                videoField.classList.remove('hidden');
-                textField.classList.add('hidden');
-                inputTexto.removeAttribute('required');
-                inputVideo.setAttribute('required', 'required');
-            } else {
-                videoField.classList.add('hidden');
-                textField.classList.remove('hidden');
-                inputVideo.removeAttribute('required');
-                inputTexto.setAttribute('required', 'required');
-            }
-        });
-
-        // ---------- Funções de CRUD do Supabase ----------
-        async function carregarEstudos() {
-            estudosContainer.innerHTML = '<div class="text-center text-gray-500 col-span-full">Carregando estudos...</div>';
-            
-            // Verifica o usuário logado para mostrar botões de admin
-            const { data: { user } } = await supabase.auth.getUser();
-            let isAdminUser = false;
-            if (user) {
-                const { data: profile } = await supabase.from('profiles').select('admin').eq('id', user.id).single();
-                isAdminUser = profile?.admin === true;
             }
 
-            // Exibe ou oculta o botão de criar estudo e o link do admin
-            createEstudoBtn.style.display = isAdminUser ? '' : 'none';
-            adminLink.style.display = isAdminUser ? '' : 'none';
-
-            const { data, error } = await supabase.from('estudos').select('*').order('created_at', { ascending: false });
-            
-            if (error) {
-                estudosContainer.innerHTML = '<div class="text-center text-red-500 col-span-full">Erro ao carregar estudos.</div>';
-                console.error('Erro ao carregar estudos:', error);
-                displayMessage('Erro ao carregar estudos.', 'error');
-                return;
-            }
-            if (!data || data.length === 0) {
-                estudosContainer.innerHTML = '<div class="text-center text-gray-500 col-span-full">Nenhum estudo cadastrado.</div>';
-                return;
-            }
-
-            estudosContainer.innerHTML = data.map(estudo => {
-                const isVideo = estudo.video_url;
-                const embedUrl = isVideo ? isValidYouTubeUrl(estudo.video_url) : null;
-                
-                const displayContent = isVideo && embedUrl
-                    ? `<div class='aspect-video mb-2'><iframe src='${embedUrl}' class='w-full h-full rounded-lg border' frameborder='0' allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture' allowfullscreen></iframe></div>` 
-                    : (estudo.conteudo ? `<div class='text-gray-700 font-inter line-clamp-4'>${sanitizeAndFormatText(estudo.conteudo).substring(0, 200)}${(estudo.conteudo || '').length > 200 ? '...' : ''}</div>` : '');
-                
-                // Botões de editar/excluir visíveis apenas para admins
-                const adminButtons = isAdminUser ? `
-                    <div class="flex gap-2">
-                        <button type="button" class="text-xs text-blue-600 hover:underline" onclick="event.stopPropagation(); window.editarEstudo('${estudo.id}')" aria-label="Editar estudo ${sanitizeAndFormatText(estudo.titulo)}">Editar</button>
-                        <button type="button" class="text-xs text-red-600 hover:underline" onclick="event.stopPropagation(); window.deletarEstudo('${estudo.id}')" aria-label="Excluir estudo ${sanitizeAndFormatText(estudo.titulo)}">Excluir</button>
-                    </div>
-                ` : '';
-
-                return `
-                    <div class="estudo-card bg-white rounded-xl shadow-md p-6 border border-orange-100 flex flex-col gap-2 cursor-pointer hover:shadow-lg transition" 
-                        onclick="window.location.href='estudo_detalhe.html?id=${estudo.id}'"
-                        role="link" tabindex="0" aria-label="Ver detalhes do estudo: ${sanitizeAndFormatText(estudo.titulo)}">
-                        <h2 class="text-xl font-bold text-orange-700 font-inter mb-2">${sanitizeAndFormatText(estudo.titulo)}</h2>
-                        ${displayContent}
-                        <div class="flex justify-between items-center mt-2 gap-2">
-                            <span class="text-xs text-gray-400">${new Date(estudo.created_at).toLocaleDateString('pt-BR')}</span>
-                            ${adminButtons}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        window.editarEstudo = async (id) => {
-            setFormLoading(true); // Desabilita o formulário enquanto carrega
-            const { data, error } = await supabase.from('estudos').select('*').eq('id', id).single();
-            if (error || !data) {
-                displayMessage('Erro ao carregar estudo para edição.', 'error');
-                console.error('Erro ao carregar estudo para edição:', error);
+            function hideModal() { 
+                modal.classList.add('hidden'); 
+                form.reset(); 
                 setFormLoading(false);
-                return;
             }
-            showModal(true, data);
-        };
 
-        window.deletarEstudo = async (id) => {
-            if (!confirm('Tem certeza que deseja excluir este estudo? Esta ação não pode ser desfeita.')) return;
-            
-            const targetButton = event.target; // Pega o botão clicado
-            targetButton.disabled = true;
-            targetButton.textContent = 'Excluindo...';
-            targetButton.classList.add('opacity-50', 'cursor-not-allowed');
+            function setFormLoading(isLoading) {
+                const saveBtn = document.getElementById('save-estudo-btn');
+                const cancelBtn = document.getElementById('cancel-estudo-btn');
+                const inputs = form.querySelectorAll('input, textarea, select');
+                
+                inputs.forEach(input => {
+                    input.disabled = isLoading;
+                });
+                saveBtn.disabled = isLoading;
+                cancelBtn.disabled = isLoading;
 
-
-            const { error } = await supabase.from('estudos').delete().eq('id', id);
-            if (error) {
-                displayMessage('Erro ao excluir estudo: ' + error.message, 'error');
-                console.error('Erro ao excluir estudo:', error);
-            } else {
-                displayMessage('Estudo excluído com sucesso!', 'success');
-                carregarEstudos();
+                saveBtn.textContent = isLoading ? 'Salvando...' : 'Salvar';
+                saveBtn.classList.toggle('opacity-70', isLoading);
+                saveBtn.classList.toggle('cursor-not-allowed', isLoading);
+                cancelBtn.classList.toggle('opacity-70', isLoading);
+                cancelBtn.classList.toggle('cursor-not-allowed', isLoading);
             }
-            targetButton.disabled = false;
-            targetButton.textContent = 'Excluir';
-            targetButton.classList.remove('opacity-50', 'cursor-not-allowed');
-        };
 
-        form.onsubmit = async (e) => {
-            e.preventDefault();
-            setFormLoading(true);
+            // ---------- Event Listeners de UI ----------
+            mobileMenuBtn.onclick = () => {
+                sidebar.classList.remove('-translate-x-full');
+                sidebar.classList.add('translate-x-0');
+            };
 
-            const id = inputId.value;
-            const titulo = inputTitulo.value.trim();
-            const tipo = selectTipo.value;
-            let video_url = null;
-            let conteudo = null;
+            closeSidebarBtn.onclick = () => {
+                sidebar.classList.add('-translate-x-full');
+                sidebar.classList.remove('translate-x-0');
+            };
 
-            if (tipo === 'Video') {
-                const rawVideoUrl = inputVideo.value.trim();
-                video_url = isValidYouTubeUrl(rawVideoUrl);
-                if (!video_url) {
-                    displayMessage('Link do vídeo do YouTube inválido. Por favor, insira uma URL válida.', 'error');
+            createEstudoBtn.onclick = () => showModal(false);
+            btnCancel.onclick = hideModal;
+            modal.onclick = (e) => { 
+                if (e.target === modal) hideModal(); 
+            };
+
+            selectTipo.addEventListener('change', () => {
+                if (selectTipo.value === 'Video') {
+                    videoField.classList.remove('hidden');
+                    textField.classList.add('hidden');
+                    inputTexto.removeAttribute('required');
+                    inputVideo.setAttribute('required', 'required');
+                } else {
+                    videoField.classList.add('hidden');
+                    textField.classList.remove('hidden');
+                    inputVideo.removeAttribute('required');
+                    inputTexto.setAttribute('required', 'required');
+                }
+            });
+
+            // ---------- Funções de CRUD do Supabase ----------
+            async function carregarEstudos() {
+                estudosContainer.innerHTML = '<div class="text-center text-gray-500 col-span-full">Carregando estudos...</div>';
+                
+                const { data: { user } } = await supabase.auth.getUser();
+                let isAdminUser = false;
+                if (user) {
+                    const { data: profile } = await supabase.from('profiles').select('admin').eq('id', user.id).single();
+                    isAdminUser = profile?.admin === true;
+                }
+
+                createEstudoBtn.style.display = isAdminUser ? '' : 'none';
+                adminLink.style.display = isAdminUser ? '' : 'none';
+
+                const { data, error } = await supabase.from('estudos').select('*').order('created_at', { ascending: false });
+                
+                if (error) {
+                    estudosContainer.innerHTML = '<div class="text-center text-red-500 col-span-full">Erro ao carregar estudos.</div>';
+                    console.error('Erro ao carregar estudos:', error);
+                    displayMessage('Erro ao carregar estudos.', 'error');
+                    return;
+                }
+                if (!data || data.length === 0) {
+                    estudosContainer.innerHTML = '<div class="text-center text-gray-500 col-span-full">Nenhum estudo cadastrado.</div>';
+                    return;
+                }
+
+                estudosContainer.innerHTML = data.map(estudo => {
+                    const isVideo = estudo.video_url;
+                    const embedUrl = isVideo ? isValidYouTubeUrl(estudo.video_url) : null;
+                    
+                    const displayContent = isVideo && embedUrl
+                        ? `<div class='aspect-video mb-2'><iframe src='${embedUrl}' class='w-full h-full rounded-lg border' frameborder='0' allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture' allowfullscreen></iframe></div>` 
+                        : (estudo.conteudo ? `<div class='text-gray-700 font-inter line-clamp-4'>${sanitizeAndFormatText(estudo.conteudo).substring(0, 200)}${(estudo.conteudo || '').length > 200 ? '...' : ''}</div>` : '');
+                    
+                    const adminButtons = isAdminUser ? `
+                        <div class="flex gap-2">
+                            <button type="button" class="text-xs text-blue-600 hover:underline" onclick="event.stopPropagation(); window.editarEstudo('${estudo.id}')" aria-label="Editar estudo ${sanitizeAndFormatText(estudo.titulo)}">Editar</button>
+                            <button type="button" class="text-xs text-red-600 hover:underline" onclick="event.stopPropagation(); window.deletarEstudo('${estudo.id}')" aria-label="Excluir estudo ${sanitizeAndFormatText(estudo.titulo)}">Excluir</button>
+                        </div>
+                    ` : '';
+
+                    return `
+                        <div class="estudo-card bg-white rounded-xl shadow-md p-6 border border-orange-100 flex flex-col gap-2 cursor-pointer hover:shadow-lg transition" 
+                            onclick="window.location.href='estudo_detalhe.html?id=${estudo.id}'"
+                            role="link" tabindex="0" aria-label="Ver detalhes do estudo: ${sanitizeAndFormatText(estudo.titulo)}">
+                            <h2 class="text-xl font-bold text-orange-700 font-inter mb-2">${sanitizeAndFormatText(estudo.titulo)}</h2>
+                            ${displayContent}
+                            <div class="flex justify-between items-center mt-2 gap-2">
+                                <span class="text-xs text-gray-400">${new Date(estudo.created_at).toLocaleDateString('pt-BR')}</span>
+                                ${adminButtons}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            window.editarEstudo = async (id) => {
+                setFormLoading(true);
+                const { data, error } = await supabase.from('estudos').select('*').eq('id', id).single();
+                if (error || !data) {
+                    displayMessage('Erro ao carregar estudo para edição.', 'error');
+                    console.error('Erro ao carregar estudo para edição:', error);
                     setFormLoading(false);
                     return;
                 }
-            } else {
-                conteudo = inputTexto.value.trim();
-            }
+                showModal(true, data);
+            };
 
-            if (!titulo || (tipo === 'Video' && !video_url) || (tipo === 'Texto' && !conteudo)) {
-                displayMessage('Preencha todos os campos obrigatórios.', 'error');
+            window.deletarEstudo = async (id) => {
+                if (!confirm('Tem certeza que deseja excluir este estudo? Esta ação não pode ser desfeita.')) return;
+                
+                const targetButton = event.target;
+                targetButton.disabled = true;
+                targetButton.textContent = 'Excluindo...';
+                targetButton.classList.add('opacity-50', 'cursor-not-allowed');
+
+
+                const { error } = await supabase.from('estudos').delete().eq('id', id);
+                if (error) {
+                    displayMessage('Erro ao excluir estudo: ' + error.message, 'error');
+                    console.error('Erro ao excluir estudo:', error);
+                } else {
+                    displayMessage('Estudo excluído com sucesso!', 'success');
+                    carregarEstudos();
+                }
+                targetButton.disabled = false;
+                targetButton.textContent = 'Excluir';
+                targetButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            };
+
+            form.onsubmit = async (e) => {
+                e.preventDefault();
+                setFormLoading(true);
+
+                const id = inputId.value;
+                const titulo = inputTitulo.value.trim();
+                const tipo = selectTipo.value;
+                let video_url = null;
+                let conteudo = null;
+
+                if (tipo === 'Video') {
+                    const rawVideoUrl = inputVideo.value.trim();
+                    video_url = isValidYouTubeUrl(rawVideoUrl);
+                    if (!video_url) {
+                        displayMessage('Link do vídeo do YouTube inválido. Por favor, insira uma URL válida.', 'error');
+                        setFormLoading(false);
+                        return;
+                    }
+                } else {
+                    conteudo = inputTexto.value.trim();
+                }
+
+                if (!titulo || (tipo === 'Video' && !video_url) || (tipo === 'Texto' && !conteudo)) {
+                    displayMessage('Preencha todos os campos obrigatórios.', 'error');
+                    setFormLoading(false);
+                    return;
+                }
+
+                let error;
+                if (id) {
+                    ({ error } = await supabase.from('estudos').update({ titulo, conteudo, video_url, updated_at: new Date().toISOString() }).eq('id', id));
+                } else {
+                    ({ error } = await supabase.from('estudos').insert({ titulo, conteudo, video_url }));
+                }
+
+                if (error) {
+                    displayMessage('Erro ao salvar estudo: ' + error.message, 'error');
+                    console.error('Erro ao salvar estudo:', error);
+                } else {
+                    displayMessage(`Estudo ${id ? 'atualizado' : 'criado'} com sucesso!`, 'success');
+                    hideModal();
+                    carregarEstudos();
+                }
                 setFormLoading(false);
-                return;
-            }
+            };
 
-            let error;
-            if (id) {
-                ({ error } = await supabase.from('estudos').update({ titulo, conteudo, video_url, updated_at: new Date().toISOString() }).eq('id', id));
-            } else {
-                ({ error } = await supabase.from('estudos').insert({ titulo, conteudo, video_url }));
-            }
-
-            if (error) {
-                displayMessage('Erro ao salvar estudo: ' + error.message, 'error');
-                console.error('Erro ao salvar estudo:', error);
-            } else {
-                displayMessage(`Estudo ${id ? 'atualizado' : 'criado'} com sucesso!`, 'success');
-                hideModal();
+            // ---------- Inicialização da Página ----------
+            document.addEventListener('DOMContentLoaded', () => {
+                document.getElementById('ano-footer').textContent = new Date().getFullYear();
                 carregarEstudos();
-            }
-            setFormLoading(false);
-        };
+            });
+        }
 
-        // ---------- Inicialização da Página ----------
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('ano-footer').textContent = new Date().getFullYear();
-            carregarEstudos();
-        });
+        // Chama a função principal para iniciar a aplicação
+        initEstudosPage();
     </script>
 </body>
 </html>
