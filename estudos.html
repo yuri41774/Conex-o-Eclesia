@@ -184,7 +184,7 @@
                         </div>
                         <div id="estudo-video-field" class="hidden">
                             <label for="estudo-link-video" class="block text-sm font-medium text-gray-700">Link do Vídeo (YouTube)</label>
-                            <input type="url" id="estudo-link-video" placeholder="Ex: https://www.youtube.com/watch?v=VIDEO_ID" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" aria-label="Link do vídeo do YouTube">
+                            <input type="url" id="estudo-link-video" placeholder="Ex: https://www.youtube.com/watch?v=dQw4w9WgXcQ" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" aria-label="Link do vídeo do YouTube">
                         </div>
                         <div id="estudo-text-field">
                             <label for="estudo-conteudo-texto" class="block text-sm font-medium text-gray-700">Conteúdo do Texto</label>
@@ -292,7 +292,8 @@
                 const regExp = /(?:https?:\/\/)?(?:www\.)?(?:m\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/|v\/|)([\w-]{11})(?:\S+)?/;
                 const match = url.match(regExp);
                 if (match && match[1]) {
-                    return `http://www.youtube.com/embed/${match[1]}?rel=0&modestbranding=1`; // Corrigido para URL de embed padrão do YouTube
+                    // CORREÇÃO APLICADA AQUI: usar crases para template literal e a URL padrão do YouTube
+                    return `https://www.youtube.com/embed/${match[1]}?rel=0&modestbranding=1`;
                 }
                 return null;
             }
@@ -502,7 +503,7 @@
                     displayMessage('Erro ao salvar estudo: ' + error.message, 'error');
                     console.error('Erro ao salvar estudo:', error);
                 } else {
-                    displayMessage(`Estudo ${id ? 'atualizado' : 'criado'} com sucesso!', 'success');
+                    displayMessage(`Estudo ${id ? 'atualizado' : 'criado'} com sucesso!`, 'success');
                     hideModal();
                     carregarEstudos(); // Recarrega a lista após salvar
                 }
