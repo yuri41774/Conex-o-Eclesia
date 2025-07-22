@@ -14,7 +14,7 @@
         background: linear-gradient(135deg, #ff9800 0%, #ffb347 100%);
       }
       .sidebar-transition {
-        transition: width 0.3s ease-in-out, left 0.3s, box-shadow 0.3s, transform 0.3s ease-in-out; /* Adicionado transform */
+        transition: width 0.3s ease-in-out, left 0.3s, box-shadow 0.3s, transform 0.3s ease-in-out;
       }
       .sidebar-collapsed .sidebar-item-text {
         display: none;
@@ -793,21 +793,27 @@
             // Verifica se o cliente Supabase global já foi inicializado
             if (window.globalSupabaseClient) {
                 setIsSupabaseClientReady(true);
-                console.log("Supabase client já está pronto.");
+                console.log("[App] Supabase client já está pronto.");
             } else {
-                console.warn("Supabase client não está pronto na renderização inicial do App. Aguardando...");
-                // Se não está pronto, aguarda um pouco. Isso é um fallback caso o supabaseClientInstance.js não tenha terminado ainda.
-                const timeoutId = setTimeout(() => {
+                console.warn("[App] Supabase client não está pronto na renderização inicial do App. Aguardando...");
+                // Se não está pronto, usa um intervalo para esperar que supabaseClientInstance.js termine
+                const maxTries = 20; // Tentar por até 20 * 100ms = 2 segundos
+                let currentTry = 0;
+                const intervalId = setInterval(() => {
                     if (window.globalSupabaseClient) {
                         setIsSupabaseClientReady(true);
-                        console.log("Supabase client inicializado globalmente após atraso.");
-                    } else {
-                        console.error("Falha ao inicializar o cliente Supabase após timeout. Verifique 'supabaseClientInstance.js' e variáveis.");
+                        console.log("[App] Supabase client inicializado globalmente após atraso/tentativa.");
+                        clearInterval(intervalId); // Limpa o intervalo
+                    } else if (currentTry >= maxTries) {
+                        console.error("[App] Falha ao inicializar o cliente Supabase após várias tentativas. Verifique 'supabaseClientInstance.js' e variáveis.");
                         setModalMessage("Erro crítico: Não foi possível conectar ao serviço. Por favor, recarregue a página.", "error");
                         setIsModalOpen(true);
+                        clearInterval(intervalId); // Limpa o intervalo
                     }
-                }, 500); // Atraso para permitir que supabaseClientInstance.js termine
-                return () => clearTimeout(timeoutId); // Limpa o timeout se o componente for desmontado
+                    currentTry++;
+                }, 100); // Tenta a cada 100ms (total 2s)
+
+                return () => clearInterval(intervalId); // Limpa o intervalo ao desmontar
             }
           }, []); // Dependências vazias para rodar apenas uma vez na montagem
 
@@ -817,13 +823,13 @@
                     try {
                         const { data: { session } } = await window.globalSupabaseClient.auth.getSession();
                         if (!session) {
-                            window.location.href = 'index.html';
+                            window.location.href = 'index.html'; // Redireciona para login
                         } else {
-                            setIsAuthChecking(false);
+                            setIsAuthChecking(false); // Usuário autenticado
                         }
                     } catch (error) {
                         console.error('Erro ao verificar sessão:', error);
-                        window.location.href = 'index.html';
+                        window.location.href = 'index.html'; // Em caso de erro, redireciona
                     }
                 };
                 checkUserSession();
@@ -878,7 +884,7 @@
           if (!isSupabaseClientReady || isAuthChecking) {
             return (
               <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
-                <div className="text-white text-2xl font-bold font-inter">A carregar...</div>
+                <div className="text-white text-2xl font-bold font-inter text-center">A carregar...</div>
               </div>
             );
           }
