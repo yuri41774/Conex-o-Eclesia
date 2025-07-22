@@ -14,7 +14,7 @@
         background: linear-gradient(135deg, #ff9800 0%, #ffb347 100%);
       }
       .sidebar-transition {
-        transition: width 0.3s ease-in-out, left 0.3s, box-shadow 0.3s;
+        transition: width 0.3s ease-in-out, left 0.3s, box-shadow 0.3s, transform 0.3s ease-in-out; /* Adicionado transform */
       }
       .sidebar-collapsed .sidebar-item-text {
         display: none;
@@ -61,6 +61,9 @@
         .p-6 {
           padding: 1rem !important;
         }
+        .main-content {
+          padding-top: 5rem; /* Espaço para o botão hambúrguer fixo */
+        }
       }
       /* Melhorias visuais para posts */
       .post-card {
@@ -87,24 +90,6 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabaseClientInstance.js"></script>
-
-    <script>
-      // Inicializa o Supabase Client global antes do React (se não estiver em supabaseClientInstance.js)
-      (function() {
-        if (!window.globalSupabaseClient) {
-          const SUPABASE_URL = window.SUPABASE_URL || localStorage.getItem('SUPABASE_URL');
-          const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || localStorage.getItem('SUPABASE_ANON_KEY');
-          if (window.supabase && SUPABASE_URL && SUPABASE_ANON_KEY) {
-            window.globalSupabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-          }
-        }
-      })();
-      // Define o ano atual no rodapé
-      window.addEventListener('DOMContentLoaded', function() {
-        var anoFooter = document.getElementById('ano-footer');
-        if (anoFooter) anoFooter.textContent = new Date().getFullYear();
-      });
-    </script>
 
     <script type="text/babel">
         // Componente Modal
@@ -481,7 +466,7 @@
                 .select(`
                   *,
                   profiles (full_name),
-                  likes(user_id) -- Adiciona a contagem de curtidas e verifica se o usuário atual curtiu
+                  likes(user_id)
                 `)
                 .order('created_at', { ascending: false });
 
@@ -769,7 +754,7 @@
                             post={post}
                             currentUserId={currentUserId}
                             onToggleLike={handleToggleLike}
-                            onShowMessage={onShowModal}
+                            onShowModal={onShowModal}
                         />
 
                         {/* Lógica de Integração de Anúncios */}
@@ -801,71 +786,66 @@
           const [isAuthChecking, setIsAuthChecking] = React.useState(true);
           const [isSupabaseClientReady, setIsSupabaseClientReady] = React.useState(false);
 
+          // AGORA, ACESSE A INSTÂNCIA GLOBALMENTE
           const supabase = window.globalSupabaseClient;
 
           React.useEffect(() => {
-            const initializeSupabase = async () => {
-              if (window.globalSupabaseClient) {
-                  setIsSupabaseClientReady(true);
-                  console.log("Supabase client já está pronto.");
-              } else if (window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
-                  window.globalSupabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-                  setIsSupabaseClientReady(true);
-                  console.log("Supabase client inicializado globalmente dentro do App component.");
-              } else {
-                  console.warn("Variáveis de ambiente Supabase ou SDK não disponíveis. Tentando novamente...");
-                  const timeoutId = setTimeout(() => {
-                      if (window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
-                          window.globalSupabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-                          setIsSupabaseClientReady(true);
-                          console.log("Supabase client inicializado após timeout.");
-                      } else {
-                          console.error("Falha ao inicializar o cliente Supabase após timeout. Verifique 'supabaseClientInstance.js' e variáveis.");
-                      }
-                  }, 500);
-                  return () => clearTimeout(timeoutId);
-              }
-            };
-
-            initializeSupabase();
-          }, []);
+            // Verifica se o cliente Supabase global já foi inicializado
+            if (window.globalSupabaseClient) {
+                setIsSupabaseClientReady(true);
+                console.log("Supabase client já está pronto.");
+            } else {
+                console.warn("Supabase client não está pronto na renderização inicial do App. Aguardando...");
+                // Se não está pronto, aguarda um pouco. Isso é um fallback caso o supabaseClientInstance.js não tenha terminado ainda.
+                const timeoutId = setTimeout(() => {
+                    if (window.globalSupabaseClient) {
+                        setIsSupabaseClientReady(true);
+                        console.log("Supabase client inicializado globalmente após atraso.");
+                    } else {
+                        console.error("Falha ao inicializar o cliente Supabase após timeout. Verifique 'supabaseClientInstance.js' e variáveis.");
+                        setModalMessage("Erro crítico: Não foi possível conectar ao serviço. Por favor, recarregue a página.", "error");
+                        setIsModalOpen(true);
+                    }
+                }, 500); // Atraso para permitir que supabaseClientInstance.js termine
+                return () => clearTimeout(timeoutId); // Limpa o timeout se o componente for desmontado
+            }
+          }, []); // Dependências vazias para rodar apenas uma vez na montagem
 
           React.useEffect(() => {
             if (isSupabaseClientReady && window.globalSupabaseClient) {
-              const checkUserSession = async () => {
-                  try {
-                      const { data: { session } } = await window.globalSupabaseClient.auth.getSession();
-                      if (!session) {
-                          window.location.href = 'index.html';
-                      } else {
-                          setIsAuthChecking(false);
-                      }
-                  } catch (error) {
-                      console.error('Erro ao verificar sessão:', error);
+                const checkUserSession = async () => {
+                    try {
+                        const { data: { session } } = await window.globalSupabaseClient.auth.getSession();
+                        if (!session) {
+                            window.location.href = 'index.html';
+                        } else {
+                            setIsAuthChecking(false);
+                        }
+                    } catch (error) {
+                        console.error('Erro ao verificar sessão:', error);
+                        window.location.href = 'index.html';
+                    }
+                };
+                checkUserSession();
+
+                // Lida com mudanças de autenticação em tempo real
+                const { data: authListener } = window.globalSupabaseClient.auth.onAuthStateChange(
+                  (event, session) => {
+                    if (event === 'SIGNED_OUT' || !session) {
                       window.location.href = 'index.html';
+                    } else if (event === 'SIGNED_IN') {
+                      setIsAuthChecking(false);
+                    }
                   }
-              };
-              checkUserSession();
-
-              // Lida com mudanças de autenticação em tempo real
-              const { data: authListener } = window.globalSupabaseClient.auth.onAuthStateChange(
-                (event, session) => {
-                  if (event === 'SIGNED_OUT' || !session) {
-                    window.location.href = 'index.html';
-                  } else if (event === 'SIGNED_IN') {
-                    setIsAuthChecking(false);
+                );
+                // Cleanup do listener
+                return () => {
+                  if (authListener && authListener.unsubscribe) {
+                      authListener.unsubscribe();
                   }
-                }
-              );
-              // Cleanup do listener
-              return () => {
-                if (authListener && authListener.unsubscribe) {
-                    authListener.unsubscribe();
-                }
-              };
+                };
             }
-          }, [isSupabaseClientReady]);
-
+          }, [isSupabaseClientReady]); // Depende de isSupabaseClientReady para garantir que o cliente esteja pronto
 
           const showModal = (message, type) => {
             setModalMessage(message);
