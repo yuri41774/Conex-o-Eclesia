@@ -14,7 +14,7 @@
         background: linear-gradient(135deg, #ff9800 0%, #ffb347 100%);
       }
       .sidebar-transition {
-        transition: width 0.3s ease-in-out, left 0.3s, box-shadow 0.3s, transform 0.3s ease-in-out;
+        transition: width 0.3s ease-in-out, left 0.3s, box-shadow 0.3s;
       }
       .sidebar-collapsed .sidebar-item-text {
         display: none;
@@ -61,9 +61,6 @@
         .p-6 {
           padding: 1rem !important;
         }
-        .main-content {
-          padding-top: 5rem; /* Espaço para o botão hambúrguer fixo */
-        }
       }
       /* Melhorias visuais para posts */
       .post-card {
@@ -91,6 +88,24 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabaseClientInstance.js"></script>
 
+    <script>
+      // Inicializa o Supabase Client global antes do React
+      (function() {
+        if (!window.globalSupabaseClient) {
+          const SUPABASE_URL = window.SUPABASE_URL || localStorage.getItem('SUPABASE_URL');
+          const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || localStorage.getItem('SUPABASE_ANON_KEY');
+          if (window.supabase && SUPABASE_URL && SUPABASE_ANON_KEY) {
+            window.globalSupabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          }
+        }
+      })();
+      // Define o ano atual no rodapé
+      window.addEventListener('DOMContentLoaded', function() {
+        var anoFooter = document.getElementById('ano-footer');
+        if (anoFooter) anoFooter.textContent = new Date().getFullYear();
+      });
+    </script>
+
     <script type="text/babel">
         // Componente Modal
         function Modal({ isOpen, message, type, onClose }) {
@@ -99,8 +114,8 @@
           const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
           const headerText = type === 'success' ? 'Sucesso!' : 'Erro!';
 
-          return (
-            <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
+          return (<
+            div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
               <div className="bg-white rounded-lg shadow-xl overflow-hidden max-w-sm w-full transform transition-all duration-300 scale-100">
                 <div className={`${bgColor} text-white px-6 py-4 flex justify-between items-center rounded-t-lg`}>
                   <h3 className="text-xl font-bold font-inter">{headerText}</h3>
@@ -136,7 +151,9 @@
           const [image, setImage] = React.useState(''); // URL da imagem
           const [imageFile, setImageFile] = React.useState(null); // Arquivo selecionado
           const [isLoading, setIsLoading] = React.useState(false);
+          // const [uploadProgress, setUploadProgress] = React.useState(0); // Não utilizado atualmente
 
+          // Função para upload da imagem no Supabase Storage
           const handleImageUpload = async (file) => {
             if (!file) return null;
             try {
@@ -150,6 +167,7 @@
                 onShowMessage('Erro ao fazer upload da imagem: ' + error.message, 'error');
                 return null;
               }
+              // Gera a URL pública
               const { data: publicUrlData } = supabase.storage.from('post-images').getPublicUrl(fileName);
               return publicUrlData.publicUrl;
             } catch (err) {
@@ -222,8 +240,8 @@
 
           if (!isOpen) return null;
 
-          return (
-            <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
+          return (<
+            div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
               <div className="bg-white rounded-lg shadow-xl overflow-hidden max-w-md w-full transform transition-all duration-300 scale-100">
                 <div className="bg-orange-500 text-white px-6 py-4 flex justify-between items-center rounded-t-lg">
                   <h3 className="text-xl font-bold font-inter">Criar Nova Publicação</h3>
@@ -275,8 +293,8 @@
                         disabled={isLoading}
                         aria-label="Selecione uma imagem para o post"
                       />
-                      {imageFile && (
-                        <div className="mt-2 flex items-center space-x-2">
+                      {imageFile && (<
+                        div className="mt-2 flex items-center space-x-2">
                           <img src={URL.createObjectURL(imageFile)} alt="Preview" className="w-20 h-20 object-cover rounded-lg border border-orange-200" />
                           <span className="text-xs text-gray-500">Pré-visualização</span>
                         </div>
@@ -321,15 +339,15 @@
           );
         }
 
-        // Componente AdComponent para exibir anúncios
+        // NOVO Componente: AdComponent para exibir anúncios
         function AdComponent({ adData }) {
-          if (!adData) return null;
+          if (!adData) return null; // Não renderiza se não houver dados de anúncio
 
-          return (
-            <div className="bg-white p-6 rounded-2xl modern-shadow border border-blue-100 flex flex-col items-center text-center my-6">
+          return (<
+            div className="bg-white p-6 rounded-2xl modern-shadow border border-blue-100 flex flex-col items-center text-center my-6">
               <h3 className="text-xl font-bold text-blue-700 mb-4 font-inter">Anúncio</h3>
-              {adData.imageUrl && (
-                <a href={adData.linkUrl} target="_blank" rel="noopener noreferrer">
+              {adData.imageUrl && (<
+                a href={adData.linkUrl} target="_blank" rel="noopener noreferrer">
                   <img
                     src={adData.imageUrl}
                     alt={adData.altText || "Anúncio"}
@@ -340,107 +358,13 @@
                 </a>
               )}
               <p className="text-gray-700 font-inter mb-2">{adData.altText || "Este é um espaço de anúncio."}</p>
-              {adData.advertiserName && (
-                <span className="text-sm text-gray-500">Por: {adData.advertiserName}</span>
+              {adData.advertiserName && (<
+                span className="text-sm text-gray-500">Por: {adData.advertiserName}</span>
               )}
             </div>
           );
         }
 
-        // NOVO Componente: PostCard - Para exibir um post individualmente e gerenciar curtidas
-        function PostCard({ post, currentUserId, onToggleLike, onShowMessage }) {
-            const [isLiked, setIsLiked] = React.useState(post.isLikedByCurrentUser);
-            const [likesCount, setLikesCount] = React.useState(post.likesCount);
-            const [isLiking, setIsLiking] = React.useState(false); // Para desabilitar o botão enquanto curte
-
-            // Atualiza os estados internos quando as props de post mudam (útil após um novo like/unlike)
-            React.useEffect(() => {
-                setIsLiked(post.isLikedByCurrentUser);
-                setLikesCount(post.likesCount);
-            }, [post.isLikedByCurrentUser, post.likesCount]);
-
-            const handleLikeClick = async () => {
-                if (isLiking) return; // Evita cliques múltiplos
-                setIsLiking(true);
-
-                const previousIsLiked = isLiked;
-                const previousLikesCount = likesCount;
-
-                // Otimização de UI: atualiza a interface antes da chamada da API
-                setIsLiked(!previousIsLiked);
-                setLikesCount(previousIsLiked ? previousLikesCount - 1 : previousLikesCount + 1);
-
-                try {
-                    await onToggleLike(post.id, !previousIsLiked); // Passa o novo estado desejado
-                } catch (error) {
-                    // Em caso de erro, reverte a UI
-                    setIsLiked(previousIsLiked);
-                    setLikesCount(previousLikesCount);
-                    onShowMessage(`Erro ao ${!previousIsLiked ? 'curtir' : 'descurtir'} o post: ${error.message || 'Erro desconhecido'}`, 'error');
-                } finally {
-                    setIsLiking(false);
-                }
-            };
-
-            return (
-                <div className="post-card bg-white p-6 rounded-2xl modern-shadow border border-orange-100 flex flex-col sm:flex-row gap-4 items-start">
-                    {/* Avatar do autor */}
-                    <div className="flex-shrink-0 w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-2xl font-inter shadow-sm">
-                        {post.author && post.author[0]}
-                    </div>
-                    <div className="flex-1">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
-                            <span className="font-inter font-bold text-gray-800 text-lg">{post.author}</span>
-                            <span className="text-xs text-orange-500 font-inter mt-1 sm:mt-0">{post.date}</span>
-                        </div>
-                        <h2 className="post-title text-2xl font-bold text-orange-700 mb-2 font-inter">{post.title}</h2>
-                        {post.image && (
-                            <img
-                                src={post.image}
-                                alt={`Imagem para o post: ${post.title}`}
-                                className="w-full h-48 object-cover rounded-xl mb-4 border border-orange-200 shadow-sm hover:scale-105 transition-transform duration-200"
-                                onError={(e) => { e.target.onerror = null; e.target.src = `https://placehold.co/400x200/ff9800/ffffff?text=Imagem+N%C3%A3o+Dispon%C3%ADvel`; }}
-                                title="Clique para ampliar"
-                                style={{ cursor: 'pointer' }}
-                                onClick={() => window.open(post.image, '_blank')}
-                            />
-                        )}
-                        <p className="post-content text-gray-700 leading-relaxed font-inter">{post.content}</p>
-
-                        {/* Seção de Curtidas */}
-                        <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
-                            <button
-                                onClick={currentUserId ? handleLikeClick : () => onShowMessage('Faça login para curtir posts!', 'info')}
-                                className={`flex items-center space-x-2 p-2 rounded-lg transition duration-200
-                                    ${isLiked ? 'bg-red-100 text-red-600 hover:bg-red-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}
-                                    ${isLiking ? 'opacity-70 cursor-not-allowed' : ''}`}
-                                aria-label={isLiked ? "Descurtir post" : "Curtir post"}
-                                disabled={isLiking}
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill={isLiked ? "currentColor" : "none"}
-                                    viewBox="0 0 24 24"
-                                    strokeWidth={1.5}
-                                    stroke="currentColor"
-                                    className="w-6 h-6"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"
-                                    />
-                                </svg>
-                                <span className="font-semibold font-inter">{isLiked ? 'Curtido' : 'Curtir'}</span>
-                            </button>
-                            <span className="text-gray-500 text-sm font-inter">
-                                {likesCount} {likesCount === 1 ? 'curtida' : 'curtidas'}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
 
         // Componente para a tela de Feed
         function FeedScreen({ onShowModal, onLogout, supabase }) {
@@ -449,24 +373,17 @@
           const [isLoadingPosts, setIsLoadingPosts] = React.useState(true);
           const [isSidebarOpen, setIsSidebarOpen] = React.useState(window.innerWidth >= 768);
           const [isAdmin, setIsAdmin] = React.useState(false);
-          const [ads, setAds] = React.useState([]);
-          const [currentUserId, setCurrentUserId] = React.useState(null); // Estado para armazenar o ID do usuário logado
-          const adDisplayInterval = 3;
+          const [ads, setAds] = React.useState([]); // Estado para armazenar os dados dos anúncios
+          const adDisplayInterval = 3; // Exibir um anúncio a cada 3 publicações
 
-          // Função para buscar posts e informações de curtidas
           const fetchPosts = async () => {
             setIsLoadingPosts(true);
             try {
-              const { data: { user } } = await supabase.auth.getUser();
-              setCurrentUserId(user ? user.id : null); // Armazena o ID do usuário
-              const userId = user ? user.id : null;
-
               const { data, error } = await supabase
                 .from('posts')
                 .select(`
                   *,
-                  profiles (full_name),
-                  likes(user_id)
+                  profiles (full_name)
                 `)
                 .order('created_at', { ascending: false });
 
@@ -475,23 +392,15 @@
                 onShowModal(`Erro ao carregar publicações: ${error.message || 'Erro desconhecido'}`, 'error');
                 setPosts([]);
               } else {
-                const formattedPosts = data.map(post => {
-                    const likesForThisPost = post.likes || [];
-                    const likesCount = likesForThisPost.length;
-                    const isLikedByCurrentUser = userId ? likesForThisPost.some(like => like.user_id === userId) : false;
-
-                    return {
-                        id: post.id,
-                        author: post.profiles ? post.profiles.full_name : 'Autor Desconhecido',
-                        church: post.church_id ? 'Nome da Igreja Aqui (buscar)' : '', // Placeholder
-                        date: new Date(post.created_at).toLocaleDateString('pt-BR'),
-                        title: post.title,
-                        content: post.content,
-                        image: post.image_url,
-                        likesCount: likesCount,
-                        isLikedByCurrentUser: isLikedByCurrentUser,
-                    };
-                });
+                const formattedPosts = data.map(post => ({
+                  id: post.id,
+                  author: post.profiles ? post.profiles.full_name : 'Autor Desconhecido',
+                  church: post.church_id ? 'Nome da Igreja Aqui (buscar)' : '', // Placeholder
+                  date: new Date(post.created_at).toLocaleDateString('pt-BR'),
+                  title: post.title,
+                  content: post.content,
+                  image: post.image_url
+                }));
                 setPosts(formattedPosts);
               }
             } catch (error) {
@@ -503,70 +412,18 @@
             }
           };
 
-          // Função para curtir/descurtir um post
-          const handleToggleLike = async (postId, shouldLike) => {
-              if (!currentUserId) {
-                  onShowModal('Você precisa estar logado para curtir posts!', 'info');
-                  return;
-              }
-
-              try {
-                  if (shouldLike) {
-                      // Curtir o post
-                      const { error } = await supabase
-                          .from('likes')
-                          .insert([{ post_id: postId, user_id: currentUserId }]);
-
-                      if (error) {
-                          if (error.code === '23505') { // Código de erro para violação de unique constraint (já curtiu)
-                              console.warn('Usuário já curtiu este post.');
-                              // Apenas atualize o estado local para "curtido" se a UI já não refletir isso
-                              setPosts(prevPosts => prevPosts.map(p =>
-                                  p.id === postId ? { ...p, isLikedByCurrentUser: true, likesCount: p.likesCount + (p.isLikedByCurrentUser ? 0 : 1) } : p
-                              ));
-                          } else {
-                              throw error;
-                          }
-                      } else {
-                          // Sucesso ao curtir, atualiza o estado local
-                          setPosts(prevPosts => prevPosts.map(p =>
-                              p.id === postId ? { ...p, isLikedByCurrentUser: true, likesCount: p.likesCount + 1 } : p
-                          ));
-                      }
-                  } else {
-                      // Descurtir o post
-                      const { error } = await supabase
-                          .from('likes')
-                          .delete()
-                          .eq('post_id', postId)
-                          .eq('user_id', currentUserId);
-
-                      if (error) {
-                          throw error;
-                      } else {
-                          // Sucesso ao descurtir, atualiza o estado local
-                          setPosts(prevPosts => prevPosts.map(p =>
-                              p.id === postId ? { ...p, isLikedByCurrentUser: false, likesCount: p.likesCount - 1 } : p
-                          ));
-                      }
-                  }
-              } catch (error) {
-                  console.error(`Erro ao ${shouldLike ? 'curtir' : 'descurtir'} post:`, error);
-                  onShowModal(`Erro ao ${shouldLike ? 'curtir' : 'descurtir'} post: ${error.message}`, 'error');
-              }
-          };
-
-
+          // NOVO: Função para buscar anúncios
           const fetchAds = async () => {
             try {
               const { data, error } = await supabase
-                .from('advertisements')
+                .from('advertisements') // Assumindo que você tem uma tabela 'advertisements'
                 .select('*')
-                .eq('is_active', true)
-                .order('created_at', { ascending: false });
+                .eq('is_active', true) // Apenas anúncios ativos
+                .order('created_at', { ascending: false }); // Ou ordenar por prioridade/aleatório
 
               if (error) {
                 console.error('Erro ao carregar anúncios:', error);
+                // Opcionalmente, mostrar um modal, mas a falha dos anúncios não deve bloquear o feed
               } else {
                 setAds(data);
               }
@@ -577,8 +434,9 @@
 
           React.useEffect(() => {
             fetchPosts();
-            fetchAds();
+            fetchAds(); // Chamar fetchAds quando o componente é montado
 
+            // Checa se o usuário é admin pelo campo 'admin' (booleano)
             const checkAdmin = async () => {
               try {
                 const { data: { user } } = await supabase.auth.getUser();
@@ -595,7 +453,7 @@
               }
             };
             checkAdmin();
-          }, []);
+          }, []); // Dependências vazias para rodar apenas uma vez
 
           const handleNewPost = (newPost) => {
             fetchPosts(); // Recarrega os posts após criar um novo
@@ -613,22 +471,24 @@
             window.location.href = 'chat.html';
           };
 
+          // Função para navegar para a página da igreja (exemplo)
           const handleNavigateToChurch = () => {
-            const exampleChurchId = 'd2c0b1a0-e3f4-5678-90ab-cdef12345678';
+            const exampleChurchId = 'd2c0b1a0-e3f4-5678-90ab-cdef12345678'; // Substitua por um ID real
             window.location.href = `igreja.html?churchId=${exampleChurchId}`;
           };
 
+          // Função para aviso de "Em desenvolvimento" (não utilizada no código, mas mantida)
           const handleComingSoon = (featureName) => {
             onShowModal(`${featureName} está em desenvolvimento e estará disponível em breve!`, 'info');
           };
 
-          const handleNavigateToAdmin = () => {
-            window.location.href = 'admin.html';
+          const handleNavigateToAdmin = () => { // Nova função para navegar para o admin
+            window.location.href = 'admin.html'; // Direciona para a página admin.html
           };
 
 
-          return (
-            <div className="flex flex-col md:flex-row min-h-screen w-full bg-gradient-orange p-4 sm:p-6 md:p-8">
+          return (<
+            div className="flex flex-col md:flex-row min-h-screen w-full bg-gradient-orange p-4 sm:p-6 md:p-8">
               {/* Botão de hambúrguer para mobile */}
               <button
                 onClick={toggleSidebar}
@@ -659,8 +519,8 @@
                 </button>
 
                 <div className="text-3xl font-extrabold mb-6 font-inter text-orange-500 sidebar-item-text">Menu</div>
-                <div 
-                    className="flex items-center space-x-2 text-xl cursor-pointer hover:text-orange-500 transition duration-200" 
+                <div 
+                    className="flex items-center space-x-2 text-xl cursor-pointer hover:text-orange-500 transition duration-200" 
                     aria-label="Acessar meu perfil"
                     onClick={handleNavigateToProfile}
                 >
@@ -708,209 +568,4 @@
                 {/* BOTÃO DE ADMINISTRADOR - visível só para admin */}
                 {isAdmin && (
                   <button
-                    className="w-full text-left py-3 px-4 rounded-lg font-bold text-lg font-inter bg-gray-600 hover:bg-gray-700 text-white shadow-md"
-                    aria-label="Aceder painel de administrador"
-                    onClick={handleNavigateToAdmin}
-                  >
-                    <span className="sidebar-item-text">Administrador</span>
-                  </button>
-                )}
-                <div className="mt-auto pt-4 w-full border-t border-gray-200 md:border-none">
-                  <button
-                    onClick={onLogout}
-                    className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 transform hover:scale-100 active:scale-95 shadow-md font-inter"
-                    aria-label="Sair da sua conta"
-                  >
-                    Sair
-                  </button>
-                </div>
-              </aside>
-
-              <main className={`flex-1 p-6 bg-white rounded-2xl modern-shadow max-w-2xl mx-auto
-                                md:ml-0 ${isSidebarOpen ? 'md:ml-64' : 'md:ml-20'} sidebar-transition`}>
-                <div className="flex flex-col sm:flex-row sm:justify-between items-center mb-8 gap-4">
-                  <div className="text-center sm:text-left">
-                    <h1 className="text-4xl font-extrabold text-orange-600 mb-2 font-inter drop-shadow-lg">Posts e Anúncios</h1>
-                    <p className="text-gray-600 text-lg font-inter">Últimas notícias e comunicados da comunidade.</p>
-                  </div>
-                  <button
-                    onClick={() => { fetchPosts(); fetchAds(); }}
-                    className="btn-orange hover:bg-orange-600 text-white font-bold py-2 px-6 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 shadow-md drop-shadow-md"
-                    aria-label="Atualizar feed de publicações"
-                  >
-                    Atualizar Feed
-                  </button>
-                </div>
-                {isLoadingPosts ? (
-                  <div className="text-center text-gray-600 text-lg font-inter animate-pulse">Carregando publicações...</div>
-                ) : posts.length === 0 ? (
-                  <div className="text-center text-gray-600 text-lg font-inter">Nenhuma publicação encontrada.</div>
-                ) : (
-                  <div className="flex flex-col space-y-6">
-                    {posts.map((post, index) => (
-                      <React.Fragment key={post.id}>
-                        {/* Renderiza o novo componente PostCard */}
-                        <PostCard
-                            post={post}
-                            currentUserId={currentUserId}
-                            onToggleLike={handleToggleLike}
-                            onShowModal={onShowModal}
-                        />
-
-                        {/* Lógica de Integração de Anúncios */}
-                        {(index + 1) % adDisplayInterval === 0 && ads.length > 0 && (
-                          <AdComponent adData={ads[((index + 1) / adDisplayInterval - 1) % ads.length]} />
-                        )}
-                      </React.Fragment>
-                    ))}
-                  </div>
-                )}
-              </main>
-
-              <CreatePostModal
-                isOpen={isCreatePostModalOpen}
-                onClose={() => setIsCreatePostModalOpen(false)}
-                onSavePost={handleNewPost}
-                onShowMessage={onShowModal}
-                supabase={supabase}
-              />
-            </div>
-          );
-        }
-
-        // Componente principal para a página de feed
-        function App() {
-          const [isModalOpen, setIsModalOpen] = React.useState(false);
-          const [modalMessage, setModalMessage] = React.useState('');
-          const [modalType, setModalType] = React.useState('info');
-          const [isAuthChecking, setIsAuthChecking] = React.useState(true);
-          const [isSupabaseClientReady, setIsSupabaseClientReady] = React.useState(false);
-
-          // AGORA, ACESSE A INSTÂNCIA GLOBALMENTE
-          const supabase = window.globalSupabaseClient;
-
-          React.useEffect(() => {
-            // Verifica se o cliente Supabase global já foi inicializado
-            if (window.globalSupabaseClient) {
-                setIsSupabaseClientReady(true);
-                console.log("[App] Supabase client já está pronto.");
-            } else {
-                console.warn("[App] Supabase client não está pronto na renderização inicial do App. Aguardando...");
-                // Se não está pronto, usa um intervalo para esperar que supabaseClientInstance.js termine
-                const maxTries = 20; // Tentar por até 20 * 100ms = 2 segundos
-                let currentTry = 0;
-                const intervalId = setInterval(() => {
-                    if (window.globalSupabaseClient) {
-                        setIsSupabaseClientReady(true);
-                        console.log("[App] Supabase client inicializado globalmente após atraso/tentativa.");
-                        clearInterval(intervalId); // Limpa o intervalo
-                    } else if (currentTry >= maxTries) {
-                        console.error("[App] Falha ao inicializar o cliente Supabase após várias tentativas. Verifique 'supabaseClientInstance.js' e variáveis.");
-                        setModalMessage("Erro crítico: Não foi possível conectar ao serviço. Por favor, recarregue a página.", "error");
-                        setIsModalOpen(true);
-                        clearInterval(intervalId); // Limpa o intervalo
-                    }
-                    currentTry++;
-                }, 100); // Tenta a cada 100ms (total 2s)
-
-                return () => clearInterval(intervalId); // Limpa o intervalo ao desmontar
-            }
-          }, []); // Dependências vazias para rodar apenas uma vez na montagem
-
-          React.useEffect(() => {
-            if (isSupabaseClientReady && window.globalSupabaseClient) {
-                const checkUserSession = async () => {
-                    try {
-                        const { data: { session } } = await window.globalSupabaseClient.auth.getSession();
-                        if (!session) {
-                            window.location.href = 'index.html'; // Redireciona para login
-                        } else {
-                            setIsAuthChecking(false); // Usuário autenticado
-                        }
-                    } catch (error) {
-                        console.error('Erro ao verificar sessão:', error);
-                        window.location.href = 'index.html'; // Em caso de erro, redireciona
-                    }
-                };
-                checkUserSession();
-
-                // Lida com mudanças de autenticação em tempo real
-                const { data: authListener } = window.globalSupabaseClient.auth.onAuthStateChange(
-                  (event, session) => {
-                    if (event === 'SIGNED_OUT' || !session) {
-                      window.location.href = 'index.html';
-                    } else if (event === 'SIGNED_IN') {
-                      setIsAuthChecking(false);
-                    }
-                  }
-                );
-                // Cleanup do listener
-                return () => {
-                  if (authListener && authListener.unsubscribe) {
-                      authListener.unsubscribe();
-                  }
-                };
-            }
-          }, [isSupabaseClientReady]); // Depende de isSupabaseClientReady para garantir que o cliente esteja pronto
-
-          const showModal = (message, type) => {
-            setModalMessage(message);
-            setModalType(type);
-            setIsModalOpen(true);
-          };
-
-          const closeModal = () => {
-            setIsModalOpen(false);
-            setModalMessage('');
-            setModalType('info');
-          };
-
-          const handleLogout = async () => {
-            try {
-              const { error } = await supabase.auth.signOut();
-              if (error) {
-                console.error('Erro ao fazer logout:', error);
-                showModal(`Erro ao fazer logout: ${error.message}`, 'error');
-              } else {
-                showModal('Logout realizado com sucesso!', 'success');
-                window.location.href = 'index.html';
-              }
-            } catch (error) {
-              console.error('Erro inesperado ao fazer logout:', error);
-              showModal('Ocorreu um erro inesperado ao fazer logout.', 'error');
-            }
-          };
-
-          if (!isSupabaseClientReady || isAuthChecking) {
-            return (
-              <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
-                <div className="text-white text-2xl font-bold font-inter text-center">A carregar...</div>
-              </div>
-            );
-          }
-
-          return (
-            <div className="min-h-screen flex flex-col md:flex-row items-stretch justify-center p-0">
-              <FeedScreen
-                onShowModal={showModal}
-                onLogout={handleLogout}
-                supabase={supabase}
-              />
-              <div className="text-center text-white text-sm opacity-80 font-inter py-4 bg-gray-800 w-full md:hidden">
-                © {new Date().getFullYear()} CPN Serviços. Todos os direitos reservados. <span className="text-xs ml-2 opacity-70">v1.2025.07.1</span>
-              </div>
-              <Modal
-                isOpen={isModalOpen}
-                message={modalMessage}
-                type={modalType}
-                onClose={closeModal}
-              />
-            </div>
-          );
-        }
-
-        // Inicialização do Supabase e renderização do App
-        ReactDOM.render(<App />, document.getElementById('root'));
-    </script>
-</body>
-</html>
+                    className="w-full text-left py-3 px-4 rounded-lg font-bold text-lg font-inter bg-gray-600 hover:bg-gray-70
