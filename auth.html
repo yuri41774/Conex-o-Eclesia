@@ -576,6 +576,12 @@
                     console.warn("Erro ao atualizar perfil Firebase (não crítico para o registo):", updateProfileError);
                 }
 
+                // --- NOVO PASSO CRÍTICO: Obter ID Token do Firebase e configurar Supabase ---
+                const idToken = await user.getIdToken();
+                await supabase.auth.setSession({ access_token: idToken });
+                console.log("[RegisterScreen] Supabase cliente configurado com ID Token do Firebase.");
+                // --- FIM DO NOVO PASSO ---
+
                 // 3. Criar perfil correspondente no Supabase
                 // O ID do perfil no Supabase será o UID do utilizador do Firebase
                 const { error: profileError } = await supabase
@@ -736,7 +742,7 @@
                 </div>
 
                 <div className="mb-6">
-                  <label htmlFor="roleInChurch" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+                  <label htmlFor="roleInChurch" className="block text-sm font-semibold mb-2 font-inter">
                     Cargo/Função na Igreja (Opcional)
                   </label>
                   <input
