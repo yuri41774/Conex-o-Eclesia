@@ -12,23 +12,26 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 // Expõe a instância do cliente Supabase globalmente.
 // Este ficheiro é um módulo, por isso o código é executado uma vez.
-// A lógica de "retry" ou "espera" para 'window.globalSupabaseClient' deve estar no ficheiro que o consome.
 if (typeof window !== 'undefined') {
   // Define as URLs globalmente para que o código que espera por elas possa encontrá-las
   window.SUPABASE_URL = SUPABASE_URL;
   window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
 
-  try {
-    // Tenta criar o cliente Supabase. 'createClient' já foi importado.
-    // Não precisamos verificar 'window.supabase' aqui, pois 'createClient' é uma importação de módulo.
-    if (!window.globalSupabaseClient) { // Apenas cria se ainda não foi criado
-      window.globalSupabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      console.log("[Supabase] Cliente de dados inicializado globalmente.");
-    } else {
-      console.log("[Supabase] Cliente de dados já inicializado em outro contexto global.");
+  // Cria uma promessa global que resolve quando o cliente Supabase está pronto.
+  // O componente App pode então esperar por esta promessa.
+  window.supabaseClientReadyPromise = new Promise((resolve, reject) => {
+    try {
+      if (!window.globalSupabaseClient) { // Apenas cria se ainda não foi criado
+        window.globalSupabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log("[Supabase] Cliente de dados inicializado globalmente.");
+        resolve(window.globalSupabaseClient); // Resolve a promessa com a instância do cliente
+      } else {
+        console.log("[Supabase] Cliente de dados já inicializado em outro contexto global.");
+        resolve(window.globalSupabaseClient); // Resolve a promessa se já existir
+      }
+    } catch (error) {
+      console.error("[Supabase] Erro ao inicializar o cliente de dados:", error);
+      reject(error); // Rejeita a promessa em caso de erro
     }
-  } catch (error) {
-    console.error("[Supabase] Erro ao inicializar o cliente de dados:", error);
-    // Poderia definir um estado de erro global aqui se necessário
-  }
+  });
 }
