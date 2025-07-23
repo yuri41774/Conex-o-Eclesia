@@ -57,7 +57,8 @@
             createUserWithEmailAndPassword, 
             sendPasswordResetEmail,
             signOut,
-            updateProfile // CORRIGIDO: Adicionado updateProfile
+            updateProfile, // Adicionado updateProfile
+            onAuthStateChanged // Adicionado onAuthStateChanged para uso direto
         } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
         
         if (typeof window !== 'undefined') {
@@ -65,7 +66,8 @@
             window.firebaseCreateUserWithEmailAndPassword = createUserWithEmailAndPassword;
             window.firebaseSendPasswordResetEmail = sendPasswordResetEmail;
             window.firebaseSignOut = signOut;
-            window.firebaseUpdateProfile = updateProfile; // CORRIGIDO: Expor updateProfile
+            window.firebaseUpdateProfile = updateProfile;
+            window.firebaseOnAuthStateChanged = onAuthStateChanged; // Expor onAuthStateChanged
         }
     </script>
 
@@ -290,7 +292,7 @@
         }
 
         // Componente LoginScreen: Formulário para iniciar sessão (agora com Firebase)
-        function LoginScreen({ onSwitchToRegister, onShowModal, onLoginSuccess, firebaseAuth, supabase }) {
+        function LoginScreen({ onSwitchToRegister, onShowModal, onLoginSuccess, firebaseAuth, supabase }) { /* CORRIGIDO: Adicionado 'supabase' às props */
           const [email, setEmail] = React.useState('');
           const [password, setPassword] = React.useState('');
           const [isLoading, setIsLoading] = React.useState(false);
@@ -460,9 +462,6 @@
           const handleReset = async (e) => {
             e.preventDefault();
             setIsLoading(true);
-
-            // Adicionado console.log para depuração
-            console.log("[ForgotPasswordModal] firebaseAuth:", firebaseAuth);
 
             if (!firebaseAuth) {
                 onShowMessage('Serviço de autenticação não disponível. Recarregue a página.', 'error');
