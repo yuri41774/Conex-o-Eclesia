@@ -6,8 +6,8 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 // As suas credenciais do Supabase.
 // SUBSTITUA PELOS SEUS DADOS REAIS DO SUPABASE!
 // Encontra-os em Project Settings > API
-const SUPABASE_URL = "SUA_URL_DO_SUPABASE";
-const SUPABASE_ANON_KEY = "SUA_CHAVE_ANON_DO_SUPABASE";
+const SUPABASE_URL = "https://rahhplphegvvdehrumyp.supabase.co"; // A SUA URL DO PROJETO SUPABASE
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJhaGhwbHBoZWd2dmRlaHJ1bXlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3MDk2NDMsImV4cCI6MjA2NjI4NTY0M30.EDM-RotlChTCWiisI4o5okQ6Llee1ZaQEAcLaphBqTs"; // A SUA CHAVE ANÓNIMA PÚBLICA DO SUPABASE
 
 // Expõe as variáveis globalmente para que outros scripts possam aceder a elas
 if (typeof window !== 'undefined') {
