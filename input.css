@@ -1,0 +1,13 @@
+/* input.css */
+
+/* Estas são as diretivas básicas do Tailwind. */
+/* Elas serão substituídas pelo CSS gerado pelo Tailwind. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Pode adicionar o seu CSS personalizado aqui, se necessário. */
+/* Exemplo: */
+/* .my-custom-class {
+  background-color: lightblue;
+} */
