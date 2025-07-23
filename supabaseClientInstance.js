@@ -1,43 +1,42 @@
-// firebaseClientInstance.js
+// supabaseClientInstance.js
 
-// Importa as funções necessárias do Firebase SDK via CDN
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-// Se for usar Firestore (base de dados em tempo real do Firebase), descomente:
-// import { getFirestore } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+// Importa a função createClient do Supabase SDK via CDN
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-// As suas credenciais de configuração do projeto Firebase.
-// SUBSTITUA PELOS SEUS DADOS REAIS DO FIREBASE!
-// Encontra-os em Project settings -> General -> Your apps -> Firebase SDK snippet -> Config
-const firebaseConfig = {
-  apiKey: "SUA_API_KEY_FIREBASE",
-  authDomain: "SEU_AUTH_DOMAIN_FIREBASE",
-  projectId: "SEU_PROJECT_ID_FIREBASE",
-  storageBucket: "SEU_STORAGE_BUCKET_FIREBASE",
-  messagingSenderId: "SEU_MESSAGING_SENDER_ID_FIREBASE",
-  appId: "SEU_APP_ID_FIREBASE"
-};
+// As suas credenciais do Supabase.
+// SUBSTITUA PELOS SEUS DADOS REAIS DO SUPABASE!
+// Encontra-os em Project Settings > API
+const SUPABASE_URL = "SUA_URL_DO_SUPABASE";
+const SUPABASE_ANON_KEY = "SUA_CHAVE_ANON_DO_SUPABASE";
 
-// Inicializa a aplicação Firebase
-const firebaseApp = initializeApp(firebaseConfig);
-const firebaseAuth = getAuth(firebaseApp);
-// Se for usar Firestore, descomente:
-// const firebaseDb = getFirestore(firebaseApp);
-
-// Expõe as instâncias globalmente para que os outros scripts e componentes possam aceder a elas
+// Expõe as variáveis globalmente para que outros scripts possam aceder a elas
 if (typeof window !== 'undefined') {
-  window.globalFirebaseApp = firebaseApp;
-  window.globalFirebaseAuth = firebaseAuth;
-  // Se for usar Firestore, descomente:
-  // window.globalFirebaseDb = firebaseDb;
-  console.log("[Firebase] Cliente inicializado globalmente.");
-}
+  window.SUPABASE_URL = SUPABASE_URL;
+  window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
 
-// Opcional: Listener para depuração do estado de autenticação do Firebase no console
-// onAuthStateChanged(firebaseAuth, (user) => {
-//   if (user) {
-//     console.log("[Firebase Auth] Utilizador autenticado:", user.uid);
-//   } else {
-//     console.log("[Firebase Auth] Utilizador não autenticado.");
-//   }
-// });
+  // Inicializa a instância do cliente Supabase globalmente, se ainda não existir.
+  // Importante: Não passamos um 'auth' client aqui, pois o Firebase gerirá a autenticação.
+  if (window.supabase && !window.globalSupabaseClient) {
+    window.globalSupabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log("[Supabase] Cliente de dados inicializado globalmente.");
+  } else if (window.globalSupabaseClient) {
+    console.log("[Supabase] Cliente de dados já inicializado em outro contexto global.");
+  } else {
+    // Fallback para esperar o SDK carregar, se necessário
+    let tries = 0;
+    const tryInit = () => {
+      if (window.supabase && !window.globalSupabaseClient) {
+        window.globalSupabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log("[Supabase] Cliente de dados inicializado globalmente (retry).");
+      } else if (window.globalSupabaseClient) {
+        console.log("[Supabase] Cliente de dados já inicializado em outro contexto global.");
+      } else if (tries < 10) { // Tenta por 10 * 50ms = 500ms
+        tries++;
+        setTimeout(tryInit, 50);
+      } else {
+        console.error("[Supabase] SDK (window.supabase) não disponível após múltiplas tentativas. Não foi possível inicializar o cliente de dados.");
+      }
+    };
+    tryInit();
+  }
+}
