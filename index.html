@@ -3,767 +3,227 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Conexão Eclesia - Acesso</title>
+    <title>Conexão Eclesia - Dashboard</title>
+    <!-- Incluindo Tailwind CSS para estilização (via CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Incluindo a fonte Inter do Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        /* Define a fonte Inter como padrão para o corpo da página */
         body {
             font-family: 'Inter', sans-serif;
-            text-size-adjust: none;
-            -webkit-text-size-adjust: none;
-            background: linear-gradient(135deg, #a7b7eb 0%, #b3c2f0 100%); /* Um azul claro suave */
+            background: linear-gradient(135deg, #a7b7eb 0%, #b3c2f0 100%); /* Fundo suave */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
         }
-        /* Responsividade para telas menores */
-        @media (max-width: 640px) {
-            #root > div {
-                padding: 0.5rem !important;
-                border-radius: 0.75rem !important;
-            }
-            .rounded-xl, .rounded-lg, .rounded-3xl, .rounded-2xl {
-                border-radius: 0.75rem !important;
-            }
-            .shadow-2xl, .shadow-xl, .shadow-md {
-                box-shadow: 0 2px 8px 0 rgba(37,99,235,0.10), 0 1.5px 4px 0 rgba(0,0,0,0.04) !important;
-            }
+        .card {
+            background-color: white;
+            border-radius: 1.25rem; /* rounded-2xl */
+            box-shadow: 0 4px 24px 0 rgba(0,0,0,0.1), 0 1.5px 4px 0 rgba(0,0,0,0.04); /* modern-shadow */
+            padding: 2rem;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+        .btn-primary {
+            background-color: #2563eb; /* blue-600 */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem; /* rounded-lg */
+            font-weight: 700;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .btn-primary:hover {
+            background-color: #1d4ed8; /* blue-700 */
+        }
+        .btn-danger {
+            background-color: #dc2626; /* red-600 */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .btn-danger:hover {
+            background-color: #b91c1c; /* red-700 */
         }
     </style>
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#2563eb">
-    </head>
+</head>
 <body>
-    <div id="root"></div>
+    <div id="app-container" class="card">
+        <h1 class="text-3xl font-bold text-gray-800 mb-4">A carregar...</h1>
+        <p class="text-gray-600">A verificar a sua sessão e a ligar aos serviços.</p>
+    </div>
 
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Importa o SDK do Firebase App e Auth -->
+    <script type="module" src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
+    <!-- Carrega o script de inicialização do Firebase -->
+    <script type="module" src="firebaseClientInstance.js"></script>
+
+    <!-- Importa o SDK do Supabase Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Carrega o script de inicialização do Supabase -->
     <script src="supabaseClientInstance.js"></script>
 
-    <script type="text/babel">
-        // Componente Modal
-        function Modal({ isOpen, message, type, onClose }) {
-          if (!isOpen) return null;
+    <script type="module">
+        // Referências aos elementos do DOM
+        const appContainer = document.getElementById('app-container');
 
-          const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
-          const headerText = type === 'success' ? 'Sucesso!' : 'Erro!';
-
-          return ( // Corrigido: Removido o "<" extra aqui
-            <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
-              <div className="bg-white rounded-lg shadow-xl overflow-hidden max-w-sm w-full transform transition-all duration-300 scale-100">
-                <div className={`${bgColor} text-white px-6 py-4 flex justify-between items-center rounded-t-lg`}>
-                  <h3 className="text-xl font-bold font-inter">{headerText}</h3>
-                  <button
-                    onClick={onClose}
-                    className="text-white hover:text-gray-200 focus:outline-none text-2xl font-bold"
-                    aria-label="Fechar modal de mensagem"
-                  >
-                    &times;
-                  </button>
-                </div>
-                <div className="p-6">
-                  <p className="text-gray-700 text-lg mb-4 font-inter">{message}</p>
-                  <div className="flex justify-end">
-                    <button
-                      onClick={onClose}
-                      className={`py-2 px-6 rounded-lg font-bold text-white transition duration-300 shadow-md ${bgColor} hover:${bgColor.replace('500', '600')} focus:outline-none focus:ring-2 focus:ring-opacity-75`}
-                      aria-label="Entendido, fechar mensagem"
-                    >
-                      OK
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
+        // Função para exibir mensagens no console e na UI
+        function displayMessage(message, type = 'info') {
+            console.log(`[App Message - ${type.toUpperCase()}] ${message}`);
+            // Para uma aplicação real, você usaria um modal ou toast aqui
+            // Por simplicidade, vamos atualizar o conteúdo do container
+            appContainer.innerHTML = `
+                <h1 class="text-3xl font-bold ${type === 'error' ? 'text-red-600' : 'text-blue-600'} mb-4">${type === 'error' ? 'Erro!' : 'Informação'}</h1>
+                <p class="text-gray-700 mb-4">${message}</p>
+                <button onclick="window.location.reload()" class="btn-primary">Recarregar</button>
+            `;
         }
 
-        // Modal para cadastro de igreja
-        function ChurchRegisterModal({ isOpen, onClose, onShowMessage, supabase, onSwitchToRegister }) {
-          const [churchName, setChurchName] = React.useState('');
-          const [churchEmail, setChurchEmail] = React.useState('');
-          const [churchCity, setChurchCity] = React.useState('');
-          const [isLoading, setIsLoading] = React.useState(false);
+        // Função principal para inicializar a aplicação
+        async function initApp() {
+            let firebaseAuth;
+            let supabase;
 
-          const handleChurchRegister = async (e) => {
-            e.preventDefault();
-            if (!churchName || !churchEmail || !churchCity) {
-              onShowMessage('Preencha todos os campos para registrar a igreja.', 'error');
-              return;
-            }
-            setIsLoading(true);
-            try {
-              const { error } = await supabase.from('churches').insert([
-                { name: churchName, email: churchEmail, city: churchCity }
-              ]);
-              if (error) {
-                onShowMessage('Erro ao registrar igreja: ' + error.message, 'error');
-              } else {
-                onShowMessage('Igreja registrada com sucesso! Agora crie uma conta de usuário para ser o administrador desta igreja.', 'success');
-                setChurchName('');
-                setChurchEmail('');
-                setChurchCity('');
-                onClose();
-                if (onSwitchToRegister) {
-                    onSwitchToRegister();
+            // --- 1. Aguardar e obter a instância do Firebase Auth ---
+            const maxFirebaseTries = 20; // Tentar por até 2 segundos
+            let currentFirebaseTry = 0;
+            const firebaseIntervalId = setInterval(() => {
+                if (window.globalFirebaseAuth) {
+                    firebaseAuth = window.globalFirebaseAuth;
+                    console.log("[App] Cliente Firebase Auth obtido.");
+                    clearInterval(firebaseIntervalId);
+                    
+                    // --- 2. Aguardar e obter a instância do Supabase Client ---
+                    const maxSupabaseTries = 20; // Tentar por até 2 segundos
+                    let currentSupabaseTry = 0;
+                    const supabaseIntervalId = setInterval(() => {
+                        if (window.globalSupabaseClient) {
+                            supabase = window.globalSupabaseClient;
+                            console.log("[App] Cliente Supabase obtido.");
+                            clearInterval(supabaseIntervalId);
+                            
+                            // --- 3. Iniciar a verificação de autenticação e carregar dados ---
+                            checkAuthAndLoadData(firebaseAuth, supabase);
+
+                        } else if (currentSupabaseTry >= maxSupabaseTries) {
+                            console.error("[App] Falha ao inicializar o cliente Supabase.");
+                            displayMessage("Erro crítico: Não foi possível ligar ao serviço de base de dados. Por favor, recarregue a página.", "error");
+                            clearInterval(supabaseIntervalId);
+                        }
+                        currentSupabaseTry++;
+                    }, 100); // Tenta a cada 100ms
+
+                } else if (currentFirebaseTry >= maxFirebaseTries) {
+                    console.error("[App] Falha ao inicializar o cliente Firebase Auth.");
+                    displayMessage("Erro crítico: Não foi possível ligar ao serviço de autenticação. Por favor, recarregue a página.", "error");
+                    clearInterval(firebaseIntervalId);
                 }
-              }
-            } catch (err) {
-              onShowMessage('Erro inesperado ao registrar igreja.', 'error');
-            } finally {
-              setIsLoading(false);
-            }
-          };
-
-          if (!isOpen) return null;
-          return ( // Corrigido: Removido o "<" extra aqui
-            <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
-              <div className="bg-white rounded-lg shadow-xl max-w-sm w-full overflow-hidden">
-                <div className="bg-purple-700 text-white px-6 py-4 flex justify-between items-center rounded-t-lg">
-                  <h3 className="text-xl font-bold font-inter">Registrar Igreja</h3>
-                  <button
-                    onClick={onClose}
-                    className="text-white hover:text-gray-200 focus:outline-none text-2xl font-bold"
-                    aria-label="Fechar modal de registro de igreja"
-                    disabled={isLoading}
-                  >
-                    &times;
-                  </button>
-                </div>
-                <form className="p-6" onSubmit={handleChurchRegister}>
-                  <div className="mb-4">
-                    <label htmlFor="churchName" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Nome da Igreja</label>
-                    <input
-                      type="text"
-                      id="churchName"
-                      className="shadow-sm border rounded-lg w-full py-3 px-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 font-inter bg-gray-100"
-                      placeholder="Nome completo da igreja"
-                      value={churchName}
-                      onChange={e => setChurchName(e.target.value)}
-                      required
-                      aria-label="Nome da igreja"
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <div className="mb-4">
-                    <label htmlFor="churchEmail" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Email da Igreja</label>
-                    <input
-                      type="email"
-                      id="churchEmail"
-                      className="shadow-sm border rounded-lg w-full py-3 px-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 font-inter bg-gray-100"
-                      placeholder="contato@igreja.com"
-                      value={churchEmail}
-                      onChange={e => setChurchEmail(e.target.value)}
-                      required
-                      aria-label="Email da igreja"
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <div className="mb-6">
-                    <label htmlFor="churchCity" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Cidade</label>
-                    <input
-                      type="text"
-                      id="churchCity"
-                      className="shadow-sm border rounded-lg w-full py-3 px-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 font-inter bg-gray-100"
-                      placeholder="Cidade da igreja"
-                      value={churchCity}
-                      onChange={e => setChurchCity(e.target.value)}
-                      required
-                      aria-label="Cidade da igreja"
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <div className="flex justify-end">
-                    <button
-                      type="submit"
-                      className="py-2 px-6 rounded-lg font-bold text-white bg-purple-700 hover:bg-purple-800 transition duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-75 font-inter"
-                      aria-label="Registrar igreja agora"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? 'Registrando...' : 'Registrar'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          );
+                currentFirebaseTry++;
+            }, 100); // Tenta a cada 100ms
         }
 
-        // Componente para a tela de Login
-        function LoginScreen({ onSwitchToRegister, onShowModal, onLoginSuccess, supabase }) {
-          const [email, setEmail] = React.useState('');
-          const [password, setPassword] = React.useState('');
-          const [isLoading, setIsLoading] = React.useState(false);
-          // Novo estado para modal de igreja
-          const [isChurchModalOpen, setIsChurchModalOpen] = React.useState(false);
-          const [showForgotModal, setShowForgotModal] = React.useState(false);
+        // Função para verificar a autenticação Firebase e carregar dados do Supabase
+        async function checkAuthAndLoadData(firebaseAuth, supabase) {
+            // Listener de estado de autenticação do Firebase
+            firebaseAuth.onAuthStateChanged(async (user) => {
+                if (user) {
+                    // Utilizador autenticado via Firebase
+                    console.log("[App] Utilizador autenticado Firebase UID:", user.uid);
+                    
+                    // Tentar obter dados do perfil do Supabase usando o UID do Firebase
+                    try {
+                        const { data: profile, error } = await supabase
+                            .from('profiles')
+                            .select('*')
+                            .eq('id', user.uid) // O ID do perfil Supabase deve ser o UID do Firebase
+                            .single();
 
-          const handleLogin = async (e) => {
-            e.preventDefault();
-            setIsLoading(true);
+                        if (error && error.code !== 'PGRST116') { // PGRST116 é "no rows found"
+                            console.error("Erro ao carregar perfil do Supabase:", error);
+                            displayMessage("Erro ao carregar os seus dados de perfil. Tente novamente.", "error");
+                            // Ainda assim, exibe o dashboard, mas com aviso
+                            renderDashboard(user, null); 
+                        } else if (!profile) {
+                            // Se o perfil não existe no Supabase, cria um novo
+                            console.log("[App] Perfil Supabase não encontrado, a criar novo...");
+                            const { data: newProfile, error: createError } = await supabase
+                                .from('profiles')
+                                .insert([{ 
+                                    id: user.uid, 
+                                    email: user.email, 
+                                    full_name: user.displayName || user.email.split('@')[0], // Nome padrão
+                                    avatar_url: user.photoURL || 'https://i.ibb.co/Vt2W1d1/user-profile-default-image.png'
+                                }])
+                                .select('*')
+                                .single();
 
-            try {
-                const { data, error } = await supabase.auth.signInWithPassword({
-                    email: email,
-                    password: password,
-                });
+                            if (createError) {
+                                console.error("Erro ao criar perfil no Supabase:", createError);
+                                displayMessage("Erro ao criar o seu perfil inicial. Por favor, contacte o suporte.", "error");
+                                renderDashboard(user, null); // Exibe o dashboard sem perfil completo
+                            } else {
+                                console.log("[App] Perfil Supabase criado com sucesso.");
+                                renderDashboard(user, newProfile);
+                            }
+                        } else {
+                            // Perfil encontrado e carregado com sucesso
+                            console.log("[App] Perfil Supabase carregado:", profile);
+                            renderDashboard(user, profile);
+                        }
+                    } catch (supabaseError) {
+                        console.error("Erro inesperado na operação do Supabase:", supabaseError);
+                        displayMessage("Ocorreu um erro inesperado ao aceder aos seus dados. Recarregue a página.", "error");
+                        renderDashboard(user, null); // Exibe o dashboard sem perfil completo
+                    }
 
-                if (error) {
-                    console.error('Erro de login no Supabase:', error);
-                    onShowModal(`Erro no login: ${error.message}`, 'error');
-                } else if (data.user) {
-                    onShowModal('Login bem-sucedido!', 'success');
-                    onLoginSuccess();
                 } else {
-                    onShowModal('Credenciais inválidas. Tente novamente.', 'error');
+                    // Utilizador NÃO autenticado via Firebase
+                    console.log("[App] Utilizador não autenticado. Redirecionando para a página de autenticação.");
+                    // Redireciona para a página de autenticação (que você criará como auth.html)
+                    window.location.href = 'auth.html'; 
                 }
-            } catch (error) {
-                console.error('Erro inesperado ao tentar fazer login:', error);
-                onShowModal('Ocorreu um erro inesperado ao fazer login.', 'error');
-            } finally {
-                setIsLoading(false);
-            }
-          };
-
-          return ( // Corrigido: Removido o "<" extra aqui
-            <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md mx-auto transform transition-all duration-300 hover:scale-105">
-              <div className="text-center mb-8">
-                <h1 className="text-4xl font-extrabold text-gray-800 mb-2 font-inter">Conexão Eclesia</h1>
-                <p className="text-gray-600 text-lg">Faça login para continuar</p>
-              </div>
-
-              <form onSubmit={handleLogin}>
-                <div className="mb-6">
-                  <label htmlFor="loginEmail" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
-                    Email ou Nome de Usuário
-                  </label>
-                  <input
-                    type="text"
-                    id="loginEmail"
-                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
-                    placeholder="seuemail@exemplo.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    aria-label="Insira seu email ou nome de usuário"
-                    disabled={isLoading}
-                  />
-                </div>
-
-                <div className="mb-8">
-                  <label htmlFor="loginPassword" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
-                    Senha
-                  </label>
-                  <input
-                    type="password"
-                    id="loginPassword"
-                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 mb-3 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    aria-label="Insira sua senha"
-                    disabled={isLoading}
-                  />
-                  <a href="#" className="inline-block align-baseline font-bold text-sm text-blue-600 hover:text-blue-800 font-inter"
-                     aria-label="Clique para recuperar sua senha"
-                     onClick={e => { e.preventDefault(); setShowForgotModal(true); }}
-                  >
-                    Esqueceu sua senha?
-                  </a>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 transform hover:scale-100 active:scale-95 shadow-md font-inter"
-                  aria-label="Entrar na sua conta"
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Entrando...' : 'Entrar'}
-                </button>
-              </form>
-
-              <div className="mt-8 text-center">
-                <p className="text-gray-600 font-inter">
-                  Não tem uma conta?{' '}
-                  <a href="#" onClick={onSwitchToRegister} className="font-bold text-blue-600 hover:text-blue-800 font-inter"
-                     aria-label="Clique para criar uma nova conta agora"
-                  >
-                    Crie uma agora!
-                  </a>
-                </p>
-                <p className="text-gray-600 font-inter mt-4">
-                  É uma igreja?{' '}
-                  <button
-                    type="button"
-                    onClick={() => setIsChurchModalOpen(true)}
-                    className="font-bold text-purple-600 hover:text-purple-800 font-inter underline focus:outline-none"
-                    aria-label="Clique para registrar sua igreja"
-                  >
-                    Registre sua Igreja!
-                  </button>
-                </p>
-              </div>
-              <ChurchRegisterModal
-                isOpen={isChurchModalOpen}
-                onClose={() => setIsChurchModalOpen(false)}
-                onShowMessage={onShowModal}
-                supabase={supabase}
-                onSwitchToRegister={onSwitchToRegister} {/* Passa a função para o modal */}
-              />
-              <ForgotPasswordModal isOpen={showForgotModal} onClose={() => setShowForgotModal(false)} onShowMessage={onShowModal} supabase={supabase} />
-            </div>
-          );
+            });
         }
 
-        // Modal para recuperação de senha
-        function ForgotPasswordModal({ isOpen, onClose, onShowMessage, supabase }) {
-          const [email, setEmail] = React.useState('');
-          const [isLoading, setIsLoading] = React.useState(false);
+        // Função para renderizar o dashboard (conteúdo principal da aplicação)
+        function renderDashboard(firebaseUser, supabaseProfile) {
+            const userName = supabaseProfile?.full_name || firebaseUser.displayName || firebaseUser.email;
+            const userEmail = firebaseUser.email;
+            const userUid = firebaseUser.uid;
+            const userAvatar = supabaseProfile?.avatar_url || firebaseUser.photoURL || 'https://i.ibb.co/Vt2W1d1/user-profile-default-image.png';
 
-          const handleReset = async (e) => {
-            e.preventDefault();
-            setIsLoading(true);
-            try {
-              // Certifique-se de que redirectTo está correto.
-              // Use window.location.origin para garantir que o caminho base está correto
-              const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: `${window.location.origin}/index.html`, // Redireciona de volta para esta página
-              });
-              if (error) {
-                onShowMessage('Erro ao solicitar redefinição: ' + error.message, 'error');
-              } else {
-                onShowMessage('Se o email estiver cadastrado, você receberá instruções para redefinir a senha.', 'success');
-                onClose();
-              }
-            } catch (err) {
-              onShowMessage('Erro inesperado ao solicitar redefinição.', 'error');
-            } finally {
-              setIsLoading(false);
-            }
-          };
-
-          if (!isOpen) return null;
-          return ( // Corrigido: Removido o "<" extra aqui
-            <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
-              <div className="bg-white rounded-lg shadow-xl max-w-sm w-full">
-                <div className="bg-blue-600 text-white px-6 py-4 flex justify-between items-center rounded-t-lg">
-                  <h3 className="text-xl font-bold font-inter">Recuperar Senha</h3>
-                  <button onClick={onClose} className="text-white hover:text-gray-200 focus:outline-none text-2xl font-bold" aria-label="Fechar modal de recuperação" disabled={isLoading}>&times;</button>
+            appContainer.innerHTML = `
+                <h1 class="text-3xl font-bold text-blue-600 mb-4">Bem-vindo, ${userName}!</h1>
+                <img src="${userAvatar}" alt="Avatar do utilizador" class="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-blue-300 shadow-md">
+                <p class="text-gray-700 mb-2"><strong>Email:</strong> ${userEmail}</p>
+                <p class="text-gray-700 mb-4"><strong>ID de Utilizador (Firebase):</strong> ${userUid}</p>
+                
+                <div class="space-y-3">
+                    <a href="conexao-eclesia-feed.html" class="block w-full btn-primary">Ir para o Feed de Publicações</a>
+                    <button id="logout-btn" class="block w-full btn-danger">Terminar Sessão</button>
                 </div>
-                <form className="p-6" onSubmit={handleReset}>
-                  <label htmlFor="forgotEmail" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Email cadastrado</label>
-                  <input
-                    type="email"
-                    id="forgotEmail"
-                    className="shadow-sm border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 font-inter bg-gray-100 mb-6"
-                    placeholder="seuemail@exemplo.com"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    required
-                    aria-label="Digite seu email cadastrado"
-                    disabled={isLoading}
-                  />
-                  <div className="flex justify-end">
-                    <button type="submit" className="py-2 px-6 rounded-lg font-bold text-white bg-blue-600 hover:bg-blue-700 transition duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-inter" aria-label="Solicitar redefinição de senha" disabled={isLoading}>
-                      {isLoading ? 'Enviando...' : 'Enviar link de redefinição'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          );
-        }
+            `;
 
-        // Componente para a tela de Registro
-        function RegisterScreen({ onSwitchToLogin, onShowModal, supabase }) {
-          const [fullName, setFullName] = React.useState('');
-          const [dateOfBirth, setDateOfBirth] = React.useState('');
-          const [phoneNumber, setPhoneNumber] = React.useState('');
-          const [roleInChurch, setRoleInChurch] = React.useState('');
-          const [churchName, setChurchName] = React.useState('');
-          const [registerEmail, setRegisterEmail] = React.useState('');
-          const [registerPassword, setRegisterPassword] = React.useState('');
-          const [confirmPassword, setConfirmPassword] = React.useState('');
-          const [isLoading, setIsLoading] = React.useState(false);
-
-          const handleRegister = async (e) => {
-            e.preventDefault();
-
-            if (registerPassword !== confirmPassword) {
-              onShowModal('As palavras-passe não coincidem. Por favor, verifique.', 'error');
-              return;
-            }
-            setIsLoading(true);
-
-            try {
-                const { data: authData, error: authError } = await supabase.auth.signUp({
-                    email: registerEmail,
-                    password: registerPassword,
-                    options: {
-                        data: {
-                            full_name: fullName, // Corrigido: `full_name_from_signup` para `full_name`
-                            phone_number: phoneNumber,
-                            date_of_birth: dateOfBirth,
-                            role_in_church: roleInChurch,
-                            // church_name: churchName, // Manter se for um campo de texto em profiles
-                        },
-                    },
-                });
-
-                if (authError) {
-                    console.error('Erro de registo no Supabase Auth:', authError);
-                    onShowModal(`Erro ao registar: ${authError.message}`, 'error');
-                } else if (authData.user) {
-                    // Se a criação automática de perfil via trigger/webhook não funcionar, descomente este bloco:
-                    // const { error: profileError } = await supabase
-                    //     .from('profiles')
-                    //     .insert([
-                    //         {
-                    //             id: authData.user.id,
-                    //             full_name: fullName,
-                    //             phone_number: phoneNumber,
-                    //             date_of_birth: dateOfBirth,
-                    //             role_in_church: roleInChurch,
-                    //             // church_name: churchName, // Se 'church_name' não for uma FK, pode ser salvo aqui
-                    //         }
-                    //     ]);
-                    // if (profileError) {
-                    //     console.error('Erro ao criar perfil:', profileError);
-                    //     onShowModal(`Registo de utilizador OK, mas erro ao criar perfil: ${profileError.message}. Por favor, tente novamente.`, 'error');
-                    // } else {
-                        onShowModal('Registo bem-sucedido! Por favor, verifique o seu e-mail para confirmar a conta e depois faça login.', 'success');
-                        // Limpa o formulário
-                        setFullName('');
-                        setDateOfBirth('');
-                        setPhoneNumber('');
-                        setRoleInChurch('');
-                        setChurchName('');
-                        setRegisterEmail('');
-                        setRegisterPassword('');
-                        setConfirmPassword('');
-                        onSwitchToLogin(); // Volta para a tela de login
-                    // }
-                } else {
-                    onShowModal('Registo falhou. Por favor, tente novamente.', 'error');
-                }
-            } catch (error) {
-                console.error('Erro inesperado ao tentar registar:', error);
-                onShowModal('Ocorreu um erro inesperado ao registar.', 'error');
-            } finally {
-                setIsLoading(false);
-            }
-          };
-
-          return ( // Corrigido: Removido o "<" extra aqui
-            <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md mx-auto transform transition-all duration-300 hover:scale-105">
-              <div className="text-center mb-8">
-                <h1 className="text-4xl font-extrabold text-gray-800 mb-2 font-inter">Conexão Eclesia</h1>
-                <p className="text-gray-600 text-lg">Crie a sua conta</p>
-              </div>
-
-              <form onSubmit={handleRegister}>
-                <div className="mb-6">
-                  <label htmlFor="fullName" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
-                    Nome Completo
-                  </label>
-                  <input
-                    type="text"
-                    id="fullName"
-                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
-                    placeholder="O seu nome completo"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    required
-                    aria-label="Insira o seu nome completo"
-                    disabled={isLoading}
-                  />
-                </div>
-
-                <div className="mb-6">
-                  <label htmlFor="dateOfBirth" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
-                    Data de Nascimento
-                  </label>
-                  <input
-                    type="date"
-                    id="dateOfBirth"
-                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
-                    value={dateOfBirth}
-                    onChange={(e) => setDateOfBirth(e.target.value)}
-                    required
-                    aria-label="Insira a sua data de nascimento"
-                    disabled={isLoading}
-                  />
-                </div>
-
-                <div className="mb-6">
-                  <label htmlFor="phoneNumber" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
-                    Número de Telefone
-                  </label>
-                  <input
-                    type="tel"
-                    id="phoneNumber"
-                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
-                    placeholder="(XX) XXXX-XXXX"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    required
-                    aria-label="Insira o seu número de telefone"
-                    disabled={isLoading}
-                  />
-                </div>
-
-                <div className="mb-6">
-                  <label htmlFor="roleInChurch" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
-                    Cargo/Função na Igreja (Opcional)
-                  </label>
-                  <input
-                    type="text"
-                    id="roleInChurch"
-                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
-                    placeholder="Ex: Pastor, Membro, Voluntário"
-                    value={roleInChurch}
-                    onChange={(e) => setRoleInChurch(e.target.value)}
-                    aria-label="Insira o seu cargo ou função na igreja"
-                    disabled={isLoading}
-                  />
-                </div>
-
-                <div className="mb-6">
-                  <label htmlFor="churchName" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
-                    Nome da Igreja/Comunidade (Opcional)
-                  </label>
-                  <input
-                    type="text"
-                    id="churchName"
-                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
-                    placeholder="Nome da sua igreja"
-                    value={churchName}
-                    onChange={(e) => setChurchName(e.target.value)}
-                    aria-label="Insira o nome da sua igreja ou comunidade"
-                    disabled={isLoading}
-                  />
-                </div>
-
-                <div className="mb-6">
-                  <label htmlFor="registerEmail" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    id="registerEmail"
-                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
-                    placeholder="O seu email@exemplo.com"
-                    value={registerEmail}
-                    onChange={(e) => setRegisterEmail(e.target.value)}
-                    required
-                    aria-label="Insira o seu endereço de email para registo"
-                    disabled={isLoading}
-                  />
-                </div>
-
-                <div className="mb-6">
-                  <label htmlFor="registerPassword" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
-                    Palavra-passe
-                  </label>
-                  <input
-                    type="password"
-                    id="registerPassword"
-                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
-                    placeholder="••••••••"
-                    value={registerPassword}
-                    onChange={(e) => setRegisterPassword(e.target.value)}
-                    required
-                    aria-label="Insira a sua palavra-passe de registo"
-                    disabled={isLoading}
-                  />
-                </div>
-
-                <div className="mb-8">
-                  <label htmlFor="confirmPassword" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
-                    Confirmar Palavra-passe
-                  </label>
-                  <input
-                    type="password"
-                    id="confirmPassword"
-                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
-                    placeholder="••••••••"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                    aria-label="Confirme a sua palavra-passe de registo"
-                    disabled={isLoading}
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 transform hover:scale-100 active:scale-95 shadow-md font-inter"
-                  aria-label="Finalizar registo da conta"
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'A registar...' : 'Registar'}
-                </button>
-              </form>
-
-              <div className="mt-8 text-center">
-                <p className="text-gray-600 font-inter">
-                  Já tem uma conta?{' '}
-                  <a href="#" onClick={onSwitchToLogin} className="font-bold text-blue-600 hover:text-blue-800 font-inter"
-                     aria-label="Clique para fazer login na sua conta existente"
-                  >
-                    Fazer login
-                  </a>
-                </p>
-              </div>
-            </div>
-          );
-        }
-
-        // Função utilitária para buscar igrejas e tentar corrigir erro de coluna automaticamente (mantida)
-        async function fetchChurchesWithAutoFix(supabase, onShowMessage) {
-          let { data: churches, error } = await supabase
-            .from('churches')
-            .select('*');
-
-          // Se houver erro de coluna, tenta buscar com nomes alternativos e corrige
-          if (error && error.message && error.message.includes('column')) {
-            // Tenta buscar com nomes em português (caso o banco não tenha sido migrado)
-            let { data: churchesPT, error: errorPT } = await supabase
-              .from('churches')
-              .select('nome, email, cidade');
-            if (!errorPT && churchesPT) {
-              // Corrige os dados para o padrão em inglês
-              churches = churchesPT.map(c => ({
-                name: c.nome,
-                email: c.email,
-                city: c.cidade
-              }));
-              onShowMessage('Atenção: O banco ainda está com colunas em português. Considere migrar para name/email/city.', 'error');
-              error = null;
-            }
-          }
-          return { churches, error };
-        }
-
-        // Componente principal do aplicativo React que gerencia as visualizações e o modal
-        function App() {
-          const [currentView, setCurrentView] = React.useState('login');
-          const [isModalOpen, setIsModalOpen] = React.useState(false);
-          const [modalMessage, setModalMessage] = React.useState('');
-          const [modalType, setModalType] = React.useState('info');
-
-          // Inicializa a instância do Supabase globalmente se ainda não foi inicializada
-          const [supabase, setSupabase] = React.useState(() => window.globalSupabaseClient || null);
-
-          React.useEffect(() => {
-            if (!supabase) {
-              // Tenta aguardar o carregamento do Supabase por até 1 segundo
-              let tries = 0;
-              const interval = setInterval(() => {
-                if (window.globalSupabaseClient) {
-                  setSupabase(window.globalSupabaseClient);
-                  clearInterval(interval);
-                } else if (tries > 10) { // Tenta por 1 segundo (10 * 100ms)
-                  clearInterval(interval);
-                  // Opcional: mostrar um erro grave se o Supabase não carregar
-                  console.error("Supabase client não carregou após 1 segundo. Verifique 'supabaseClientInstance.js'.");
-                  showModal("Erro crítico: O sistema não pôde se conectar. Por favor, recarregue a página.", "error");
-                }
-                tries++;
-              }, 100);
-              return () => clearInterval(interval);
-            }
-          }, [supabase]);
-
-          React.useEffect(() => {
-            if (!supabase) return; // Garante que o supabase esteja inicializado antes de verificar a sessão
-            const checkUserSession = async () => {
+            // Adicionar listener ao botão de logout
+            document.getElementById('logout-btn').addEventListener('click', async () => {
                 try {
-                    const { data: { session } = {} } = await supabase.auth.getSession();
-                    if (session) {
-                        window.location.href = 'conexao-eclesia-feed.html'; // Redireciona se já logado
-                    }
+                    await window.globalFirebaseAuth.signOut();
+                    displayMessage("Sessão terminada com sucesso!", "success");
+                    // onAuthStateChanged irá redirecionar para auth.html
                 } catch (error) {
-                    console.error('Erro ao verificar sessão inicial:', error);
-                    // Não é crítico aqui, pois estamos na tela de login/registro
+                    console.error("Erro ao terminar a sessão:", error);
+                    displayMessage("Erro ao terminar a sessão: " + error.message, "error");
                 }
-            };
-            checkUserSession();
-
-            // Adiciona listener para mudanças de estado de autenticação (ex: login bem-sucedido)
-            const { data: authListener } = supabase.auth.onAuthStateChange(
-                (event, session) => {
-                    if (event === 'SIGNED_IN' && session) {
-                        handleLoginSuccess(); // Redireciona ao fazer login com sucesso
-                    }
-                    // Outros eventos (SIGNED_OUT, USER_UPDATED) podem ser tratados aqui, se necessário
-                }
-            );
-            return () => {
-                if (authListener && authListener.unsubscribe) {
-                    authListener.unsubscribe();
-                }
-            };
-          }, [supabase]); // Dependência em 'supabase' para garantir que o listener seja configurado após a inicialização
-
-          const showModal = (message, type) => {
-            setModalMessage(message);
-            setModalType(type);
-            setIsModalOpen(true);
-          };
-
-          const closeModal = () => {
-            setIsModalOpen(false);
-            setModalMessage('');
-            setModalType('info');
-          };
-
-          const handleLoginSuccess = () => {
-            window.location.href = 'conexao-eclesia-feed.html';
-          };
-
-          const renderView = () => {
-            if (!supabase) {
-              return (
-                <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
-                  <div className="text-white text-2xl font-bold font-inter text-center">Carregando dependências...<br/>Se demorar, recarregue a página.<br/>Se persistir, verifique o arquivo <code className="bg-gray-800 p-1 rounded">supabaseClientInstance.js</code>.</div>
-                </div>
-              );
-            }
-            switch (currentView) {
-              case 'login':
-                return <LoginScreen onSwitchToRegister={() => setCurrentView('register')} onShowModal={showModal} onLoginSuccess={handleLoginSuccess} supabase={supabase} />;
-              case 'register':
-                // Passa 'supabase' diretamente para o RegisterScreen
-                return <RegisterScreen onSwitchToLogin={() => setCurrentView('login')} onShowModal={showModal} supabase={supabase} />;
-              default:
-                return <LoginScreen onSwitchToRegister={() => setCurrentView('register')} onShowModal={showModal} onLoginSuccess={handleLoginSuccess} supabase={supabase} />;
-            }
-          };
-
-          return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center p-4">
-              <div className="w-full max-w-md">
-                {renderView()}
-                <Modal isOpen={isModalOpen} message={modalMessage} type={modalType} onClose={closeModal} />
-              </div>
-            </div>
-          );
+            });
         }
 
-        // Renderiza o componente App no elemento root
-        const rootElement = document.getElementById('root');
-        ReactDOM.render(<App />, rootElement);
+        // Inicia a aplicação quando o DOM estiver completamente carregado
+        document.addEventListener('DOMContentLoaded', initApp);
     </script>
-    <div id="ano-footer" class="mt-8 text-center text-white text-sm opacity-80 font-inter py-4"></div>
-    <script>
-      // Este bloco de script pode ser removido ou otimizado se o supabaseClientInstance.js já lida com tudo.
-      // Mantido apenas a parte do rodapé para evitar duplicação em outros lugares.
-      window.addEventListener('DOMContentLoaded', function() {
-        var anoFooter = document.getElementById('ano-footer');
-        if (anoFooter) anoFooter.textContent = `© ${new Date().getFullYear()} CPN Serviços. Todos os direitos reservados. v1.2025.07.1`;
-      });
-    </script>
-  </body>
+</body>
 </html>
