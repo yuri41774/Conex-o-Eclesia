@@ -1,35 +1,37 @@
 // firebaseClientInstance.js
 
-// Importa as funções necessárias do Firebase SDK via CDN
+// Importa as funções necessárias do Firebase SDK
+// Adicionado getAuth
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-// Se for usar Firestore (base de dados em tempo real do Firebase), descomente:
-// import { getFirestore } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+// Se for usar Analytics, descomente e use a versão correta do SDK
+// import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
 
 // As suas credenciais de configuração do projeto Firebase.
 // SUBSTITUA PELOS SEUS DADOS REAIS DO FIREBASE!
 // Encontra-os em Project settings -> General -> Your apps -> Firebase SDK snippet -> Config
 const firebaseConfig = {
-  apiKey: "SUA_API_KEY_FIREBASE",
-  authDomain: "SEU_AUTH_DOMAIN_FIREBASE",
-  projectId: "SEU_PROJECT_ID_FIREBASE",
-  storageBucket: "SEU_STORAGE_BUCKET_FIREBASE",
-  messagingSenderId: "SEU_MESSAGING_SENDER_ID_FIREBASE",
-  appId: "SEU_APP_ID_FIREBASE"
+  apiKey: "AIzaSyBfFQ0wZIe1WY0Lw3L0Rlr97UrnnSydurM", // A SUA API KEY
+  authDomain: "conexao-eclesiastica.firebaseapp.com", // O SEU AUTH DOMAIN
+  projectId: "conexao-eclesiastica", // O SEU PROJECT ID
+  storageBucket: "conexao-eclesiastica.firebasestorage.app", // O SEU STORAGE BUCKET
+  messagingSenderId: "1009771043961", // O SEU MESSAGING SENDER ID
+  appId: "1:1009771043961:web:6a8d829618f0b0f8a508a8", // O SEU APP ID
+  measurementId: "G-W0701VYFK9" // O SEU MEASUREMENT ID (se usar Analytics)
 };
 
 // Inicializa a aplicação Firebase
 const firebaseApp = initializeApp(firebaseConfig);
-const firebaseAuth = getAuth(firebaseApp);
-// Se for usar Firestore, descomente:
-// const firebaseDb = getFirestore(firebaseApp);
+const firebaseAuth = getAuth(firebaseApp); // <--- CORREÇÃO: Obter a instância de Auth
+// Se for usar Analytics, descomente:
+// const firebaseAnalytics = getAnalytics(firebaseApp);
 
 // Expõe as instâncias globalmente para que os outros scripts e componentes possam aceder a elas
 if (typeof window !== 'undefined') {
   window.globalFirebaseApp = firebaseApp;
-  window.globalFirebaseAuth = firebaseAuth;
-  // Se for usar Firestore, descomente:
-  // window.globalFirebaseDb = firebaseDb;
+  window.globalFirebaseAuth = firebaseAuth; // <--- CORREÇÃO: Expor a instância de Auth
+  // Se for usar Analytics, descomente:
+  // window.globalFirebaseAnalytics = firebaseAnalytics;
   console.log("[Firebase] Cliente inicializado globalmente.");
 }
 
