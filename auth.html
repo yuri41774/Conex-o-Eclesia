@@ -3,36 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Conexão Eclesia - Autenticação</title>
+    <title>Conexão Eclesia - Feed</title>
     <!-- Incluindo Tailwind CSS para estilização (via CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Incluindo a fonte Inter do Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            text-size-adjust: none;
-            -webkit-text-size-adjust: none;
-            background: linear-gradient(135deg, #a7b7eb 0%, #b3c2f0 100%); /* Um azul claro suave */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
+      body {
+        font-family: 'Inter', sans-serif;
+        text-size-adjust: none;
+        -webkit-text-size-adjust: none;
+        background: linear-gradient(135deg, #ff9800 0%, #ffb347 100%); /* Cor de fundo consistente */
+      }
+      .sidebar-transition {
+        transition: width 0.3s ease-in-out, left 0.3s, box-shadow 0.3s, transform 0.3s ease-in-out;
+      }
+      .sidebar-collapsed .sidebar-item-text {
+        display: none;
+      }
+      .main-content-expanded {
+        flex-grow: 1;
+      }
+      .modern-shadow {
+        box-shadow: 0 4px 24px 0 rgba(255,152,0,0.10), 0 1.5px 4px 0 rgba(0,0,0,0.04);
+      }
+      .rounded-2xl {
+        border-radius: 1.25rem;
+      }
+      .btn-orange {
+        background: linear-gradient(90deg, #ff9800 0%, #fb8c00 100%);
+        color: #fff;
+        box-shadow: 0 2px 8px 0 rgba(255,152,0,0.10);
+      }
+      .btn-orange:hover, .btn-orange:focus {
+        background: linear-gradient(90deg, #fb8c00 0%, #ff9800 100%);
+      }
+      /* Responsividade Sidebar */
+      @media (max-width: 768px) {
+        aside.fixed {
+          position: fixed;
+          left: 0;
+          top: 0;
+          width: 100vw;
+          max-width: 100vw;
+          z-index: 40;
+          height: auto;
+          min-height: 0;
+          border-radius: 0 0 1.5rem 1.5rem;
         }
-        /* Responsividade para telas menores */
-        @media (max-width: 640px) {
-            #root > div {
-                padding: 0.5rem !important;
-                border-radius: 0.75rem !important;
-            }
-            .rounded-xl, .rounded-lg, .rounded-3xl, .rounded-2xl {
-                border-radius: 0.75rem !important;
-            }
-            .shadow-2xl, .shadow-xl, .shadow-md {
-                box-shadow: 0 2px 8px 0 rgba(37,99,235,0.10), 0 1.5px 4px 0 rgba(0,0,0,0.04) !important;
-            }
+        .rounded-2xl {
+          border-radius: 0.75rem !important;
         }
+        .modern-shadow {
+          box-shadow: 0 2px 8px 0 rgba(255,152,0,0.10), 0 1.5px 4px 0 rgba(0,0,0,0.04) !important;
+        }
+        .max-w-2xl {
+          max-width: 100vw !important;
+        }
+        .p-6 {
+          padding: 1rem !important;
+        }
+        .main-content {
+          padding-top: 5rem; /* Espaço para o botão hambúrguer fixo */
+        }
+      }
+      /* Melhorias visuais para posts */
+      .post-card {
+        transition: box-shadow 0.2s, transform 0.2s;
+      }
+      .post-card:hover {
+        box-shadow: 0 8px 32px 0 rgba(255,152,0,0.18), 0 3px 8px 0 rgba(0,0,0,0.08);
+        transform: translateY(-2px) scale(1.01);
+      }
+      .post-title {
+        letter-spacing: -0.5px;
+      }
+      .post-content {
+        font-size: 1.08rem;
+        line-height: 1.7;
+      }
     </style>
 </head>
 <body>
@@ -49,6 +98,23 @@
     <script type="module" src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
     <!-- Carrega o script de inicialização do Firebase. ESSENCIAL! -->
     <script type="module" src="firebaseClientInstance.js"></script>
+
+    <!-- NOVO: Importa as funções modulares específicas do Firebase Auth e as expõe globalmente -->
+    <script type="module">
+        import { 
+            signInWithEmailAndPassword, 
+            createUserWithEmailAndPassword, 
+            sendPasswordResetEmail,
+            signOut // Adicionado signOut aqui para consistência
+        } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+        
+        if (typeof window !== 'undefined') {
+            window.firebaseSignInWithEmailAndPassword = signInWithEmailAndPassword;
+            window.firebaseCreateUserWithEmailAndPassword = createUserWithEmailAndPassword;
+            window.firebaseSendPasswordResetEmail = sendPasswordResetEmail;
+            window.firebaseSignOut = signOut; // Expor signOut também
+        }
+    </script>
 
     <!-- Importa o SDK do Supabase Client (para base de dados e armazenamento) -->
     <script type="module" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"></script>
@@ -127,719 +193,688 @@
           );
         }
 
-        // Modal para registo de igreja (agora com Supabase)
-        // WCAG: Adicionado role="dialog", aria-modal="true" e aria-labelledby.
-        // WCAG: Adicionado controlo da tecla ESC para fechar.
-        function ChurchRegisterModal({ isOpen, onClose, onShowMessage, onSwitchToRegister, supabase }) {
-          // Hooks chamados incondicionalmente no topo do componente
-          const [churchName, setChurchName] = React.useState('');
-          const [churchEmail, setChurchEmail] = React.useState('');
-          const [churchCity, setChurchCity] = React.useState('');
-          const [isLoading, setIsLoading] = React.useState(false);
-          const modalRef = React.useRef(null);
-          const modalTitleId = React.useId();
+        // Componente CreatePostModal: Formulário para criar novas publicações
+        function CreatePostModal({ isOpen, onClose, onSavePost, onShowMessage, supabase, currentFirebaseUser }) {
+          const [title, setTitle] = React.useState('');
+          const [content, setContent] = React.useState('');
+          const [image, setImage] = React.useState(''); // URL da imagem (se for inserida manualmente)
+          const [imageFile, setImageFile] = React.useState(null); // Ficheiro de imagem selecionado
+          const [isLoading, setIsLoading] = React.useState(false); // Estado de carregamento para o formulário
 
-          React.useEffect(() => {
-            if (isOpen) {
-              modalRef.current?.focus();
-              const handleKeyDown = (event) => {
-                if (event.key === 'Escape') {
-                  onClose();
-                }
-              };
-              document.addEventListener('keydown', handleKeyDown);
-              return () => document.removeEventListener('keydown', handleKeyDown);
-            }
-          }, [isOpen, onClose]);
-
-          const handleChurchRegister = async (e) => {
-            e.preventDefault();
-            if (!churchName || !churchEmail || !churchCity) {
-              onShowMessage('Preencha todos os campos para registar a igreja.', 'error');
-              return;
-            }
-            setIsLoading(true);
+          // Função para fazer upload da imagem para o Supabase Storage
+          const handleImageUpload = async (file) => {
+            if (!file) return null;
             try {
-              if (!supabase) {
-                onShowMessage('Serviço de base de dados não disponível. Recarregue a página.', 'error');
-                setIsLoading(false);
-                return;
-              }
-              const { error } = await supabase.from('churches').insert([
-                { name: churchName, email: churchEmail, city: churchCity }
-              ]);
+              const fileExt = file.name.split('.').pop(); // Pega a extensão do ficheiro
+              // Gera um nome de ficheiro único para evitar colisões
+              const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+              
+              // Faz o upload do ficheiro para o bucket 'post-images' no Supabase Storage
+              const { data, error } = await supabase.storage.from('post-images').upload(fileName, file, {
+                cacheControl: '3600', // Cache por 1 hora
+                upsert: false // Não sobrescreve se o ficheiro já existir
+              });
+
               if (error) {
-                console.error('Erro ao registar igreja no Supabase:', error);
-                onShowMessage(`Erro ao registar igreja: ${error.message || 'Erro desconhecido'}.`, 'error');
-              } else {
-                onShowMessage('Igreja registada com sucesso! Agora crie uma conta de utilizador para ser o administrador desta igreja.', 'success');
-                setChurchName('');
-                setChurchEmail('');
-                setChurchCity('');
-                onClose();
-                if (onSwitchToRegister) {
-                    onSwitchToRegister();
-                }
+                onShowMessage('Erro ao fazer upload da imagem: ' + error.message, 'error');
+                return null;
               }
+              
+              // Obtém a URL pública do ficheiro recém-carregado
+              const { data: publicUrlData } = supabase.storage.from('post-images').getPublicUrl(fileName);
+              return publicUrlData.publicUrl;
             } catch (err) {
-              console.error("Erro inesperado ao registar igreja:", err);
-              onShowMessage('Ocorreu um erro inesperado ao registar igreja. Verifique a sua ligação.', 'error');
-            } finally {
-              setIsLoading(false);
+              onShowMessage('Erro inesperado ao fazer upload da imagem.', 'error');
+              return null;
             }
           };
 
-          if (!isOpen) return null;
+          // Lida com o envio do formulário de criação de post
+          const handleSubmit = async (e) => {
+            e.preventDefault(); // Previne o comportamento padrão de recarregar a página
+            if (!title || !content) {
+              onShowMessage('Título e Conteúdo são obrigatórios.', 'error');
+              return;
+            }
+            setIsLoading(true); // Ativa o estado de carregamento
+
+            let imageUrl = image; // Começa com a URL manual, se houver
+            if (imageFile) { // Se um ficheiro foi selecionado, faz o upload primeiro
+              imageUrl = await handleImageUpload(imageFile);
+              if (!imageUrl) { // Se o upload falhar, para a execução
+                setIsLoading(false);
+                return;
+              }
+            }
+
+            // Verifica se o utilizador Firebase está disponível
+            if (!currentFirebaseUser || !currentFirebaseUser.uid) {
+              onShowMessage('Precisa de estar autenticado para criar uma publicação.', 'error');
+              setIsLoading(false);
+              return;
+            }
+
+            try {
+              // Insere os dados da publicação na tabela 'posts' do Supabase
+              const { data, error } = await supabase
+                .from('posts')
+                .insert([
+                  {
+                    title,
+                    content,
+                    image_url: imageUrl || null, // Salva a URL da imagem (ou null se não houver)
+                    author_id: currentFirebaseUser.uid, // UID do utilizador Firebase como autor
+                    is_published: true // Define como publicado
+                  }
+                ])
+                .select(); // Retorna os dados da publicação inserida
+
+              if (error) {
+                console.error('Erro ao guardar no Supabase:', error);
+                onShowMessage(`Erro ao criar publicação: ${error.message}`, 'error');
+              } else {
+                onSavePost(data[0]); // Chama a função do pai para atualizar a lista de publicações
+                onShowMessage('Publicação criada com sucesso!', 'success');
+                // Limpa os campos do formulário e fecha o modal
+                setTitle('');
+                setContent('');
+                setImage('');
+                setImageFile(null);
+                onClose();
+              }
+            } catch (error) {
+              console.error('Erro inesperado:', error);
+              onShowMessage('Ocorreu um erro inesperado ao criar a publicação.', 'error');
+            } finally {
+              setIsLoading(false); // Desativa o estado de carregamento
+            }
+          };
+
+          // Lida com a seleção de ficheiro de imagem
+          const handleFileChange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+              setImageFile(file); // Armazena o ficheiro
+              setImage(''); // Limpa o campo de URL manual, pois um ficheiro foi selecionado
+            }
+          };
+
+          if (!isOpen) return null; // Não renderiza se o modal não estiver aberto
+
           return (
-            <div 
-              className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby={modalTitleId}
-              tabIndex="-1"
-              ref={modalRef}
-            >
-              <div className="bg-white rounded-lg shadow-xl max-w-sm w-full overflow-hidden">
-                <div className="bg-purple-700 text-white px-6 py-4 flex justify-between items-center rounded-t-lg">
-                  <h3 id={modalTitleId} className="text-xl font-bold font-inter">Registar Igreja</h3>
+            <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-lg shadow-xl overflow-hidden max-w-md w-full transform transition-all duration-300 scale-100">
+                <div className="bg-orange-500 text-white px-6 py-4 flex justify-between items-center rounded-t-lg">
+                  <h3 className="text-xl font-bold font-inter">Criar Nova Publicação</h3>
                   <button
                     onClick={onClose}
                     className="text-white hover:text-gray-200 focus:outline-none text-2xl font-bold"
-                    aria-label="Fechar modal de registo de igreja"
+                    aria-label="Fechar modal de criação de publicação"
                     disabled={isLoading}
                   >
                     &times;
                   </button>
                 </div>
-                <form className="p-6" onSubmit={handleChurchRegister}>
-                  <div className="mb-4">
-                    <label htmlFor="churchName" className="block text-sm font-medium text-gray-700">Nome da Igreja</label>
-                    <input
-                      type="text"
-                      id="churchName"
-                      className="shadow-sm border rounded-lg w-full py-3 px-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 font-inter bg-gray-100"
-                      placeholder="Nome completo da igreja"
-                      value={churchName}
-                      onChange={e => setChurchName(e.target.value)}
-                      required
-                      aria-label="Nome da igreja"
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <div className="mb-4">
-                    <label htmlFor="churchEmail" className="block text-sm font-medium text-gray-700">Email da Igreja</label>
-                    <input
-                      type="email"
-                      id="churchEmail"
-                      className="shadow-sm border rounded-lg w-full py-3 px-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 font-inter bg-gray-100"
-                      placeholder="contacto@igreja.com"
-                      value={churchEmail}
-                      onChange={e => setChurchEmail(e.target.value)}
-                      required
-                      aria-label="Email da igreja"
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <div className="mb-6">
-                    <label htmlFor="churchCity" className="block text-sm font-medium text-gray-700">Cidade</label>
-                    <input
-                      type="text"
-                      id="churchCity"
-                      className="shadow-sm border rounded-lg w-full py-3 px-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 font-inter bg-gray-100"
-                      placeholder="Cidade da igreja"
-                      value={churchCity}
-                      onChange={e => setChurchCity(e.target.value)}
-                      required
-                      aria-label="Cidade da igreja"
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <div className="flex justify-end">
-                    <button
-                      type="submit"
-                      className="py-2 px-6 rounded-lg font-bold text-white bg-purple-700 hover:bg-purple-800 transition duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-75 font-inter"
-                      aria-label="Registar igreja agora"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? 'A registar...' : 'Registar'}
-                    </button>
-                  </div>
-                </form>
+                <div className="p-6">
+                  <form onSubmit={handleSubmit}>
+                    <div className="mb-4">
+                      <label htmlFor="postTitle" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Título</label>
+                      <input
+                        type="text"
+                        id="postTitle"
+                        className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition duration-200 font-inter"
+                        placeholder="Título da sua publicação"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        required
+                        aria-label="Campo para o título da publicação"
+                        disabled={isLoading}
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <label htmlFor="postContent" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Conteúdo</label>
+                      <textarea
+                        id="postContent"
+                        className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition duration-200 font-inter h-32 resize-none"
+                        placeholder="Escreva o conteúdo da sua publicação aqui..."
+                        value={content}
+                        onChange={(e) => setContent(e.target.value)}
+                        required
+                        aria-label="Campo para o conteúdo da publicação"
+                        disabled={isLoading}
+                      ></textarea>
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Foto da Publicação</label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+                        onChange={handleFileChange}
+                        disabled={isLoading}
+                        aria-label="Selecione uma imagem para a publicação"
+                      />
+                      {imageFile && (
+                        <div className="mt-2 flex items-center space-x-2">
+                          <img src={URL.createObjectURL(imageFile)} alt="Pré-visualização" className="w-20 h-20 object-cover rounded-lg border border-orange-200" />
+                          <span className="text-xs text-gray-500">Pré-visualização</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="mb-6">
+                      <label htmlFor="postImage" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">URL da Imagem (Opcional)</label>
+                      <input
+                        type="url"
+                        id="postImage"
+                        className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition duration-200 font-inter"
+                        placeholder="https://exemplo.com/imagem.jpg"
+                        value={image}
+                        onChange={(e) => { setImage(e.target.value); setImageFile(null); }}
+                        aria-label="Campo para a URL da imagem da publicação"
+                        disabled={isLoading}
+                      />
+                    </div>
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={onClose}
+                        className="mr-4 py-2 px-6 rounded-lg font-bold text-gray-700 bg-gray-200 hover:bg-gray-300 transition duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75 font-inter"
+                        aria-label="Cancelar criação da publicação"
+                        disabled={isLoading}
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="submit"
+                        className="py-2 px-6 rounded-lg font-bold text-white btn-orange transition duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-opacity-75 font-inter"
+                        aria-label="Guardar nova publicação"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? 'A publicar...' : 'Publicar'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
               </div>
             </div>
           );
         }
 
-        // Componente LoginScreen: Formulário para iniciar sessão (agora com Firebase)
-        function LoginScreen({ onSwitchToRegister, onShowModal, onLoginSuccess, firebaseAuth, supabase }) {
-          const [email, setEmail] = React.useState('');
-          const [password, setPassword] = React.useState('');
-          const [isLoading, setIsLoading] = React.useState(false);
-          const [isChurchModalOpen, setIsChurchModalOpen] = React.useState(false);
-          const [showForgotModal, setShowForgotModal] = React.useState(false);
-
-          const handleLogin = async (e) => {
-            e.preventDefault();
-            setIsLoading(true);
-
-            if (!firebaseAuth) {
-                onShowModal('Serviço de autenticação não disponível. Recarregue a página.', 'error');
-                setIsLoading(false);
-                return;
-            }
-
-            try {
-                // Iniciar sessão com email e palavra-passe via Firebase Auth
-                const userCredential = await firebaseAuth.signInWithEmailAndPassword(email, password);
-                const user = userCredential.user; // O objeto de utilizador do Firebase
-
-                if (user) {
-                    onShowModal('Sessão iniciada com sucesso!', 'success');
-                    onLoginSuccess(user); // Passa o utilizador Firebase para o sucesso
-                } else {
-                    // Esta parte geralmente não é alcançada com signInWithEmailAndPassword, pois erros são lançados
-                    onShowModal('Credenciais inválidas. Tente novamente.', 'error');
-                }
-            } catch (error) {
-                console.error('Erro de início de sessão Firebase:', error);
-                let errorMessage = 'Ocorreu um erro inesperado ao iniciar sessão.';
-                // Mensagens de erro específicas do Firebase
-                if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-                    errorMessage = 'Email ou palavra-passe inválidos.';
-                } else if (error.code === 'auth/invalid-email') {
-                    errorMessage = 'Formato de email inválido.';
-                } else if (error.code === 'auth/user-disabled') {
-                    errorMessage = 'A sua conta foi desativada.';
-                } else if (error.code === 'auth/too-many-requests') {
-                    errorMessage = 'Demasiadas tentativas de início de sessão. Tente novamente mais tarde.';
-                }
-                onShowModal(`Erro: ${errorMessage}`, 'error');
-            } finally {
-                setIsLoading(false);
-            }
-          };
+        // Componente AdComponent: Exibe um bloco de anúncio
+        function AdComponent({ adData }) {
+          if (!adData) return null; // Não renderiza se não houver dados de anúncio
 
           return (
-            <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md mx-auto transform transition-all duration-300 hover:scale-105">
-              <div className="text-center mb-8">
-                <h1 className="text-4xl font-extrabold text-gray-800 mb-2 font-inter">Conexão Eclesia</h1>
-                <p className="text-gray-600 text-lg">Inicie sessão para continuar</p>
-              </div>
-
-              <form onSubmit={handleLogin}>
-                <div className="mb-6">
-                  <label htmlFor="loginEmail" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
-                    Email
-                  </label>
-                  <input
-                    type="email" 
-                    id="loginEmail"
-                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
-                    placeholder="o seu email@exemplo.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    aria-label="Insira o seu email"
-                    disabled={isLoading}
+            <div className="bg-white p-6 rounded-2xl modern-shadow border border-blue-100 flex flex-col items-center text-center my-6">
+              <h3 className="text-xl font-bold text-blue-700 mb-4 font-inter">Anúncio</h3>
+              {adData.imageUrl && (
+                <a href={adData.linkUrl} target="_blank" rel="noopener noreferrer">
+                  <img
+                    src={adData.imageUrl}
+                    alt={adData.altText || "Anúncio"}
+                    className="w-full h-48 object-contain rounded-xl mb-4 border border-blue-200 shadow-sm cursor-pointer"
+                    onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/400x200/ADD8E6/000000?text=Ad+Loading+Error'; }}
+                    title="Clique para saber mais"
                   />
-                </div>
-
-                <div className="mb-8">
-                  <label htmlFor="loginPassword" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
-                    Palavra-passe
-                  </label>
-                  <input
-                    type="password"
-                    id="loginPassword"
-                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 mb-3 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    aria-label="Insira a sua palavra-passe"
-                    disabled={isLoading}
-                  />
-                  <a href="#" onClick={e => { e.preventDefault(); setShowForgotModal(true); }}
-                     className="inline-block align-baseline font-bold text-sm text-blue-600 hover:text-blue-800 font-inter"
-                     aria-label="Clique para recuperar a sua palavra-passe"
-                     role="button" 
-                  >
-                    Esqueceu a sua palavra-passe?
-                  </a>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 transform hover:scale-100 active:scale-95 shadow-md font-inter"
-                  aria-label="Iniciar sessão na sua conta"
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'A iniciar sessão...' : 'Iniciar sessão'}
-                </button>
-              </form>
-
-              <div className="mt-8 text-center">
-                <p className="text-gray-600 font-inter">
-                  Não tem uma conta?{' '}
-                  <a href="#" onClick={onSwitchToRegister} className="font-bold text-blue-600 hover:text-blue-800 font-inter"
-                     aria-label="Clique para criar uma nova conta agora"
-                     role="button" 
-                  >
-                    Crie uma agora!
-                  </a>
-                </p>
-                <p className="text-gray-600 font-inter mt-4">
-                  É uma igreja?{' '}
-                  <button
-                    type="button"
-                    onClick={() => setIsChurchModalOpen(true)}
-                    className="font-bold text-purple-600 hover:text-purple-800 font-inter underline focus:outline-none"
-                    aria-label="Clique para registar a sua igreja"
-                  >
-                    Registe a sua Igreja!
-                  </button>
-                </p>
-              </div>
-              <ChurchRegisterModal
-                isOpen={isChurchModalOpen}
-                onClose={() => setIsChurchModalOpen(false)}
-                onShowMessage={onShowModal}
-                onSwitchToRegister={onSwitchToRegister} 
-                supabase={supabase} /* Passa o cliente Supabase para o modal da igreja */
-              />
-              <ForgotPasswordModal isOpen={showForgotModal} onClose={() => setShowForgotModal(false)} onShowMessage={onShowModal} firebaseAuth={firebaseAuth} />
+                </a>
+              )}
+              <p className="text-gray-700 font-inter mb-2">{adData.altText || "Este é um espaço de anúncio."}</p>
+              {adData.advertiserName && (
+                <span className="text-sm text-gray-500">Por: {adData.advertiserName}</span>
+              )}
             </div>
           );
         }
 
-        // Modal para recuperação de palavra-passe (agora com Firebase)
-        // WCAG: Adicionado role="dialog", aria-modal="true" e aria-labelledby.
-        // WCAG: Adicionado controlo da tecla ESC para fechar.
-        function ForgotPasswordModal({ isOpen, onClose, onShowMessage, firebaseAuth }) {
-          // Hooks chamados incondicionalmente no topo do componente
-          const [email, setEmail] = React.useState('');
-          const [isLoading, setIsLoading] = React.useState(false);
-          const modalRef = React.useRef(null);
-          const modalTitleId = React.useId();
+        // Componente PostCard: Exibe uma publicação individual e gere as curtidas
+        function PostCard({ post, currentUserId, onToggleLike, onShowMessage }) {
+            // Estados locais para a curtida da publicação
+            const [isLiked, setIsLiked] = React.useState(post.isLikedByCurrentUser);
+            const [likesCount, setLikesCount] = React.useState(post.likesCount);
+            const [isLiking, setIsLiking] = React.useState(false); // Para desabilitar o botão enquanto a requisição está em andamento
 
-          React.useEffect(() => {
-            if (isOpen) {
-              modalRef.current?.focus();
-              const handleKeyDown = (event) => {
-                if (event.key === 'Escape') {
-                  onClose();
-                }
-              };
-              document.addEventListener('keydown', handleKeyDown);
-              return () => document.removeEventListener('keydown', handleKeyDown);
-            }
-          }, [isOpen, onClose]);
+            // Efeito para atualizar os estados locais se as props da publicação mudarem (ex: após uma nova curtida/descurtida global)
+            React.useEffect(() => {
+                setIsLiked(post.isLikedByCurrentUser);
+                setLikesCount(post.likesCount);
+            }, [post.isLikedByCurrentUser, post.likesCount]);
 
-          const handleReset = async (e) => {
-            e.preventDefault();
-            setIsLoading(true);
+            // Lida com o clique no botão de curtir/descurtir
+            const handleLikeClick = async () => {
+                if (isLiking) return; // Evita múltiplos cliques
+                setIsLiking(true); // Ativa o estado de "a curtir"
 
-            if (!firebaseAuth) {
-                onShowMessage('Serviço de autenticação não disponível. Recarregue a página.', 'error');
-                setIsLoading(false);
-                return;
-            }
+                const previousIsLiked = isLiked;
+                const previousLikesCount = likesCount;
 
-            try {
-              // Envia email de redefinição de palavra-passe via Firebase Auth
-              await firebaseAuth.sendPasswordResetEmail(email);
-              onShowMessage('Se o email estiver registado, receberá instruções para redefinir a palavra-passe.', 'success');
-              onClose();
-            } catch (error) {
-              console.error('Erro ao solicitar redefinição Firebase:', error);
-              let errorMessage = 'Ocorreu um erro inesperado ao solicitar a redefinição.';
-              if (error.code === 'auth/user-not-found') {
-                  errorMessage = 'Utilizador não encontrado com este email.';
-              } else if (error.code === 'auth/invalid-email') {
-                  errorMessage = 'Formato de email inválido.';
-              } else if (error.code === 'auth/too-many-requests') {
-                  errorMessage = 'Demasiadas tentativas de redefinição. Tente novamente mais tarde.';
-              }
-              onShowMessage(`Erro: ${errorMessage}`, 'error');
-            } finally {
-              setIsLoading(false);
-            }
-          };
+                // Otimização de UI: atualiza a interface imediatamente para uma resposta rápida
+                setIsLiked(!previousIsLiked);
+                setLikesCount(previousIsLiked ? previousLikesCount - 1 : previousLikesCount + 1);
 
-          if (!isOpen) return null;
-          return (
-            <div 
-              className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby={modalTitleId}
-              tabIndex="-1"
-              ref={modalRef}
-            >
-              <div className="bg-white rounded-lg shadow-xl max-w-sm w-full">
-                <div className="bg-blue-600 text-white px-6 py-4 flex justify-between items-center rounded-t-lg">
-                  <h3 id={modalTitleId} className="text-xl font-bold font-inter">Recuperar Palavra-passe</h3>
-                  <button onClick={onClose} className="text-white hover:text-gray-200 focus:outline-none text-2xl font-bold" aria-label="Fechar modal de recuperação" disabled={isLoading}>&times;</button>
-                </div>
-                <form className="p-6" onSubmit={handleReset}>
-                  <label htmlFor="forgotEmail" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Email registado</label>
-                  <input
-                    type="email"
-                    id="forgotEmail"
-                    className="shadow-sm border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 font-inter bg-gray-100 mb-6"
-                    placeholder="o seu email@exemplo.com"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    required
-                    aria-label="Digite o seu email registado"
-                    disabled={isLoading}
-                  />
-                  <div className="flex justify-end">
-                    <button type="submit" className="py-2 px-6 rounded-lg font-bold text-white bg-blue-600 hover:bg-blue-700 transition duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-inter" aria-label="Solicitar redefinição de palavra-passe" disabled={isLoading}>
-                      {isLoading ? 'A enviar...' : 'Enviar link de redefinição'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          );
-        }
-
-        // Componente RegisterScreen: Formulário para registo de novo utilizador (agora com Firebase e Supabase)
-        function RegisterScreen({ onSwitchToLogin, onShowModal, onLoginSuccess, firebaseAuth, supabase }) {
-          const [fullName, setFullName] = React.useState('');
-          const [dateOfBirth, setDateOfBirth] = React.useState('');
-          const [phoneNumber, setPhoneNumber] = React.useState('');
-          const [roleInChurch, setRoleInChurch] = React.useState('');
-          const [churchName, setChurchName] = React.useState('');
-          const [registerEmail, setRegisterEmail] = React.useState('');
-          const [registerPassword, setRegisterPassword] = React.useState('');
-          const [confirmPassword, setConfirmPassword] = React.useState('');
-          const [isLoading, setIsLoading] = React.useState(false);
-          const [passwordAnalysis, setPasswordAnalysis] = React.useState(''); // Estado para a análise da palavra-passe
-
-          const handleRegister = async (e) => {
-            e.preventDefault();
-
-            if (registerPassword !== confirmPassword) {
-              onShowModal('As palavras-passe não coincidem. Por favor, verifique.', 'error');
-              return;
-            }
-            setIsLoading(true);
-
-            if (!firebaseAuth || !supabase) {
-                onShowModal('Serviços de autenticação ou base de dados não disponíveis. Recarregue a página.', 'error');
-                setIsLoading(false);
-                return;
-            }
-
-            try {
-                // 1. Criar utilizador no Firebase Auth
-                const userCredential = await firebaseAuth.createUserWithEmailAndPassword(registerEmail, registerPassword);
-                const user = userCredential.user; // O objeto de utilizador do Firebase
-
-                // 2. Atualizar perfil Firebase (opcional, para displayName e photoURL)
                 try {
-                    await user.updateProfile({
-                        displayName: fullName,
-                        // photoURL: 'URL_DO_AVATAR_PADRAO_OU_UPLOADED' // Se tiver upload de avatar aqui
-                    });
-                } catch (updateProfileError) {
-                    console.warn("Erro ao atualizar perfil Firebase (não crítico para o registo):", updateProfileError);
+                    // Chama a função do componente pai para lidar com a lógica de curtir/descurtir no Supabase
+                    await onToggleLike(post.id, !previousIsLiked);
+                } catch (error) {
+                    // Em caso de erro na API, reverte a UI para o estado anterior
+                    setIsLiked(previousIsLiked);
+                    setLikesCount(previousLikesCount);
+                    onShowMessage(`Erro ao ${!previousIsLiked ? 'curtir' : 'descurtir'} a publicação: ${error.message || 'Erro desconhecido'}`, 'error');
+                } finally {
+                    setIsLiking(false); // Desativa o estado de "a curtir"
                 }
+            };
 
-                // 3. Criar perfil correspondente no Supabase
-                // O ID do perfil no Supabase será o UID do utilizador do Firebase
-                const { error: profileError } = await supabase
-                    .from('profiles')
-                    .insert([
-                        {
-                            id: user.uid, // UID do Firebase como ID do perfil Supabase
-                            email: user.email,
-                            full_name: fullName,
-                            phone_number: phoneNumber,
-                            date_of_birth: dateOfBirth,
-                            role_in_church: roleInChurch,
-                            // church_name: churchName, // Se 'church_name' for um campo de texto em profiles
-                            avatar_url: user.photoURL || 'https://i.ibb.co/Vt2W1d1/user-profile-default-image.png' // Avatar padrão
-                        }
-                    ]);
+            return (
+                <div className="post-card bg-white p-6 rounded-2xl modern-shadow border border-orange-100 flex flex-col sm:flex-row gap-4 items-start">
+                    {/* Avatar do autor (primeira letra do nome) */}
+                    <div className="flex-shrink-0 w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-2xl font-inter shadow-sm">
+                        {post.author && post.author[0]}
+                    </div>
+                    <div className="flex-1">
+                        {/* Informações do autor e data */}
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
+                            <span className="font-inter font-bold text-gray-800 text-lg">{post.author}</span>
+                            <span className="text-xs text-orange-500 font-inter mt-1 sm:mt-0">{post.date}</span>
+                        </div>
+                        {/* Título da publicação */}
+                        <h2 className="post-title text-2xl font-bold text-orange-700 mb-2 font-inter">{post.title}</h2>
+                        {/* Imagem da publicação, se houver */}
+                        {post.image && (
+                            <img
+                                src={post.image}
+                                alt={`Imagem para a publicação: ${post.title}`}
+                                className="w-full h-48 object-cover rounded-xl mb-4 border border-orange-200 shadow-sm hover:scale-105 transition-transform duration-200"
+                                // Fallback para imagem caso a URL não carregue
+                                onError={(e) => { e.target.onerror = null; e.target.src = `https://placehold.co/400x200/ff9800/ffffff?text=Imagem+N%C3%A3o+Dispon%C3%ADvel`; }}
+                                title="Clique para ampliar"
+                                style={{ cursor: 'pointer' }}
+                                onClick={() => window.open(post.image, '_blank')} // Abre a imagem numa nova aba
+                            />
+                        )}
+                        {/* Conteúdo da publicação */}
+                        <p className="post-content text-gray-700 leading-relaxed font-inter">{post.content}</p>
 
-                if (profileError) {
-                    console.error('Erro ao criar perfil no Supabase:', profileError);
-                    // Se o perfil Supabase falhar criticamente, pode-se considerar apagar o utilizador Firebase
-                    // await user.delete(); // Descomente com cautela!
-                    onShowModal(`Registo de utilizador OK no Firebase, mas erro ao criar perfil no Supabase: ${profileError.message}. Por favor, contacte o suporte.`, 'error');
-                } else {
-                    onShowModal('Registo bem-sucedido! Pode agora iniciar sessão.', 'success');
-                    // Limpa o formulário
-                    setFullName('');
-                    setDateOfBirth('');
-                    setPhoneNumber('');
-                    setRoleInChurch('');
-                    setChurchName('');
-                    setRegisterEmail('');
-                    setRegisterPassword('');
-                    setConfirmPassword('');
-                    setPasswordAnalysis(''); // Limpa a análise da palavra-passe
-                    onSwitchToLogin(); // Volta para a tela de início de sessão
-                }
+                        {/* Secção de Curtidas */}
+                        <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                            <button
+                                onClick={currentUserId ? handleLikeClick : () => onShowMessage('Autentique-se para curtir publicações!', 'info')}
+                                className={`flex items-center space-x-2 p-2 rounded-lg transition duration-200
+                                    ${isLiked ? 'bg-red-100 text-red-600 hover:bg-red-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}
+                                    ${isLiking ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                aria-label={isLiked ? "Descurtir publicação" : "Curtir publicação"}
+                                disabled={isLiking}
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill={isLiked ? "currentColor" : "none"}
+                                    viewBox="0 0 24 24"
+                                    strokeWidth={1.5}
+                                    stroke="currentColor"
+                                    className="w-6 h-6"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"
+                                    />
+                                </svg>
+                                <span className="font-semibold font-inter">{isLiked ? 'Curtido' : 'Curtir'}</span>
+                            </button>
+                            <span className="text-gray-500 text-sm font-inter">
+                                {likesCount} {likesCount === 1 ? 'curtida' : 'curtidas'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Componente FeedScreen: Gere a exibição do feed principal
+        function FeedScreen({ onShowModal, onLogout, supabase, currentFirebaseUser }) {
+          const [posts, setPosts] = React.useState([]);
+          const [isCreatePostModalOpen, setIsCreatePostModalOpen] = React.useState(false);
+          const [isLoadingPosts, setIsLoadingPosts] = React.useState(true);
+          const [isSidebarOpen, setIsSidebarOpen] = React.useState(window.innerWidth >= 768); // Sidebar aberta por padrão em desktop
+          const [isAdmin, setIsAdmin] = React.useState(false); // Estado para verificar se o utilizador é admin
+          const [ads, setAds] = React.useState([]); // Estado para armazenar os dados dos anúncios
+          const adDisplayInterval = 3; // Exibir um anúncio a cada N publicações
+
+          // Função para buscar publicações e informações de curtidas
+          const fetchPosts = async () => {
+            setIsLoadingPosts(true); // Ativa o estado de carregamento de publicações
+            try {
+              // Usa o UID do utilizador Firebase para verificar curtidas e perfis
+              const firebaseUserId = currentFirebaseUser ? currentFirebaseUser.uid : null;
+              
+              // Busca publicações, perfis de autor e informações de curtidas
+              const { data, error } = await supabase
+                .from('posts')
+                .select(`
+                  *,
+                  profiles (full_name, avatar_url), /* Busca o nome completo e avatar do perfil */
+                  likes(user_id) /* Busca os user_ids de quem curtiu para esta publicação */
+                `)
+                .order('created_at', { ascending: false }); // Ordena pelas mais recentes
+
+              if (error) {
+                console.error('Erro ao carregar publicações:', error);
+                onShowModal(`Erro ao carregar publicações: ${error.message || 'Erro desconhecido'}`, 'error');
+                setPosts([]);
+              } else {
+                // Formata as publicações para incluir contagem de curtidas e status de curtida do utilizador atual
+                const formattedPosts = data.map(post => {
+                    const likesForThisPost = post.likes || [];
+                    const likesCount = likesForThisPost.length;
+                    // Verifica se o utilizador Firebase atual curtiu esta publicação
+                    const isLikedByCurrentUser = firebaseUserId ? likesForThisPost.some(like => like.user_id === firebaseUserId) : false;
+
+                    return {
+                        id: post.id,
+                        // Usa o full_name do perfil Supabase, ou um placeholder
+                        author: post.profiles ? post.profiles.full_name : 'Autor Desconhecido',
+                        // Assume que o avatar_url está no perfil do Supabase
+                        authorAvatar: post.profiles?.avatar_url || 'https://i.ibb.co/Vt2W1d1/user-profile-default-image.png', 
+                        church: post.church_id ? 'Nome da Igreja Aqui (buscar)' : '', // Placeholder para futura integração com igrejas
+                        date: new Date(post.created_at).toLocaleDateString('pt-BR'), // Formata a data
+                        title: post.title,
+                        content: post.content,
+                        image: post.image_url,
+                        likesCount: likesCount,
+                        isLikedByCurrentUser: isLikedByCurrentUser,
+                    };
+                });
+                setPosts(formattedPosts);
+              }
             } catch (error) {
-                console.error('Erro inesperado ao tentar registar Firebase:', error);
-                let errorMessage = 'Ocorreu um erro inesperado ao registar.';
-                // Mensagens de erro específicas do Firebase
-                if (error.code === 'auth/email-already-in-use') {
-                    errorMessage = 'Este email já está registado. Tente iniciar sessão ou recuperar a palavra-passe.';
-                } else if (error.code === 'auth/weak-password') {
-                    errorMessage = 'A palavra-passe é muito fraca. Escolha uma palavra-passe mais forte.';
-                } else if (error.code === 'auth/invalid-email') {
-                    errorMessage = 'Formato de email inválido.';
-                } else if (error.code === 'auth/operation-not-allowed') {
-                    errorMessage = 'Registo com email/palavra-passe não está ativado no Firebase. Contacte o administrador.';
-                }
-                onShowModal(`Erro: ${errorMessage}`, 'error');
+              console.error('Erro inesperado ao buscar publicações:', error);
+              onShowModal('Ocorreu um erro inesperado ao carregar as publicações.', 'error');
+              setPosts([]);
             } finally {
-                setIsLoading(false);
+              setIsLoadingPosts(false); // Desativa o estado de carregamento
             }
           };
 
-          // Simula a chamada à API Gemini para análise da palavra-passe
-          const analyzePasswordStrength = async () => {
-              if (registerPassword.length < 6) {
-                  setPasswordAnalysis('Palavra-passe muito curta. Mínimo de 6 caracteres.');
+          // Função para curtir/descurtir uma publicação no Supabase
+          const handleToggleLike = async (postId, shouldLike) => {
+              if (!currentFirebaseUser || !currentFirebaseUser.uid) {
+                  onShowModal('Precisa de estar autenticado para curtir publicações!', 'info');
                   return;
               }
-              setPasswordAnalysis('A analisar a palavra-passe com ✨Gemini...');
+
               try {
-                  // A chave API real seria usada aqui em um ambiente de produção
-                  const apiKey = ""; // Deixe como "" para que o Canvas injete a chave automaticamente
-                  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-                  
-                  // Prepara o payload para a API Gemini
-                  const chatHistory = [];
-                  const prompt = `Analise a força da palavra-passe: "${registerPassword}". Dê feedback sobre se é fraca, média ou forte, e sugira melhorias. Seja conciso.`;
-                  chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-                  
-                  const payload = { contents: chatHistory };
+                  if (shouldLike) {
+                      // Se deve curtir, insere um novo registo na tabela 'likes'
+                      const { error } = await supabase
+                          .from('likes')
+                          .insert([{ post_id: postId, user_id: currentFirebaseUser.uid }]); // Usa o UID do Firebase
 
-                  // Faz a chamada real à API Gemini
-                  const response = await fetch(apiUrl, {
-                     method: 'POST',
-                     headers: { 'Content-Type': 'application/json' },
-                     body: JSON.stringify(payload)
-                  });
-                  
-                  if (!response.ok) {
-                      throw new Error(`Erro HTTP: ${response.status} ${response.statusText}`);
-                  }
-
-                  const result = await response.json();
-                  
-                  if (result.candidates && result.candidates.length > 0 &&
-                      result.candidates[0].content && result.candidates[0].content.parts &&
-                      result.candidates[0].content.parts.length > 0) {
-                    const text = result.candidates[0].content.parts[0].text;
-                    setPasswordAnalysis(text);
+                      if (error) {
+                          if (error.code === '23505') { // Código de erro para violação de unique constraint (utilizador já curtiu)
+                              console.warn('Utilizador já curtiu esta publicação.');
+                              // Apenas atualiza o estado local para "curtido" se a UI já não refletir isso
+                              setPosts(prevPosts => prevPosts.map(p =>
+                                  p.id === postId ? { ...p, isLikedByCurrentUser: true, likesCount: p.likesCount + (p.isLikedByCurrentUser ? 0 : 1) } : p
+                              ));
+                          } else {
+                              throw error; // Lança outros erros
+                          }
+                      } else {
+                          // Sucesso ao curtir, a UI já foi otimizada para refletir a mudança
+                      }
                   } else {
-                    setPasswordAnalysis('Não foi possível analisar a palavra-passe. Resposta inesperada da API.');
+                      // Se deve descurtir, elimina o registo correspondente na tabela 'likes'
+                      const { error } = await supabase
+                          .from('likes')
+                          .delete()
+                          .eq('post_id', postId)
+                          .eq('user_id', currentFirebaseUser.uid); // Usa o UID do Firebase
+
+                      if (error) {
+                          throw error;
+                      } else {
+                          // Sucesso ao descurtir, a UI já foi otimizada para refletir a mudança
+                      }
                   }
               } catch (error) {
-                  console.error("Erro ao analisar palavra-passe com Gemini:", error);
-                  setPasswordAnalysis('Erro ao comunicar com o serviço de análise de palavra-passe. Verifique a sua ligação ou chave API.');
+                  console.error(`Erro ao ${shouldLike ? 'curtir' : 'descurtir'} publicação:`, error);
+                  onShowModal(`Erro ao ${shouldLike ? 'curtir' : 'descurtir'} publicação: ${error.message}`, 'error');
               }
           };
 
+          // Função para buscar anúncios
+          const fetchAds = async () => {
+            try {
+              const { data, error } = await supabase
+                .from('advertisements') // Assumindo que tem uma tabela 'advertisements' no Supabase
+                .select('*')
+                .eq('is_active', true) // Apenas anúncios ativos
+                .order('created_at', { ascending: false }); // Ou ordenar por prioridade/aleatório
+
+              if (error) {
+                console.error('Erro ao carregar anúncios:', error);
+                // A falha dos anúncios não deve bloquear o feed principal, então apenas registamos o erro.
+              } else {
+                setAds(data);
+              }
+            } catch (error) {
+              console.error('Erro inesperado ao buscar anúncios:', error);
+            }
+          };
+
+          // Efeito que executa uma vez ao montar o componente para buscar publicações, anúncios e verificar administrador
+          React.useEffect(() => {
+            fetchPosts(); // Carrega as publicações
+            fetchAds(); // Carrega os anúncios
+
+            // Verifica se o utilizador autenticado tem permissões de administrador
+            const checkAdmin = async () => {
+              if (!currentFirebaseUser || !currentFirebaseUser.uid) {
+                setIsAdmin(false);
+                return;
+              }
+              try {
+                // Busca o perfil do utilizador no Supabase usando o UID do Firebase
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('admin') // Assumindo que a tabela 'profiles' tem uma coluna 'admin' booleana
+                    .eq('id', currentFirebaseUser.uid) // O ID do perfil deve ser o UID do Firebase
+                    .single(); // Busca apenas um perfil
+                
+                if (error && error.code !== 'PGRST116') { // PGRST116 é "no rows found", que é ok se o perfil ainda não existe
+                    console.error("Erro ao verificar status de administrador no Supabase:", error);
+                    setIsAdmin(false);
+                } else {
+                    setIsAdmin(profile?.admin === true); // Define o estado de administrador
+                }
+              } catch (e) {
+                console.error("Erro inesperado ao verificar status de administrador:", e);
+                setIsAdmin(false); // Em caso de erro, assume que não é administrador
+              }
+            };
+            checkAdmin();
+          }, [currentFirebaseUser, supabase]); // Depende do utilizador Firebase e do cliente Supabase
+
+          // Lida com a criação de uma nova publicação (chamado pelo CreatePostModal)
+          const handleNewPost = (newPost) => {
+            fetchPosts(); // Recarrega as publicações para incluir a nova
+          };
+
+          // Alterna a visibilidade da barra lateral em telas pequenas
+          const toggleSidebar = () => {
+            setIsSidebarOpen(!isSidebarOpen);
+          };
+
+          // Funções de navegação para outras páginas
+          const handleNavigateToProfile = () => { window.location.href = 'perfil.html'; };
+          const handleNavigateToChat = () => { window.location.href = 'chat.html'; };
+          const handleNavigateToEstudos = () => { window.location.href = 'estudos_unificado.html'; }; // Aponta para o ficheiro unificado de estudos
+          const handleNavigateToLives = () => { window.location.href = 'lives.html'; };
+          const handleNavigateToDoacoes = () => { window.location.href = 'doacoes.html'; };
+          const handleNavigateToChurch = () => {
+            const exampleChurchId = 'd2c0b1a0-e3f4-5678-90ab-cdef12345678'; // Exemplo de ID
+            window.location.href = `igreja.html?churchId=${exampleChurchId}`;
+          };
+          const handleComingSoon = (featureName) => {
+            onShowModal(`${featureName} está em desenvolvimento e estará disponível em breve!`, 'info');
+          };
+          const handleNavigateToAdmin = () => { window.location.href = 'admin.html'; };
+
           return (
-            <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md mx-auto transform transition-all duration-300 hover:scale-105">
-              <div className="text-center mb-8">
-                <h1 className="text-4xl font-extrabold text-gray-800 mb-2 font-inter">Conexão Eclesia</h1>
-                <p className="text-gray-600 text-lg">Crie a sua conta</p>
-              </div>
+            <div className="flex flex-col md:flex-row min-h-screen w-full bg-gradient-orange p-4 sm:p-6 md:p-8">
+              {/* Botão de hambúrguer para mobile */}
+              <button
+                onClick={toggleSidebar}
+                className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-300"
+                aria-label={isSidebarOpen ? "Fechar menu lateral" : "Abrir menu lateral"}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                </svg>
+              </button>
 
-              <form onSubmit={handleRegister}>
-                <div className="mb-6">
-                  <label htmlFor="fullName" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
-                    Nome Completo
-                  </label>
-                  <input
-                    type="text"
-                    id="fullName"
-                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
-                    placeholder="O seu nome completo"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    required
-                    aria-label="Insira o seu nome completo"
-                    disabled={isLoading}
-                  />
-                </div>
-
-                <div className="mb-6">
-                  <label htmlFor="dateOfBirth" className="block text-sm font-semibold mb-2 font-inter">
-                    Data de Nascimento
-                  </label>
-                  <input
-                    type="date"
-                    id="dateOfBirth"
-                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
-                    value={dateOfBirth}
-                    onChange={(e) => setDateOfBirth(e.target.value)}
-                    required
-                    aria-label="Insira a sua data de nascimento"
-                    disabled={isLoading}
-                  />
-                </div>
-
-                <div className="mb-6">
-                  <label htmlFor="phoneNumber" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
-                    Número de Telefone
-                  </label>
-                  <input
-                    type="tel"
-                    id="phoneNumber"
-                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
-                    placeholder="(XX) XXXX-XXXX"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    required
-                    aria-label="Insira o seu número de telefone"
-                    disabled={isLoading}
-                  />
-                </div>
-
-                <div className="mb-6">
-                  <label htmlFor="roleInChurch" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
-                    Cargo/Função na Igreja (Opcional)
-                  </label>
-                  <input
-                    type="text"
-                    id="roleInChurch"
-                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
-                    placeholder="Ex: Pastor, Membro, Voluntário"
-                    value={roleInChurch}
-                    onChange={(e) => setRoleInChurch(e.target.value)}
-                    aria-label="Insira o seu cargo ou função na igreja"
-                    disabled={isLoading}
-                  />
-                </div>
-
-                <div className="mb-6">
-                  <label htmlFor="churchName" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
-                    Nome da Igreja/Comunidade (Opcional)
-                  </label>
-                  <input
-                    type="text"
-                    id="churchName"
-                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
-                    placeholder="Nome da sua igreja"
-                    value={churchName}
-                    onChange={(e) => setChurchName(e.target.value)}
-                    aria-label="Insira o nome da sua igreja ou comunidade"
-                    disabled={isLoading}
-                  />
-                </div>
-
-                <div className="mb-6">
-                  <label htmlFor="registerEmail" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    id="registerEmail"
-                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
-                    placeholder="o seu email@exemplo.com"
-                    value={registerEmail}
-                    onChange={(e) => setRegisterEmail(e.target.value)}
-                    required
-                    aria-label="Insira o seu endereço de email para registo"
-                    disabled={isLoading}
-                  />
-                </div>
-
-                <div className="mb-6">
-                  <label htmlFor="registerPassword" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
-                    Palavra-passe
-                  </label>
-                  <input
-                    type="password"
-                    id="registerPassword"
-                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
-                    placeholder="••••••••"
-                    value={registerPassword}
-                    onChange={(e) => setRegisterPassword(e.target.value)}
-                    required
-                    aria-describedby="password-analysis-feedback" /* WCAG: Liga o input ao feedback de análise */
-                    aria-label="Insira a sua palavra-passe de registo"
-                    disabled={isLoading}
-                  />
-                  {/* Botão para analisar a palavra-passe com Gemini */}
-                  <button
-                    type="button"
-                    onClick={analyzePasswordStrength}
-                    className="mt-2 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 shadow-md font-inter"
-                    aria-label="Analisar força da palavra-passe com Gemini"
-                    disabled={isLoading || registerPassword.length === 0}
-                  >
-                    Analisar Palavra-passe ✨
-                  </button>
-                  {passwordAnalysis && (
-                      <p 
-                          id="password-analysis-feedback" /* WCAG: ID para aria-describedby */
-                          className="text-sm mt-2 p-2 rounded-lg bg-blue-50 text-blue-700 border border-blue-200"
-                          aria-live="polite" /* WCAG: Anuncia as mudanças a leitores de ecrã */
-                      >
-                          {passwordAnalysis}
-                      </p>
-                  )}
-                </div>
-
-                <div className="mb-8">
-                  <label htmlFor="confirmPassword" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
-                    Confirmar Palavra-passe
-                  </label>
-                  <input
-                    type="password"
-                    id="confirmPassword"
-                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
-                    placeholder="••••••••"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                    aria-label="Confirme a sua palavra-passe de registo"
-                    disabled={isLoading}
-                  />
-                </div>
-
+              {/* Barra Lateral */}
+              <aside className={`fixed md:static top-0 left-0 h-full z-40
+                                w-64 md:w-64 sidebar-transition
+                                bg-white text-gray-900 p-4 flex flex-col items-center md:items-start space-y-4 rounded-2xl modern-shadow
+                                ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+                                md:mb-0 md:rounded-r-none md:mr-4`}>
+                
+                {/* Botão de fechar para mobile dentro do sidebar, quando aberto */}
                 <button
-                  type="submit"
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 transform hover:scale-100 active:scale-95 shadow-md font-inter"
-                  aria-label="Finalizar registo da conta"
-                  disabled={isLoading}
+                    onClick={toggleSidebar}
+                    className="md:hidden absolute top-4 right-4 p-2 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                    aria-label="Fechar menu lateral"
                 >
-                  {isLoading ? 'A registar...' : 'Registar'}
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                 </button>
-              </form>
 
-              <div className="mt-8 text-center">
-                <p className="text-gray-600 font-inter">
-                  Já tem uma conta?{' '}
-                  <a href="#" onClick={onSwitchToLogin} className="font-bold text-blue-600 hover:text-blue-800 font-inter"
-                     aria-label="Clique para iniciar sessão na sua conta existente"
-                     role="button" 
+                <div className="text-3xl font-extrabold mb-6 font-inter text-orange-500 sidebar-item-text">Menu</div>
+                <div 
+                    className="flex items-center space-x-2 text-xl cursor-pointer hover:text-orange-500 transition duration-200" 
+                    aria-label="Aceder ao meu perfil"
+                    onClick={handleNavigateToProfile}
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                    </svg>
+                    <span className="font-inter sidebar-item-text">Meu Perfil</span>
+                </div>
+                <button
+                  className="w-full text-left py-3 px-4 rounded-lg font-bold text-lg font-inter btn-orange shadow-md"
+                  onClick={() => setIsCreatePostModalOpen(true)}
+                  aria-label="Criar uma nova publicação"
+                >
+                  Criar Publicação
+                </button>
+                <button
+                  onClick={handleNavigateToChat}
+                  className="w-full text-left py-3 px-4 rounded-lg font-bold text-lg font-inter bg-purple-500 hover:bg-purple-600 text-white shadow-md"
+                  aria-label="Abrir chat global"
+                >
+                  Chat
+                </button>
+                {/* Botões de navegação para outras secções */}
+                <button
+                  onClick={handleNavigateToEstudos}
+                  className="w-full text-left py-3 px-4 rounded-lg font-bold text-lg font-inter btn-orange shadow-md"
+                  aria-label="Aceder a Estudos Bíblicos"
+                >
+                  Estudos Bíblicos
+                </button>
+                <button
+                  onClick={handleNavigateToLives}
+                  className="w-full text-left py-3 px-4 rounded-lg font-bold text-lg font-inter bg-pink-500 hover:bg-pink-600 text-white shadow-md"
+                  aria-label="Aceder a Lives"
+                >
+                  Lives
+                </button>
+                <button
+                  onClick={handleNavigateToDoacoes}
+                  className="w-full text-left py-3 px-4 rounded-lg font-bold text-lg font-inter bg-green-500 hover:bg-green-600 text-white shadow-md"
+                  aria-label="Aceder a Doações"
+                >
+                  Doações
+                </button>
+                {/* BOTÃO DE ADMINISTRADOR - visível só para admin */}
+                {isAdmin && (
+                  <button
+                    className="w-full text-left py-3 px-4 rounded-lg font-bold text-lg font-inter bg-gray-600 hover:bg-gray-700 text-white shadow-md"
+                    aria-label="Aceder ao painel de administrador"
+                    onClick={handleNavigateToAdmin}
                   >
-                    Iniciar sessão
-                  </a>
-                </p>
-              </div>
+                    <span className="sidebar-item-text">Administrador</span>
+                  </button>
+                )}
+                <div className="mt-auto pt-4 w-full border-t border-gray-200 md:border-none">
+                  <button
+                    onClick={onLogout}
+                    className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 transform hover:scale-100 active:scale-95 shadow-md font-inter"
+                    aria-label="Sair da sua conta"
+                  >
+                    Sair
+                  </button>
+                </div>
+              </aside>
+
+              <main className={`flex-1 p-6 bg-white rounded-2xl modern-shadow max-w-2xl mx-auto
+                                md:ml-0 ${isSidebarOpen ? 'md:ml-64' : 'md:ml-20'} sidebar-transition`}>
+                <div className="flex flex-col sm:flex-row sm:justify-between items-center mb-8 gap-4">
+                  <div className="text-center sm:text-left">
+                    <h1 className="text-4xl font-extrabold text-orange-600 mb-2 font-inter drop-shadow-lg">Publicações e Anúncios</h1>
+                    <p className="text-gray-600 text-lg font-inter">Últimas notícias e comunicados da comunidade.</p>
+                  </div>
+                  <button
+                    onClick={() => { fetchPosts(); fetchAds(); }}
+                    className="btn-orange hover:bg-orange-600 text-white font-bold py-2 px-6 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 shadow-md drop-shadow-md"
+                    aria-label="Atualizar feed de publicações"
+                  >
+                    Atualizar Feed
+                  </button>
+                </div>
+                {isLoadingPosts ? (
+                  <div className="text-center text-gray-600 text-lg font-inter animate-pulse">A carregar publicações...</div>
+                ) : posts.length === 0 ? (
+                  <div className="text-center text-gray-600 text-lg font-inter">Nenhuma publicação encontrada.</div>
+                ) : (
+                  <div className="flex flex-col space-y-6">
+                    {posts.map((post, index) => (
+                      <React.Fragment key={post.id}>
+                        {/* Renderiza o componente PostCard para cada publicação */}
+                        <PostCard
+                            post={post}
+                            currentUserId={currentFirebaseUser ? currentFirebaseUser.uid : null} /* Passa o UID do Firebase */
+                            onToggleLike={handleToggleLike}
+                            onShowModal={onShowModal}
+                        />
+
+                        {/* Lógica para exibir anúncios intercalados */}
+                        {(index + 1) % adDisplayInterval === 0 && ads.length > 0 && (
+                          <AdComponent adData={ads[((index + 1) / adDisplayInterval - 1) % ads.length]} />
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </div>
+                )}
+              </main>
+
+              {/* Modal de criação de publicação */}
+              <CreatePostModal
+                isOpen={isCreatePostModalOpen}
+                onClose={() => setIsCreatePostModalOpen(false)}
+                onSavePost={handleNewPost}
+                supabase={supabase}
+                onShowMessage={onShowModal}
+                currentFirebaseUser={currentFirebaseUser} /* Passa o utilizador Firebase para o modal */
+              />
             </div>
           );
         }
 
         // Componente principal da aplicação React
-        // Gere a vista atual (login/registo) e o modal de mensagens.
         function App() {
-          const [currentView, setCurrentView] = React.useState('login'); // Controla a vista atual (login ou registo)
-          const [isModalOpen, setIsModalOpen] = React.useState(false); // Controla a visibilidade do modal de mensagens
+          const [isModalOpen, setIsModalOpen] = React.useState(false); // Estado para controlar a visibilidade do modal de mensagens
           const [modalMessage, setModalMessage] = React.useState(''); // Mensagem a ser exibida no modal
           const [modalType, setModalType] = React.useState('info'); // Tipo de modal (success, error, info)
           
@@ -847,6 +882,7 @@
           const [isSupabaseReady, setIsSupabaseReady] = React.useState(false); // Indica se o Supabase está pronto
           const [firebaseAuth, setFirebaseAuth] = React.useState(null); // Instância do Firebase Auth
           const [supabase, setSupabase] = React.useState(null); // Instância do Supabase Client
+          const [currentFirebaseUser, setCurrentFirebaseUser] = React.useState(undefined); // Armazena o objeto de utilizador Firebase logado (undefined = a verificar, null = não autenticado, objeto = autenticado)
 
           // Efeito para inicializar ou aguardar o Firebase Auth
           React.useEffect(() => {
@@ -854,6 +890,19 @@
                 setFirebaseAuth(window.globalFirebaseAuth);
                 setIsFirebaseReady(true);
                 console.log("[App Auth] Cliente Firebase Auth pronto.");
+
+                // Listener de autenticação do Firebase para gerir o estado do utilizador
+                const unsubscribe = window.globalFirebaseAuth.onAuthStateChanged(user => {
+                    setCurrentFirebaseUser(user); // Define o utilizador Firebase
+                    // Se o utilizador não estiver autenticado, redireciona para a página de autenticação
+                    if (!user) {
+                        console.log("[App Auth] Utilizador Firebase não autenticado. Redirecionando para auth.html.");
+                        window.location.href = 'auth.html'; 
+                    } else {
+                        console.log("[App Auth] Utilizador Firebase autenticado:", user.uid);
+                    }
+                });
+                return () => unsubscribe(); // Cleanup: desinscreve o listener
             } else {
                 console.warn("[App Auth] Cliente Firebase Auth não disponível. A aguardar...");
                 const maxTries = 20; // Tentar por até 20 * 100ms = 2 segundos
@@ -864,6 +913,17 @@
                         setIsFirebaseReady(true);
                         console.log("[App Auth] Cliente Firebase Auth inicializado após atraso.");
                         clearInterval(intervalId);
+                        // Inicia o listener de autenticação após a inicialização bem-sucedida
+                        const unsubscribe = window.globalFirebaseAuth.onAuthStateChanged(user => {
+                            setCurrentFirebaseUser(user);
+                            if (!user) {
+                                console.log("[App Auth] Utilizador Firebase não autenticado (após retry). Redirecionando para auth.html.");
+                                window.location.href = 'auth.html';
+                            } else {
+                                console.log("[App Auth] Utilizador Firebase autenticado (após retry):", user.uid);
+                            }
+                        });
+                        return () => unsubscribe();
                     } else if (currentTry >= maxTries) {
                         console.error("[App Auth] Falha ao inicializar o cliente Firebase Auth após várias tentativas. Verifique 'firebaseClientInstance.js'.");
                         showModal("Erro crítico: Não foi possível ligar ao serviço de autenticação. Por favor, recarregue a página.", "error");
@@ -923,48 +983,53 @@
             setModalType('info');
           };
 
-          // Lida com o sucesso do início de sessão ou registo
-          const handleLoginSuccess = () => {
-            // Após o sucesso da autenticação Firebase, redireciona para o dashboard principal
-            console.log("Autenticação bem-sucedida. Redirecionando para index.html.");
-            window.location.href = 'index.html'; 
+          // Lida com a ação de terminar a sessão (agora via Firebase)
+          const handleLogout = async () => {
+            if (!firebaseAuth) {
+                onShowModal('Serviço de autenticação não disponível.', 'error');
+                return;
+            }
+            try {
+              // Utiliza a função signOut importada e exposta globalmente
+              await window.firebaseSignOut(firebaseAuth); 
+              onShowModal('Sessão terminada com sucesso!', 'success');
+              // O onAuthStateChanged irá lidar com o redirecionamento para auth.html
+            } catch (error) {
+              console.error('Erro inesperado ao terminar a sessão:', error);
+              onShowModal('Ocorreu um erro inesperado ao terminar a sessão.', 'error');
+            }
           };
 
-          // Renderização condicional da vista
-          if (!isFirebaseReady || !isSupabaseReady) {
+          // Condição de renderização principal: exibe "A carregar..." enquanto os serviços não estão prontos
+          // ou enquanto o utilizador Firebase não foi determinado (null ou um objeto de utilizador)
+          if (!isSupabaseReady || !isFirebaseReady || currentFirebaseUser === undefined) {
             return (
               <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
-                <div className="text-white text-2xl font-bold font-inter text-center">
-                  A carregar serviços...<br/>
-                  <span className="text-sm opacity-70">A ligar ao Firebase e Supabase.</span>
-                </div>
+                <div className="text-white text-2xl font-bold font-inter text-center">A carregar...</div>
               </div>
             );
           }
 
-          // Renderiza a vista de login ou registo quando os serviços estão prontos
+          // Se tudo estiver pronto e o utilizador Firebase foi determinado (mesmo que seja null/desautenticado)
           return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center p-4">
-              <div className="w-full max-w-md">
-                {currentView === 'login' ? (
-                  <LoginScreen 
-                    onSwitchToRegister={() => setCurrentView('register')} 
-                    onShowModal={showModal} 
-                    onLoginSuccess={handleLoginSuccess} 
-                    firebaseAuth={firebaseAuth} /* Passa a instância do Firebase Auth */
-                    supabase={supabase} /* Passa a instância do Supabase Client */
-                  />
-                ) : (
-                  <RegisterScreen 
-                    onSwitchToLogin={() => setCurrentView('login')} 
-                    onShowModal={showModal} 
-                    onLoginSuccess={handleLoginSuccess} 
-                    firebaseAuth={firebaseAuth} /* Passa a instância do Firebase Auth */
-                    supabase={supabase} /* Passa a instância do Supabase Client */
-                  />
-                )}
-                <Modal isOpen={isModalOpen} message={modalMessage} type={modalType} onClose={closeModal} />
+            <div className="min-h-screen flex flex-col md:flex-row items-stretch justify-center p-0">
+              <FeedScreen
+                onShowModal={showModal}
+                onLogout={handleLogout}
+                supabase={supabase}
+                currentFirebaseUser={currentFirebaseUser} /* Passa o utilizador Firebase para o FeedScreen */
+              />
+              {/* Rodapé visível apenas em telas pequenas */}
+              <div className="text-center text-white text-sm opacity-80 font-inter py-4 bg-gray-800 w-full md:hidden">
+                © {new Date().getFullYear()} CPN Serviços. Todos os direitos reservados. <span className="text-xs ml-2 opacity-70">v1.2025.07.1</span>
               </div>
+              {/* Modal de mensagens global */}
+              <Modal
+                isOpen={isModalOpen}
+                message={modalMessage}
+                type={modalType}
+                onClose={closeModal}
+              />
             </div>
           );
         }
