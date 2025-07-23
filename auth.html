@@ -56,14 +56,16 @@
             signInWithEmailAndPassword, 
             createUserWithEmailAndPassword, 
             sendPasswordResetEmail,
-            signOut // Adicionado signOut para consistência, embora não usado diretamente aqui
+            signOut,
+            updateProfile // CORRIGIDO: Adicionado updateProfile
         } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
         
         if (typeof window !== 'undefined') {
             window.firebaseSignInWithEmailAndPassword = signInWithEmailAndPassword;
             window.firebaseCreateUserWithEmailAndPassword = createUserWithEmailAndPassword;
             window.firebaseSendPasswordResetEmail = sendPasswordResetEmail;
-            window.firebaseSignOut = signOut; // Expor signOut também
+            window.firebaseSignOut = signOut;
+            window.firebaseUpdateProfile = updateProfile; // CORRIGIDO: Expor updateProfile
         }
     </script>
 
@@ -566,7 +568,8 @@
 
                 // 2. Atualizar perfil Firebase (opcional, para displayName e photoURL)
                 try {
-                    await user.updateProfile({
+                    // CORRIGIDO: Usar updateProfile diretamente na instância de auth
+                    await window.firebaseUpdateProfile(user, {
                         displayName: fullName,
                         // photoURL: 'URL_DO_AVATAR_PADRAO_OU_UPLOADED' // Se tiver upload de avatar aqui
                     });
