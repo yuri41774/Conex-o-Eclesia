@@ -41,7 +41,7 @@
     <!-- Importa React e ReactDOM a partir de um CDN (unpkg.com) -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Importa Babel para transpilar JSX diretamente no navegador -->
+    <!-- Importa Babel para transpilador JSX diretamente no navegador -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
     <!-- Importa o SDK do Firebase App e Auth (para autenticação) -->
@@ -268,7 +268,7 @@
         }
 
         // Componente LoginScreen: Formulário para iniciar sessão (agora com Firebase)
-        function LoginScreen({ onSwitchToRegister, onShowModal, onLoginSuccess, firebaseAuth }) {
+        function LoginScreen({ onSwitchToRegister, onShowModal, onLoginSuccess, firebaseAuth, supabase }) { /* CORRIGIDO: Adicionado 'supabase' às props */
           const [email, setEmail] = React.useState('');
           const [password, setPassword] = React.useState('');
           const [isLoading, setIsLoading] = React.useState(false);
@@ -601,26 +601,29 @@
               }
               setPasswordAnalysis('A analisar a palavra-passe com ✨Gemini...');
               try {
-                  // SIMULAÇÃO DA CHAMADA À API GEMINI (mantida como simulação para este ficheiro)
-                  // Em um ambiente real, você faria um fetch para seu backend que chamaria a API Gemini
-                  // const apiKey = ""; // A chave API real seria usada aqui em um ambiente de produção
-                  // const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                  // A chave API real seria usada aqui em um ambiente de produção
+                  const apiKey = ""; // Deixe como "" para que o Canvas injete a chave automaticamente
+                  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
                   
-                  // Simulação de resposta do LLM
-                  const simulatedResponse = {
-                      candidates: [{
-                          content: {
-                              parts: [{
-                                  text: `A sua palavra-passe é **${registerPassword.length < 8 ? 'fraca' : registerPassword.length < 12 ? 'média' : 'forte'}**. Sugestões: ${registerPassword.includes('123') ? 'Evite sequências comuns.' : ''} ${registerPassword.toLowerCase() === registerPassword ? 'Adicione letras maiúsculas.' : ''} ${!/[!@#$%^&*(),.?":{}|<>]/.test(registerPassword) ? 'Inclua caracteres especiais.' : ''} ${registerPassword.length < 12 ? 'Aumente o comprimento para mais de 12 caracteres.' : ''}`.trim()
-                              }]
-                          }
-                      }]
-                  };
+                  // Prepara o payload para a API Gemini
+                  const chatHistory = [];
+                  const prompt = `Analise a força da palavra-passe: "${registerPassword}". Dê feedback sobre se é fraca, média ou forte, e sugira melhorias. Seja conciso.`;
+                  chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                  
+                  const payload = { contents: chatHistory };
 
-                  // Simula um atraso de rede
-                  await new Promise(resolve => setTimeout(resolve, 1000));
+                  // Faz a chamada real à API Gemini
+                  const response = await fetch(apiUrl, {
+                     method: 'POST',
+                     headers: { 'Content-Type': 'application/json' },
+                     body: JSON.stringify(payload)
+                  });
+                  
+                  if (!response.ok) {
+                      throw new Error(`Erro HTTP: ${response.status} ${response.statusText}`);
+                  }
 
-                  const result = simulatedResponse; // Usando a resposta simulada
+                  const result = await response.json();
                   
                   if (result.candidates && result.candidates.length > 0 &&
                       result.candidates[0].content && result.candidates[0].content.parts &&
@@ -628,11 +631,11 @@
                     const text = result.candidates[0].content.parts[0].text;
                     setPasswordAnalysis(text);
                   } else {
-                    setPasswordAnalysis('Não foi possível analisar a palavra-passe. Tente novamente.');
+                    setPasswordAnalysis('Não foi possível analisar a palavra-passe. Resposta inesperada da API.');
                   }
               } catch (error) {
-                  console.error("Erro ao analisar palavra-passe com Gemini (simulado):", error);
-                  setPasswordAnalysis('Erro ao comunicar com o serviço de análise de palavra-passe.');
+                  console.error("Erro ao analisar palavra-passe com Gemini:", error);
+                  setPasswordAnalysis('Erro ao comunicar com o serviço de análise de palavra-passe. Verifique a sua ligação ou chave API.');
               }
           };
 
