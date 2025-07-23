@@ -1,6 +1,6 @@
 {
   "name": "o-seu-projeto",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Um projeto web com Firebase e Supabase.",
   "main": "index.html",
   "scripts": {
