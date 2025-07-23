@@ -3,19 +3,961 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Autenticação - Conexão Eclesia</title>
+    <title>Conexão Eclesia - Autenticação</title>
+    <!-- Incluindo Tailwind CSS para estilização (via CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Incluindo a fonte Inter do Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%); display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .auth-card { background-color: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); text-align: center; max-width: 400px; width: 90%; }
+        body {
+            font-family: 'Inter', sans-serif;
+            text-size-adjust: none;
+            -webkit-text-size-adjust: none;
+            background: linear-gradient(135deg, #a7b7eb 0%, #b3c2f0 100%); /* Um azul claro suave */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        /* Responsividade para telas menores */
+        @media (max-width: 640px) {
+            #root > div {
+                padding: 0.5rem !important;
+                border-radius: 0.75rem !important;
+            }
+            .rounded-xl, .rounded-lg, .rounded-3xl, .rounded-2xl {
+                border-radius: 0.75rem !important;
+            }
+            .shadow-2xl, .shadow-xl, .shadow-md {
+                box-shadow: 0 2px 8px 0 rgba(37,99,235,0.10), 0 1.5px 4px 0 rgba(0,0,0,0.04) !important;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="auth-card">
-        <h1 class="text-2xl font-bold text-gray-800 mb-4">Página de Autenticação</h1>
-        <p class="text-gray-600">Aqui será o seu formulário de Login e Registo.</p>
-        <a href="index.html" class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Voltar para o Dashboard</a>
-    </div>
+    <div id="root"></div>
+
+    <!-- Importa React e ReactDOM a partir de um CDN (unpkg.com) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Importa Babel para transpilar JSX diretamente no navegador -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Importa o SDK do Firebase App e Auth (para autenticação) -->
+    <script type="module" src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
+    <!-- Carrega o script de inicialização do Firebase. ESSENCIAL! -->
+    <script type="module" src="firebaseClientInstance.js"></script>
+
+    <!-- Importa o SDK do Supabase Client (para base de dados e armazenamento) -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"></script>
+    <!-- Carrega o script de inicialização do Supabase. ESSENCIAL! -->
+    <script type="module" src="supabaseClientInstance.js"></script>
+
+    <script type="text/babel">
+        // Componente Modal: Exibe mensagens de sucesso, erro ou informação para o utilizador.
+        // WCAG: Adicionado role="dialog", aria-modal="true" e aria-labelledby para acessibilidade.
+        // WCAG: Adicionado controlo da tecla ESC para fechar.
+        function Modal({ isOpen, message, type, onClose }) {
+          const modalRef = React.useRef(null);
+          const previousActiveElement = React.useRef(null);
+
+          React.useEffect(() => {
+            if (isOpen) {
+              previousActiveElement.current = document.activeElement; // Guarda o elemento focado antes de abrir o modal
+              modalRef.current?.focus(); // Move o foco para o modal
+              const handleKeyDown = (event) => {
+                if (event.key === 'Escape') {
+                  onClose();
+                }
+              };
+              document.addEventListener('keydown', handleKeyDown);
+              return () => {
+                document.removeEventListener('keydown', handleKeyDown);
+                // Restaura o foco para o elemento original quando o modal fecha
+                if (previousActiveElement.current) {
+                  previousActiveElement.current.focus();
+                }
+              };
+            }
+          }, [isOpen, onClose]);
+
+          if (!isOpen) return null;
+
+          const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+          const headerText = type === 'success' ? 'Sucesso!' : 'Erro!';
+          const modalTitleId = React.useId(); // Gera um ID único para o título do modal
+
+          return (
+            <div 
+              className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={modalTitleId}
+              tabIndex="-1" // Permite que o modal seja focado
+              ref={modalRef}
+            >
+              <div className="bg-white rounded-lg shadow-xl overflow-hidden max-w-sm w-full transform transition-all duration-300 scale-100">
+                <div className={`${bgColor} text-white px-6 py-4 flex justify-between items-center rounded-t-lg`}>
+                  <h3 id={modalTitleId} className="text-xl font-bold font-inter">{headerText}</h3>
+                  <button
+                    onClick={onClose}
+                    className="text-white hover:text-gray-200 focus:outline-none text-2xl font-bold"
+                    aria-label="Fechar modal de mensagem"
+                  >
+                    &times;
+                  </button>
+                </div>
+                <div className="p-6">
+                  <p className="text-gray-700 text-lg mb-4 font-inter">{message}</p>
+                  <div className="flex justify-end">
+                    <button
+                      onClick={onClose}
+                      className={`py-2 px-6 rounded-lg font-bold text-white transition duration-300 shadow-md ${bgColor} hover:${bgColor.replace('500', '600')} focus:outline-none focus:ring-2 focus:ring-opacity-75`}
+                      aria-label="Entendido, fechar mensagem"
+                    >
+                      OK
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        // Modal para registo de igreja (agora com Supabase)
+        // WCAG: Adicionado role="dialog", aria-modal="true" e aria-labelledby.
+        // WCAG: Adicionado controlo da tecla ESC para fechar.
+        function ChurchRegisterModal({ isOpen, onClose, onShowMessage, onSwitchToRegister, supabase }) {
+          const [churchName, setChurchName] = React.useState('');
+          const [churchEmail, setChurchEmail] = React.useState('');
+          const [churchCity, setChurchCity] = React.useState('');
+          const [isLoading, setIsLoading] = React.useState(false);
+          const modalRef = React.useRef(null);
+          const modalTitleId = React.useId();
+
+          React.useEffect(() => {
+            if (isOpen) {
+              modalRef.current?.focus();
+              const handleKeyDown = (event) => {
+                if (event.key === 'Escape') {
+                  onClose();
+                }
+              };
+              document.addEventListener('keydown', handleKeyDown);
+              return () => document.removeEventListener('keydown', handleKeyDown);
+            }
+          }, [isOpen, onClose]);
+
+          const handleChurchRegister = async (e) => {
+            e.preventDefault();
+            if (!churchName || !churchEmail || !churchCity) {
+              onShowMessage('Preencha todos os campos para registar a igreja.', 'error');
+              return;
+            }
+            setIsLoading(true);
+            try {
+              if (!supabase) {
+                onShowMessage('Serviço de base de dados não disponível.', 'error');
+                setIsLoading(false);
+                return;
+              }
+              const { error } = await supabase.from('churches').insert([
+                { name: churchName, email: churchEmail, city: churchCity }
+              ]);
+              if (error) {
+                onShowMessage('Erro ao registar igreja: ' + error.message, 'error');
+              } else {
+                onShowMessage('Igreja registada com sucesso! Agora crie uma conta de utilizador para ser o administrador desta igreja.', 'success');
+                setChurchName('');
+                setChurchEmail('');
+                setChurchCity('');
+                onClose();
+                if (onSwitchToRegister) {
+                    onSwitchToRegister();
+                }
+              }
+            } catch (err) {
+              console.error("Erro inesperado ao registar igreja:", err);
+              onShowMessage('Ocorreu um erro inesperado ao registar igreja.', 'error');
+            } finally {
+              setIsLoading(false);
+            }
+          };
+
+          if (!isOpen) return null;
+          return (
+            <div 
+              className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={modalTitleId}
+              tabIndex="-1"
+              ref={modalRef}
+            >
+              <div className="bg-white rounded-lg shadow-xl max-w-sm w-full overflow-hidden">
+                <div className="bg-purple-700 text-white px-6 py-4 flex justify-between items-center rounded-t-lg">
+                  <h3 id={modalTitleId} className="text-xl font-bold font-inter">Registar Igreja</h3>
+                  <button
+                    onClick={onClose}
+                    className="text-white hover:text-gray-200 focus:outline-none text-2xl font-bold"
+                    aria-label="Fechar modal de registo de igreja"
+                    disabled={isLoading}
+                  >
+                    &times;
+                  </button>
+                </div>
+                <form className="p-6" onSubmit={handleChurchRegister}>
+                  <div className="mb-4">
+                    <label htmlFor="churchName" className="block text-sm font-medium text-gray-700">Nome da Igreja</label>
+                    <input
+                      type="text"
+                      id="churchName"
+                      className="shadow-sm border rounded-lg w-full py-3 px-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 font-inter bg-gray-100"
+                      placeholder="Nome completo da igreja"
+                      value={churchName}
+                      onChange={e => setChurchName(e.target.value)}
+                      required
+                      aria-label="Nome da igreja"
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label htmlFor="churchEmail" className="block text-sm font-medium text-gray-700">Email da Igreja</label>
+                    <input
+                      type="email"
+                      id="churchEmail"
+                      className="shadow-sm border rounded-lg w-full py-3 px-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 font-inter bg-gray-100"
+                      placeholder="contacto@igreja.com"
+                      value={churchEmail}
+                      onChange={e => setChurchEmail(e.target.value)}
+                      required
+                      aria-label="Email da igreja"
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div className="mb-6">
+                    <label htmlFor="churchCity" className="block text-sm font-medium text-gray-700">Cidade</label>
+                    <input
+                      type="text"
+                      id="churchCity"
+                      className="shadow-sm border rounded-lg w-full py-3 px-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 font-inter bg-gray-100"
+                      placeholder="Cidade da igreja"
+                      value={churchCity}
+                      onChange={e => setChurchCity(e.target.value)}
+                      required
+                      aria-label="Cidade da igreja"
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      className="py-2 px-6 rounded-lg font-bold text-white bg-purple-700 hover:bg-purple-800 transition duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-75 font-inter"
+                      aria-label="Registar igreja agora"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? 'A registar...' : 'Registar'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          );
+        }
+
+        // Componente LoginScreen: Formulário para iniciar sessão (agora com Firebase)
+        function LoginScreen({ onSwitchToRegister, onShowModal, onLoginSuccess, firebaseAuth }) {
+          const [email, setEmail] = React.useState('');
+          const [password, setPassword] = React.useState('');
+          const [isLoading, setIsLoading] = React.useState(false);
+          const [isChurchModalOpen, setIsChurchModalOpen] = React.useState(false);
+          const [showForgotModal, setShowForgotModal] = React.useState(false);
+
+          const handleLogin = async (e) => {
+            e.preventDefault();
+            setIsLoading(true);
+
+            if (!firebaseAuth) {
+                onShowModal('Serviço de autenticação não disponível.', 'error');
+                setIsLoading(false);
+                return;
+            }
+
+            try {
+                // Iniciar sessão com email e palavra-passe via Firebase Auth
+                const userCredential = await firebaseAuth.signInWithEmailAndPassword(email, password);
+                const user = userCredential.user; // O objeto de utilizador do Firebase
+
+                if (user) {
+                    onShowModal('Sessão iniciada com sucesso!', 'success');
+                    onLoginSuccess(user); // Passa o utilizador Firebase para o sucesso
+                } else {
+                    onShowModal('Credenciais inválidas. Tente novamente.', 'error');
+                }
+            } catch (error) {
+                console.error('Erro de início de sessão Firebase:', error);
+                let errorMessage = 'Ocorreu um erro inesperado ao iniciar sessão.';
+                // Mensagens de erro específicas do Firebase
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+                    errorMessage = 'Email ou palavra-passe inválidos.';
+                } else if (error.code === 'auth/invalid-email') {
+                    errorMessage = 'Formato de email inválido.';
+                } else if (error.code === 'auth/user-disabled') {
+                    errorMessage = 'A sua conta foi desativada.';
+                }
+                onShowModal(`Erro: ${errorMessage}`, 'error');
+            } finally {
+                setIsLoading(false);
+            }
+          };
+
+          return (
+            <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md mx-auto transform transition-all duration-300 hover:scale-105">
+              <div className="text-center mb-8">
+                <h1 className="text-4xl font-extrabold text-gray-800 mb-2 font-inter">Conexão Eclesia</h1>
+                <p className="text-gray-600 text-lg">Inicie sessão para continuar</p>
+              </div>
+
+              <form onSubmit={handleLogin}>
+                <div className="mb-6">
+                  <label htmlFor="loginEmail" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+                    Email
+                  </label>
+                  <input
+                    type="email" 
+                    id="loginEmail"
+                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+                    placeholder="o seu email@exemplo.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    aria-label="Insira o seu email"
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div className="mb-8">
+                  <label htmlFor="loginPassword" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+                    Palavra-passe
+                  </label>
+                  <input
+                    type="password"
+                    id="loginPassword"
+                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 mb-3 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    aria-label="Insira a sua palavra-passe"
+                    disabled={isLoading}
+                  />
+                  <a href="#" onClick={e => { e.preventDefault(); setShowForgotModal(true); }}
+                     className="inline-block align-baseline font-bold text-sm text-blue-600 hover:text-blue-800 font-inter"
+                     aria-label="Clique para recuperar a sua palavra-passe"
+                     role="button" 
+                  >
+                    Esqueceu a sua palavra-passe?
+                  </a>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 transform hover:scale-100 active:scale-95 shadow-md font-inter"
+                  aria-label="Iniciar sessão na sua conta"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'A iniciar sessão...' : 'Iniciar sessão'}
+                </button>
+              </form>
+
+              <div className="mt-8 text-center">
+                <p className="text-gray-600 font-inter">
+                  Não tem uma conta?{' '}
+                  <a href="#" onClick={onSwitchToRegister} className="font-bold text-blue-600 hover:text-blue-800 font-inter"
+                     aria-label="Clique para criar uma nova conta agora"
+                     role="button" 
+                  >
+                    Crie uma agora!
+                  </a>
+                </p>
+                <p className="text-gray-600 font-inter mt-4">
+                  É uma igreja?{' '}
+                  <button
+                    type="button"
+                    onClick={() => setIsChurchModalOpen(true)}
+                    className="font-bold text-purple-600 hover:text-purple-800 font-inter underline focus:outline-none"
+                    aria-label="Clique para registar a sua igreja"
+                  >
+                    Registe a sua Igreja!
+                  </button>
+                </p>
+              </div>
+              <ChurchRegisterModal
+                isOpen={isChurchModalOpen}
+                onClose={() => setIsChurchModalOpen(false)}
+                onShowMessage={onShowModal}
+                onSwitchToRegister={onSwitchToRegister} 
+                supabase={supabase} /* Passa o cliente Supabase para o modal da igreja */
+              />
+              <ForgotPasswordModal isOpen={showForgotModal} onClose={() => setShowForgotModal(false)} onShowMessage={onShowModal} firebaseAuth={firebaseAuth} />
+            </div>
+          );
+        }
+
+        // Modal para recuperação de palavra-passe (agora com Firebase)
+        // WCAG: Adicionado role="dialog", aria-modal="true" e aria-labelledby.
+        // WCAG: Adicionado controlo da tecla ESC para fechar.
+        function ForgotPasswordModal({ isOpen, onClose, onShowMessage, firebaseAuth }) {
+          const [email, setEmail] = React.useState('');
+          const [isLoading, setIsLoading] = React.useState(false);
+          const modalRef = React.useRef(null);
+          const modalTitleId = React.useId();
+
+          React.useEffect(() => {
+            if (isOpen) {
+              modalRef.current?.focus();
+              const handleKeyDown = (event) => {
+                if (event.key === 'Escape') {
+                  onClose();
+                }
+              };
+              document.addEventListener('keydown', handleKeyDown);
+              return () => document.removeEventListener('keydown', handleKeyDown);
+            }
+          }, [isOpen, onClose]);
+
+          const handleReset = async (e) => {
+            e.preventDefault();
+            setIsLoading(true);
+
+            if (!firebaseAuth) {
+                onShowMessage('Serviço de autenticação não disponível.', 'error');
+                setIsLoading(false);
+                return;
+            }
+
+            try {
+              // Envia email de redefinição de palavra-passe via Firebase Auth
+              await firebaseAuth.sendPasswordResetEmail(email);
+              onShowMessage('Se o email estiver registado, receberá instruções para redefinir a palavra-passe.', 'success');
+              onClose();
+            } catch (error) {
+              console.error('Erro ao solicitar redefinição Firebase:', error);
+              let errorMessage = 'Ocorreu um erro inesperado ao solicitar a redefinição.';
+              if (error.code === 'auth/user-not-found') {
+                  errorMessage = 'Utilizador não encontrado com este email.';
+              } else if (error.code === 'auth/invalid-email') {
+                  errorMessage = 'Formato de email inválido.';
+              }
+              onShowMessage(`Erro: ${errorMessage}`, 'error');
+            } finally {
+              setIsLoading(false);
+            }
+          };
+
+          if (!isOpen) return null;
+          return (
+            <div 
+              className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={modalTitleId}
+              tabIndex="-1"
+              ref={modalRef}
+            >
+              <div className="bg-white rounded-lg shadow-xl max-w-sm w-full">
+                <div className="bg-blue-600 text-white px-6 py-4 flex justify-between items-center rounded-t-lg">
+                  <h3 id={modalTitleId} className="text-xl font-bold font-inter">Recuperar Palavra-passe</h3>
+                  <button onClick={onClose} className="text-white hover:text-gray-200 focus:outline-none text-2xl font-bold" aria-label="Fechar modal de recuperação" disabled={isLoading}>&times;</button>
+                </div>
+                <form className="p-6" onSubmit={handleReset}>
+                  <label htmlFor="forgotEmail" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Email registado</label>
+                  <input
+                    type="email"
+                    id="forgotEmail"
+                    className="shadow-sm border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 font-inter bg-gray-100 mb-6"
+                    placeholder="o seu email@exemplo.com"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    required
+                    aria-label="Digite o seu email registado"
+                    disabled={isLoading}
+                  />
+                  <div className="flex justify-end">
+                    <button type="submit" className="py-2 px-6 rounded-lg font-bold text-white bg-blue-600 hover:bg-blue-700 transition duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-inter" aria-label="Solicitar redefinição de palavra-passe" disabled={isLoading}>
+                      {isLoading ? 'A enviar...' : 'Enviar link de redefinição'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          );
+        }
+
+        // Componente RegisterScreen: Formulário para registo de novo utilizador (agora com Firebase e Supabase)
+        function RegisterScreen({ onSwitchToLogin, onShowModal, onLoginSuccess, firebaseAuth, supabase }) {
+          const [fullName, setFullName] = React.useState('');
+          const [dateOfBirth, setDateOfBirth] = React.useState('');
+          const [phoneNumber, setPhoneNumber] = React.useState('');
+          const [roleInChurch, setRoleInChurch] = React.useState('');
+          const [churchName, setChurchName] = React.useState('');
+          const [registerEmail, setRegisterEmail] = React.useState('');
+          const [registerPassword, setRegisterPassword] = React.useState('');
+          const [confirmPassword, setConfirmPassword] = React.useState('');
+          const [isLoading, setIsLoading] = React.useState(false);
+          const [passwordAnalysis, setPasswordAnalysis] = React.useState(''); // Estado para a análise da palavra-passe
+
+          const handleRegister = async (e) => {
+            e.preventDefault();
+
+            if (registerPassword !== confirmPassword) {
+              onShowModal('As palavras-passe não coincidem. Por favor, verifique.', 'error');
+              return;
+            }
+            setIsLoading(true);
+
+            if (!firebaseAuth || !supabase) {
+                onShowModal('Serviços de autenticação ou base de dados não disponíveis.', 'error');
+                setIsLoading(false);
+                return;
+            }
+
+            try {
+                // 1. Criar utilizador no Firebase Auth
+                const userCredential = await firebaseAuth.createUserWithEmailAndPassword(registerEmail, registerPassword);
+                const user = userCredential.user; // O objeto de utilizador do Firebase
+
+                // 2. Atualizar perfil Firebase (opcional, para displayName e photoURL)
+                // Isto pode falhar silenciosamente ou ser tratado.
+                try {
+                    await user.updateProfile({
+                        displayName: fullName,
+                        // photoURL: 'URL_DO_AVATAR_PADRAO_OU_UPLOADED' // Se tiver upload de avatar aqui
+                    });
+                } catch (updateProfileError) {
+                    console.warn("Erro ao atualizar perfil Firebase (não crítico para o registo):", updateProfileError);
+                }
+
+                // 3. Criar perfil correspondente no Supabase
+                // O ID do perfil no Supabase será o UID do utilizador do Firebase
+                const { error: profileError } = await supabase
+                    .from('profiles')
+                    .insert([
+                        {
+                            id: user.uid, // UID do Firebase como ID do perfil Supabase
+                            email: user.email,
+                            full_name: fullName,
+                            phone_number: phoneNumber,
+                            date_of_birth: dateOfBirth,
+                            role_in_church: roleInChurch,
+                            // church_name: churchName, // Se 'church_name' for um campo de texto em profiles
+                            avatar_url: user.photoURL || 'https://i.ibb.co/Vt2W1d1/user-profile-default-image.png' // Avatar padrão
+                        }
+                    ]);
+
+                if (profileError) {
+                    console.error('Erro ao criar perfil no Supabase:', profileError);
+                    // Se o perfil Supabase falhar criticamente, pode-se considerar apagar o utilizador Firebase
+                    // await user.delete(); // Descomente com cautela!
+                    onShowModal(`Registo de utilizador OK no Firebase, mas erro ao criar perfil no Supabase: ${profileError.message}. Por favor, contacte o suporte.`, 'error');
+                } else {
+                    onShowModal('Registo bem-sucedido! Pode agora iniciar sessão.', 'success');
+                    // Limpa o formulário
+                    setFullName('');
+                    setDateOfBirth('');
+                    setPhoneNumber('');
+                    setRoleInChurch('');
+                    setChurchName('');
+                    setRegisterEmail('');
+                    setRegisterPassword('');
+                    setConfirmPassword('');
+                    setPasswordAnalysis(''); // Limpa a análise da palavra-passe
+                    onSwitchToLogin(); // Volta para a tela de início de sessão
+                }
+            } catch (error) {
+                console.error('Erro inesperado ao tentar registar Firebase:', error);
+                let errorMessage = 'Ocorreu um erro inesperado ao registar.';
+                // Mensagens de erro específicas do Firebase
+                if (error.code === 'auth/email-already-in-use') {
+                    errorMessage = 'Este email já está registado. Tente iniciar sessão ou recuperar a palavra-passe.';
+                } else if (error.code === 'auth/weak-password') {
+                    errorMessage = 'A palavra-passe é muito fraca. Escolha uma palavra-passe mais forte.';
+                } else if (error.code === 'auth/invalid-email') {
+                    errorMessage = 'Formato de email inválido.';
+                }
+                onShowModal(`Erro: ${errorMessage}`, 'error');
+            } finally {
+                setIsLoading(false);
+            }
+          };
+
+          // Simula a chamada à API Gemini para análise da palavra-passe
+          const analyzePasswordStrength = async () => {
+              if (registerPassword.length < 6) {
+                  setPasswordAnalysis('Palavra-passe muito curta. Mínimo de 6 caracteres.');
+                  return;
+              }
+              setPasswordAnalysis('A analisar a palavra-passe com ✨Gemini...');
+              try {
+                  // SIMULAÇÃO DA CHAMADA À API GEMINI (mantida como simulação para este ficheiro)
+                  // Em um ambiente real, você faria um fetch para seu backend que chamaria a API Gemini
+                  // const apiKey = ""; // A chave API real seria usada aqui em um ambiente de produção
+                  // const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                  
+                  // Simulação de resposta do LLM
+                  const simulatedResponse = {
+                      candidates: [{
+                          content: {
+                              parts: [{
+                                  text: `A sua palavra-passe é **${registerPassword.length < 8 ? 'fraca' : registerPassword.length < 12 ? 'média' : 'forte'}**. Sugestões: ${registerPassword.includes('123') ? 'Evite sequências comuns.' : ''} ${registerPassword.toLowerCase() === registerPassword ? 'Adicione letras maiúsculas.' : ''} ${!/[!@#$%^&*(),.?":{}|<>]/.test(registerPassword) ? 'Inclua caracteres especiais.' : ''} ${registerPassword.length < 12 ? 'Aumente o comprimento para mais de 12 caracteres.' : ''}`.trim()
+                              }]
+                          }
+                      }]
+                  };
+
+                  // Simula um atraso de rede
+                  await new Promise(resolve => setTimeout(resolve, 1000));
+
+                  const result = simulatedResponse; // Usando a resposta simulada
+                  
+                  if (result.candidates && result.candidates.length > 0 &&
+                      result.candidates[0].content && result.candidates[0].content.parts &&
+                      result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    setPasswordAnalysis(text);
+                  } else {
+                    setPasswordAnalysis('Não foi possível analisar a palavra-passe. Tente novamente.');
+                  }
+              } catch (error) {
+                  console.error("Erro ao analisar palavra-passe com Gemini (simulado):", error);
+                  setPasswordAnalysis('Erro ao comunicar com o serviço de análise de palavra-passe.');
+              }
+          };
+
+          return (
+            <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md mx-auto transform transition-all duration-300 hover:scale-105">
+              <div className="text-center mb-8">
+                <h1 className="text-4xl font-extrabold text-gray-800 mb-2 font-inter">Conexão Eclesia</h1>
+                <p className="text-gray-600 text-lg">Crie a sua conta</p>
+              </div>
+
+              <form onSubmit={handleRegister}>
+                <div className="mb-6">
+                  <label htmlFor="fullName" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+                    Nome Completo
+                  </label>
+                  <input
+                    type="text"
+                    id="fullName"
+                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+                    placeholder="O seu nome completo"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                    aria-label="Insira o seu nome completo"
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div className="mb-6">
+                  <label htmlFor="dateOfBirth" className="block text-sm font-semibold mb-2 font-inter">
+                    Data de Nascimento
+                  </label>
+                  <input
+                    type="date"
+                    id="dateOfBirth"
+                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+                    value={dateOfBirth}
+                    onChange={(e) => setDateOfBirth(e.target.value)}
+                    required
+                    aria-label="Insira a sua data de nascimento"
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div className="mb-6">
+                  <label htmlFor="phoneNumber" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+                    Número de Telefone
+                  </label>
+                  <input
+                    type="tel"
+                    id="phoneNumber"
+                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+                    placeholder="(XX) XXXX-XXXX"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    required
+                    aria-label="Insira o seu número de telefone"
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div className="mb-6">
+                  <label htmlFor="roleInChurch" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+                    Cargo/Função na Igreja (Opcional)
+                  </label>
+                  <input
+                    type="text"
+                    id="roleInChurch"
+                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+                    placeholder="Ex: Pastor, Membro, Voluntário"
+                    value={roleInChurch}
+                    onChange={(e) => setRoleInChurch(e.target.value)}
+                    aria-label="Insira o seu cargo ou função na igreja"
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div className="mb-6">
+                  <label htmlFor="churchName" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+                    Nome da Igreja/Comunidade (Opcional)
+                  </label>
+                  <input
+                    type="text"
+                    id="churchName"
+                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+                    placeholder="Nome da sua igreja"
+                    value={churchName}
+                    onChange={(e) => setChurchName(e.target.value)}
+                    aria-label="Insira o nome da sua igreja ou comunidade"
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div className="mb-6">
+                  <label htmlFor="registerEmail" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    id="registerEmail"
+                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+                    placeholder="o seu email@exemplo.com"
+                    value={registerEmail}
+                    onChange={(e) => setRegisterEmail(e.target.value)}
+                    required
+                    aria-label="Insira o seu endereço de email para registo"
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div className="mb-6">
+                  <label htmlFor="registerPassword" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+                    Palavra-passe
+                  </label>
+                  <input
+                    type="password"
+                    id="registerPassword"
+                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+                    placeholder="••••••••"
+                    value={registerPassword}
+                    onChange={(e) => setRegisterPassword(e.target.value)}
+                    required
+                    aria-describedby="password-analysis-feedback" /* WCAG: Liga o input ao feedback de análise */
+                    aria-label="Insira a sua palavra-passe de registo"
+                    disabled={isLoading}
+                  />
+                  {/* Botão para analisar a palavra-passe com Gemini */}
+                  <button
+                    type="button"
+                    onClick={analyzePasswordStrength}
+                    className="mt-2 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 shadow-md font-inter"
+                    aria-label="Analisar força da palavra-passe com Gemini"
+                    disabled={isLoading || registerPassword.length === 0}
+                  >
+                    Analisar Palavra-passe ✨
+                  </button>
+                  {passwordAnalysis && (
+                      <p 
+                          id="password-analysis-feedback" /* WCAG: ID para aria-describedby */
+                          className="text-sm mt-2 p-2 rounded-lg bg-blue-50 text-blue-700 border border-blue-200"
+                          aria-live="polite" /* WCAG: Anuncia as mudanças a leitores de ecrã */
+                      >
+                          {passwordAnalysis}
+                      </p>
+                  )}
+                </div>
+
+                <div className="mb-8">
+                  <label htmlFor="confirmPassword" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+                    Confirmar Palavra-passe
+                  </label>
+                  <input
+                    type="password"
+                    id="confirmPassword"
+                    className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 font-inter"
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    aria-label="Confirme a sua palavra-passe de registo"
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 transform hover:scale-100 active:scale-95 shadow-md font-inter"
+                  aria-label="Finalizar registo da conta"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'A registar...' : 'Registar'}
+                </button>
+              </form>
+
+              <div className="mt-8 text-center">
+                <p className="text-gray-600 font-inter">
+                  Já tem uma conta?{' '}
+                  <a href="#" onClick={onSwitchToLogin} className="font-bold text-blue-600 hover:text-blue-800 font-inter"
+                     aria-label="Clique para iniciar sessão na sua conta existente"
+                     role="button" 
+                  >
+                    Iniciar sessão
+                  </a>
+                </p>
+              </div>
+            </div>
+          );
+        }
+
+        // Componente principal da aplicação React
+        // Gere a vista atual (login/registo) e o modal de mensagens.
+        function App() {
+          const [currentView, setCurrentView] = React.useState('login'); // Controla a vista atual (login ou registo)
+          const [isModalOpen, setIsModalOpen] = React.useState(false); // Controla a visibilidade do modal de mensagens
+          const [modalMessage, setModalMessage] = React.useState(''); // Mensagem a ser exibida no modal
+          const [modalType, setModalType] = React.useState('info'); // Tipo de modal (success, error, info)
+          
+          const [isFirebaseReady, setIsFirebaseReady] = React.useState(false); // Indica se o Firebase está pronto
+          const [isSupabaseReady, setIsSupabaseReady] = React.useState(false); // Indica se o Supabase está pronto
+          const [firebaseAuth, setFirebaseAuth] = React.useState(null); // Instância do Firebase Auth
+          const [supabase, setSupabase] = React.useState(null); // Instância do Supabase Client
+
+          // Efeito para inicializar ou aguardar o Firebase Auth
+          React.useEffect(() => {
+            if (window.globalFirebaseAuth) {
+                setFirebaseAuth(window.globalFirebaseAuth);
+                setIsFirebaseReady(true);
+                console.log("[App Auth] Cliente Firebase Auth pronto.");
+            } else {
+                console.warn("[App Auth] Cliente Firebase Auth não disponível. A aguardar...");
+                const maxTries = 20; // Tentar por até 20 * 100ms = 2 segundos
+                let currentTry = 0;
+                const intervalId = setInterval(() => {
+                    if (window.globalFirebaseAuth) {
+                        setFirebaseAuth(window.globalFirebaseAuth);
+                        setIsFirebaseReady(true);
+                        console.log("[App Auth] Cliente Firebase Auth inicializado após atraso.");
+                        clearInterval(intervalId);
+                    } else if (currentTry >= maxTries) {
+                        console.error("[App Auth] Falha ao inicializar o cliente Firebase Auth após várias tentativas. Verifique 'firebaseClientInstance.js'.");
+                        showModal("Erro crítico: Não foi possível ligar ao serviço de autenticação. Por favor, recarregue a página.", "error");
+                        clearInterval(intervalId);
+                    }
+                    currentTry++;
+                }, 100);
+                return () => clearInterval(intervalId);
+            }
+          }, []);
+
+          // Efeito para inicializar ou aguardar o Supabase Client
+          React.useEffect(() => {
+            if (window.supabaseClientReadyPromise) {
+                window.supabaseClientReadyPromise
+                    .then(client => {
+                        setSupabase(client);
+                        setIsSupabaseReady(true);
+                        console.log("[App DB] Cliente Supabase pronto.");
+                    })
+                    .catch(error => {
+                        console.error("[App DB] Erro ao obter cliente Supabase via promise:", error);
+                        showModal("Erro crítico: Não foi possível ligar ao serviço de base de dados. Por favor, recarregue a página.", "error");
+                        setIsSupabaseReady(false);
+                    });
+            } else {
+                console.warn("[App DB] supabaseClientReadyPromise não disponível. A aguardar...");
+                const maxTries = 20;
+                let currentTry = 0;
+                const intervalId = setInterval(() => {
+                    if (window.globalSupabaseClient) {
+                        setSupabase(window.globalSupabaseClient);
+                        setIsSupabaseReady(true);
+                        console.log("[App DB] Cliente Supabase inicializado após atraso (fallback).");
+                        clearInterval(intervalId);
+                    } else if (currentTry >= maxTries) {
+                        console.error("[App DB] Falha ao inicializar o cliente Supabase após várias tentativas (fallback). Verifique 'supabaseClientInstance.js'.");
+                        showModal("Erro crítico: Não foi possível ligar ao serviço de base de dados. Por favor, recarregue a página.", "error");
+                        clearInterval(intervalId);
+                    }
+                    currentTry++;
+                }, 100);
+                return () => clearInterval(intervalId);
+            }
+          }, []);
+
+          // Funções para controlar o modal de mensagens
+          const showModal = (message, type) => {
+            setModalMessage(message);
+            setModalType(type);
+            setIsModalOpen(true);
+          };
+
+          const closeModal = () => {
+            setIsModalOpen(false);
+            setModalMessage('');
+            setModalType('info');
+          };
+
+          // Lida com o sucesso do início de sessão ou registo
+          const handleLoginSuccess = () => {
+            // Após o sucesso da autenticação Firebase, redireciona para o dashboard principal
+            console.log("Autenticação bem-sucedida. Redirecionando para index.html.");
+            window.location.href = 'index.html'; 
+          };
+
+          // Renderização condicional da vista
+          if (!isFirebaseReady || !isSupabaseReady) {
+            return (
+              <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
+                <div className="text-white text-2xl font-bold font-inter text-center">
+                  A carregar serviços...<br/>
+                  <span className="text-sm opacity-70">A ligar ao Firebase e Supabase.</span>
+                </div>
+              </div>
+            );
+          }
+
+          // Renderiza a vista de login ou registo quando os serviços estão prontos
+          return (
+            <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center p-4">
+              <div className="w-full max-w-md">
+                {currentView === 'login' ? (
+                  <LoginScreen 
+                    onSwitchToRegister={() => setCurrentView('register')} 
+                    onShowModal={showModal} 
+                    onLoginSuccess={handleLoginSuccess} 
+                    firebaseAuth={firebaseAuth} /* Passa a instância do Firebase Auth */
+                    supabase={supabase} /* Passa a instância do Supabase Client */
+                  />
+                ) : (
+                  <RegisterScreen 
+                    onSwitchToLogin={() => setCurrentView('login')} 
+                    onShowModal={showModal} 
+                    onLoginSuccess={handleLoginSuccess} 
+                    firebaseAuth={firebaseAuth} /* Passa a instância do Firebase Auth */
+                    supabase={supabase} /* Passa a instância do Supabase Client */
+                  />
+                )}
+                <Modal isOpen={isModalOpen} message={modalMessage} type={modalType} onClose={closeModal} />
+              </div>
+            </div>
+          );
+        }
+
+        // Renderiza o componente App no elemento 'root' do DOM
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
 </body>
 </html>
