@@ -1,7 +1,6 @@
 // supabaseClientInstance.js
 
-// Importa a função createClient do Supabase SDK via CDN.
-// Esta importação torna 'createClient' diretamente disponível neste âmbito.
+// Importa a função createClient do Supabase SDK via CDN
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
 // As suas credenciais do Supabase.
@@ -13,7 +12,6 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // Expõe a instância do cliente Supabase globalmente.
 // Este ficheiro é um módulo, por isso o código é executado uma vez.
 if (typeof window !== 'undefined') {
-  // Define as URLs globalmente para que o código que espera por elas possa encontrá-las
   window.SUPABASE_URL = SUPABASE_URL;
   window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
 
@@ -21,16 +19,23 @@ if (typeof window !== 'undefined') {
   // O componente App pode então esperar por esta promessa.
   window.supabaseClientReadyPromise = new Promise((resolve, reject) => {
     try {
-      if (!window.globalSupabaseClient) { // Apenas cria se ainda não foi criado
-        window.globalSupabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        console.log("[Supabase] Cliente de dados inicializado globalmente.");
+      if (!window.globalSupabaseClient) {
+        // Inicializa o cliente Supabase com a URL e a chave.
+        // Por padrão, o cliente já vem com os módulos de base de dados e autenticação.
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window.globalSupabaseClient = supabaseClient;
+        
+        // Expõe a instância auth do Supabase para fácil acesso (opcional, mas útil para depuração)
+        window.globalSupabaseAuth = supabaseClient.auth; 
+
+        console.log("[Supabase] Cliente inicializado globalmente com autenticação e base de dados.");
         resolve(window.globalSupabaseClient); // Resolve a promessa com a instância do cliente
       } else {
-        console.log("[Supabase] Cliente de dados já inicializado em outro contexto global.");
+        console.log("[Supabase] Cliente já inicializado em outro contexto global.");
         resolve(window.globalSupabaseClient); // Resolve a promessa se já existir
       }
     } catch (error) {
-      console.error("[Supabase] Erro ao inicializar o cliente de dados:", error);
+      console.error("[Supabase] Erro ao inicializar o cliente Supabase:", error);
       reject(error); // Rejeita a promessa em caso de erro
     }
   });
