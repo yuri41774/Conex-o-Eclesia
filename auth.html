@@ -44,34 +44,10 @@
     <!-- Importa Babel para transpilador JSX diretamente no navegador -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- Importa o SDK do Firebase App e Auth (para autenticação) -->
-    <script type="module" src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
-    <script type="module" src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
-    <!-- Carrega o script de inicialização do Firebase. ESSENCIAL! -->
-    <script type="module" src="firebaseClientInstance.js"></script>
+    <!-- REMOVIDO: Importações do Firebase SDK e firebaseClientInstance.js -->
+    <!-- REMOVIDO: Bloco de script que expunha funções modulares do Firebase Auth -->
 
-    <!-- NOVO: Importa as funções modulares específicas do Firebase Auth e as expõe globalmente -->
-    <script type="module">
-        import { 
-            signInWithEmailAndPassword, 
-            createUserWithEmailAndPassword, 
-            sendPasswordResetEmail,
-            signOut,
-            updateProfile, // Adicionado updateProfile
-            onAuthStateChanged // Adicionado onAuthStateChanged para uso direto
-        } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-        
-        if (typeof window !== 'undefined') {
-            window.firebaseSignInWithEmailAndPassword = signInWithEmailAndPassword;
-            window.firebaseCreateUserWithEmailAndPassword = createUserWithEmailAndPassword;
-            window.firebaseSendPasswordResetEmail = sendPasswordResetEmail;
-            window.firebaseSignOut = signOut;
-            window.firebaseUpdateProfile = updateProfile; // Expor updateProfile
-            window.firebaseOnAuthStateChanged = onAuthStateChanged; // Expor onAuthStateChanged
-        }
-    </script>
-
-    <!-- Importa o SDK do Supabase Client (para base de dados e armazenamento) -->
+    <!-- Importa o SDK do Supabase Client (para base de dados e autenticação) -->
     <script type="module" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"></script>
     <!-- Carrega o script de inicialização do Supabase. ESSENCIAL! -->
     <script type="module" src="supabaseClientInstance.js"></script>
