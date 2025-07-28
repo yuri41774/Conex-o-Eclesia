@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Conexão Eclesia - Autenticação</title>
-    <!-- Incluindo Tailwind CSS para estilização (via CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Incluindo a fonte Inter do Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         body {
@@ -38,18 +36,11 @@
 <body>
     <div id="root"></div>
 
-    <!-- Importa React e ReactDOM a partir de um CDN (unpkg.com) -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Importa Babel para transpilador JSX diretamente no navegador -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- REMOVIDO: Importações do Firebase SDK e firebaseClientInstance.js -->
-    <!-- REMOVIDO: Bloco de script que expunha funções modulares do Firebase Auth -->
-
-    <!-- Importa o SDK do Supabase Client (para base de dados e autenticação) -->
     <script type="module" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"></script>
-    <!-- Carrega o script de inicialização do Supabase. ESSENCIAL! -->
     <script type="module" src="supabaseClientInstance.js"></script>
 
     <script type="text/babel">
@@ -167,7 +158,11 @@
               ]);
               if (error) {
                 console.error('Erro ao registar igreja no Supabase:', error);
-                onShowMessage(`Erro ao registar igreja: ${error.message || 'Erro desconhecido'}.`, 'error');
+                let errorMessage = `Erro ao registar igreja: ${error.message || 'Erro desconhecido'}.`;
+                if (error.code === '23505') { // Unique violation
+                    errorMessage = 'Já existe uma igreja registada com este nome ou email.';
+                }
+                onShowMessage(errorMessage, 'error');
               } else {
                 onShowMessage('Igreja registada com sucesso! Agora crie uma conta de utilizador para ser o administrador desta igreja.', 'success');
                 setChurchName('');
@@ -300,6 +295,10 @@
                         errorMessage = 'Email ou palavra-passe inválidos.';
                     } else if (error.message.includes('Email not confirmed')) {
                         errorMessage = 'Email não confirmado. Verifique a sua caixa de entrada.';
+                    } else if (error.message.includes('User is disabled')) {
+                        errorMessage = 'A sua conta foi desativada.';
+                    } else if (error.message.includes('Too many login attempts')) {
+                        errorMessage = 'Demasiadas tentativas de início de sessão. Tente novamente mais tarde.';
                     }
                     onShowModal(`Erro: ${errorMessage}`, 'error');
                 } else if (data.user) {
@@ -567,7 +566,7 @@
                         // Se email confirmation está ativo
                         errorMessage = 'Registo bem-sucedido! Por favor, verifique o seu email para confirmar a conta.';
                         onShowModal(errorMessage, 'success');
-                        // O perfil pode ser criado por um trigger de auth no Supabase após a confirmação.
+                        // O perfil será criado por um TRIGGER de Auth no Supabase após a confirmação.
                         setFullName(''); setDateOfBirth(''); setPhoneNumber(''); setRoleInChurch(''); setChurchName(''); setRegisterEmail(''); setRegisterPassword(''); setConfirmPassword(''); setPasswordAnalysis('');
                         onSwitchToLogin();
                         return; // Sair da função
