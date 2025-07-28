@@ -171,7 +171,7 @@
           const [isSaving, setIsSaving] = React.useState(false); // Estado para guardar o perfil
           const [roleDescriptionSuggestion, setRoleDescriptionSuggestion] = React.useState(''); // Estado para a sugestão de descrição do cargo
           const [avatarFile, setAvatarFile] = React.useState(null); // Estado para o ficheiro do avatar
-          const [avatarPreviewUrl, setAvatarPreviewUrl] = React.useState('https://i.ibb.co/Vt2W1d1/user-profile-default-image.png'); // URL de pré-visualização do avatar
+          const [avatarPreviewUrl, setAvatarPreviewUrl] = React.useState('https://ui-avatars.com/api/?name=User&background=random'); // URL de pré-visualização do avatar
 
           // Efeito para carregar dados do utilizador e perfil existente
           React.useEffect(() => {
@@ -191,7 +191,7 @@
                 }
                 setUser(authUser); // Guarda o objeto de utilizador autenticado
 
-                // Tenta buscar o perfil existente na tabela 'profiles'
+                // Tenta buscar o perfil existente
                 const { data: existingProfile, error } = await supabase
                   .from('profiles')
                   .select('*')
@@ -210,7 +210,7 @@
                   setPhoneNumber(existingProfile.phone_number || '');
                   setRoleInChurch(existingProfile.role_in_church || '');
                   setChurchName(existingProfile.church_name || '');
-                  setAvatarPreviewUrl(existingProfile.avatar_url || 'https://i.ibb.co/Vt2W1d1/user-profile-default-image.png');
+                  setAvatarPreviewUrl(existingProfile.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(existingProfile.full_name || 'User')}&background=random`);
                 } else {
                   // Perfil não existe, preenche com dados básicos do utilizador autenticado
                   setFullName(authUser.user_metadata.full_name || authUser.email.split('@')[0]);
@@ -218,7 +218,7 @@
                   setDateOfBirth(authUser.user_metadata.date_of_birth || '');
                   setRoleInChurch(authUser.user_metadata.role_in_church || '');
                   setChurchName(authUser.user_metadata.church_name || '');
-                  setAvatarPreviewUrl(authUser.user_metadata.avatar_url || 'https://i.ibb.co/Vt2W1d1/user-profile-default-image.png');
+                  setAvatarPreviewUrl(authUser.user_metadata.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(authUser.user_metadata.full_name || 'User')}&background=random`);
                   setProfile(null); // Indica que é um novo perfil a ser inserido
                 }
               } catch (err) {
@@ -353,10 +353,9 @@
               }
               setRoleDescriptionSuggestion('A gerar sugestão com ✨Gemini...');
               try {
-                  // Simulação da chamada à API Gemini
-                  // Em um ambiente real, você faria um fetch para seu backend que chamaria a API Gemini
-                  // const apiKey = ""; // A chave API real seria usada aqui em um ambiente de produção
-                  // const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                  // A chave API real seria usada aqui em um ambiente de produção
+                  const apiKey = ""; // Deixe como "" para que o Canvas injete a chave automaticamente
+                  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
                   
                   const prompt = `Gere uma breve e profissional descrição para o cargo "${roleInChurch}" numa comunidade cristã. Foco em responsabilidades e impacto. Máximo 30 palavras.`;
                   const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
