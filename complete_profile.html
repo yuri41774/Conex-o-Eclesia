@@ -171,7 +171,7 @@
           const [isSaving, setIsSaving] = React.useState(false); // Estado para guardar o perfil
           const [roleDescriptionSuggestion, setRoleDescriptionSuggestion] = React.useState(''); // Estado para a sugestão de descrição do cargo
           const [avatarFile, setAvatarFile] = React.useState(null); // Estado para o ficheiro do avatar
-          const [avatarPreviewUrl, setAvatarPreviewUrl] = React.useState('https://ui-avatars.com/api/?name=User&background=random'); // URL de pré-visualização do avatar
+          const [avatarPreviewUrl, setAvatarPreviewUrl] = React.useState('https://ui-avatars.com/api/?name=User&background=random'); // CORRIGIDO: URL de pré-visualização do avatar
 
           // Efeito para carregar dados do utilizador e perfil existente
           React.useEffect(() => {
@@ -243,7 +243,7 @@
               setAvatarPreviewUrl(URL.createObjectURL(file)); // Cria URL de pré-visualização
             } else {
               setAvatarFile(null);
-              setAvatarPreviewUrl('https://i.ibb.co/Vt2W1d1/user-profile-default-image.png'); // Volta para o padrão
+              setAvatarPreviewUrl(`https://ui-avatars.com/api/?name=${encodeURIComponent(fullName || 'User')}&background=random`); // Volta para o padrão
             }
           };
 
@@ -432,7 +432,7 @@
                   <input
                     type="text"
                     id="fullName"
-                    className="shadow-sm border rounded-lg w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 font-inter"
+                    className="shadow-sm border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 font-inter"
                     placeholder="O seu nome completo"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
