@@ -62,9 +62,6 @@
     <!-- Carrega o script de inicialização do Supabase. ESSENCIAL! -->
     <script type="module" src="supabaseClientInstance.js"></script>
 
-    <!-- REMOVIDO: Bloco de script que importava e expunha onAuthStateChanged globalmente -->
-    <!-- Agora onAuthStateChanged será importado diretamente no script principal abaixo -->
-
     <script type="module">
         // NOVO: Importa onAuthStateChanged diretamente para este âmbito
         import { onAuthStateChanged } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
