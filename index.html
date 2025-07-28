@@ -110,8 +110,8 @@
     <script type="module" src="supabaseClientInstance.js"></script>
 
     <script type="module">
-        // REMOVIDO: Importação direta de onAuthStateChanged aqui.
-        // onAuthStateChanged será acedido diretamente via supabase.auth.onAuthStateChanged
+        // CORRIGIDO: Importa onAuthStateChanged diretamente para este âmbito
+        import { onAuthStateChanged } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
         // Referências aos elementos do DOM
         const appContainer = document.getElementById('app-container');
@@ -159,8 +159,8 @@
 
             // --- 2. Iniciar a verificação de autenticação do Supabase ---
             // Listener de estado de autenticação do Supabase
-            // CORRIGIDO: Chamar supabase.auth.onAuthStateChanged diretamente
-            supabase.auth.onAuthStateChanged(async (event, session) => {
+            // CORRIGIDO: Chamar onAuthStateChanged diretamente (importado no topo deste script)
+            onAuthStateChanged(supabase.auth, async (event, session) => {
                 const user = session?.user || null; 
 
                 if (user) {
