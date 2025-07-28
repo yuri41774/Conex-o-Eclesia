@@ -12,11 +12,36 @@
         body {
             font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, #a7b7eb 0%, #b3c2f0 100%); /* Fundo suave */
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            margin: 0; /* Remover margem padrão do body */
+            padding-top: 80px; /* Espaço para o cabeçalho fixo (altura do cabeçalho + padding) */
             min-height: 100vh;
-            margin: 0;
+        }
+        #main-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 1000; /* Garante que o cabeçalho esteja sempre no topo */
+            padding: 1rem 2rem; /* Padding interno */
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap; /* Permite que os itens quebrem a linha em telas pequenas */
+            gap: 1rem; /* Espaçamento entre os itens */
+        }
+        .user-info-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .user-avatar-header {
+            width: 40px;
+            height: 40px;
+            border-radius: 9999px; /* full rounded */
+            object-fit: cover;
+            border: 2px solid #60a5fa; /* blue-300 */
         }
         .card {
             background-color: white;
@@ -26,6 +51,7 @@
             text-align: center;
             max-width: 500px;
             width: 90%;
+            margin: 2rem auto; /* Centraliza o card principal abaixo do cabeçalho */
         }
         .btn-primary {
             background-color: #2563eb; /* blue-600 */
@@ -52,10 +78,31 @@
     </style>
 </head>
 <body>
+    <!-- Cabeçalho Fixo (Inicialmente oculto ou com conteúdo de carregamento) -->
+    <header id="main-header" style="display: none;">
+        <div class="user-info-header">
+            <img id="header-avatar" src="https://i.ibb.co/Vt2W1d1/user-profile-default-image.png" alt="Avatar do utilizador" class="user-avatar-header">
+            <div>
+                <span id="header-username" class="font-bold text-gray-800 text-lg">A carregar...</span>
+                <p id="header-email" class="text-gray-600 text-sm"></p>
+            </div>
+        </div>
+        <button id="logout-btn" class="btn-danger">Terminar Sessão</button>
+    </header>
+
+    <!-- Container principal da aplicação (para a tela de carregamento ou conteúdo do dashboard) -->
     <div id="app-container" class="card">
         <h1 class="text-3xl font-bold text-gray-800 mb-4">A carregar...</h1>
         <p class="text-gray-600">A verificar a sua sessão e a ligar aos serviços.</p>
     </div>
+
+    <!-- Conteúdo principal do Dashboard (será preenchido após o carregamento) -->
+    <div id="main-dashboard-content" class="card" style="display: none;">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">O seu Dashboard</h2>
+        <p class="text-gray-700 mb-4">Bem-vindo de volta! Explore as funcionalidades da Conexão Eclesia.</p>
+        <a href="conexao-eclesia-feed.html" class="block w-full btn-primary">Ir para o Feed de Publicações</a>
+    </div>
+
 
     <!-- Importa o SDK do Supabase Client (para base de dados e autenticação) -->
     <script type="module" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"></script>
@@ -68,6 +115,13 @@
 
         // Referências aos elementos do DOM
         const appContainer = document.getElementById('app-container');
+        const mainHeader = document.getElementById('main-header');
+        const headerAvatar = document.getElementById('header-avatar');
+        const headerUsername = document.getElementById('header-username');
+        const headerEmail = document.getElementById('header-email');
+        const logoutBtn = document.getElementById('logout-btn');
+        const mainDashboardContent = document.getElementById('main-dashboard-content');
+
 
         // Função para exibir mensagens na UI (simples, pode ser um modal global)
         function displayMessage(message, type = 'info') {
@@ -105,7 +159,6 @@
 
             // --- 2. Iniciar a verificação de autenticação do Supabase ---
             // Listener de estado de autenticação do Supabase
-            // CORRIGIDO: Chamar onAuthStateChanged diretamente (importado no topo deste script)
             onAuthStateChanged(supabase.auth, async (event, session) => {
                 const user = session?.user || null; 
 
@@ -124,11 +177,12 @@
                         if (error && error.code !== 'PGRST116') { // PGRST116 é "no rows found"
                             console.error("Erro ao carregar perfil do Supabase:", error);
                             displayMessage("Erro ao carregar os seus dados de perfil. Tente novamente.", "error");
-                            renderDashboard(user, null, supabase); // Exibe o dashboard, mas com aviso
+                            // Se houver erro no perfil, ainda exibe o dashboard, mas sem os dados do perfil
+                            renderDashboard(user, null, supabase); 
                         } else if (!profile) {
                             // Se o perfil não existe na tabela 'profiles' (mas o utilizador está autenticado em auth.users)
                             console.log("[App] Perfil Supabase não encontrado na tabela 'profiles'.");
-                            // CORRIGIDO: Redirecionar para uma página de criação/complemento de perfil
+                            // Redirecionar para uma página de criação/complemento de perfil
                             window.location.href = 'complete_profile.html'; // Redireciona para completar perfil
                         } else {
                             // Perfil encontrado e carregado com sucesso
@@ -157,20 +211,21 @@
             const userUid = supabaseUser.id; // ID do utilizador Supabase Auth
             const userAvatar = supabaseProfile?.avatar_url || 'https://i.ibb.co/Vt2W1d1/user-profile-default-image.png';
 
-            appContainer.innerHTML = `
-                <h1 class="text-3xl font-bold text-blue-600 mb-4">Bem-vindo, ${userName}!</h1>
-                <img src="${userAvatar}" alt="Avatar do utilizador" class="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-blue-300 shadow-md">
-                <p class="text-gray-700 mb-2"><strong>Email:</strong> ${userEmail}</p>
-                <p class="text-gray-700 mb-4"><strong>ID de Utilizador (Supabase):</strong> ${userUid}</p>
-                
-                <div class="space-y-3">
-                    <a href="conexao-eclesia-feed.html" class="block w-full btn-primary">Ir para o Feed de Publicações</a>
-                    <button id="logout-btn" class="block w-full btn-danger">Terminar Sessão</button>
-                </div>
-            `;
+            // Oculta a tela de carregamento
+            appContainer.style.display = 'none'; 
+            // Exibe o cabeçalho fixo
+            mainHeader.style.display = 'flex';
+            // Exibe o conteúdo principal do dashboard
+            mainDashboardContent.style.display = 'block';
 
-            // Adicionar listener ao botão de logout
-            document.getElementById('logout-btn').addEventListener('click', async () => {
+            // Preenche os dados no cabeçalho fixo
+            headerAvatar.src = userAvatar;
+            headerAvatar.alt = `Avatar de ${userName}`;
+            headerUsername.textContent = userName;
+            headerEmail.textContent = userEmail;
+
+            // Adicionar listener ao botão de logout no cabeçalho fixo
+            logoutBtn.addEventListener('click', async () => {
                 try {
                     await supabaseClient.auth.signOut(); // Usa o cliente Supabase para terminar a sessão
                     displayMessage("Sessão terminada com sucesso!", "success");
