@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Conexão Eclesia - Dashboard</title>
+    <!-- Incluindo Tailwind CSS para estilização (via CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Incluindo a fonte Inter do Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         body {
@@ -55,143 +57,106 @@
         <p class="text-gray-600">A verificar a sua sessão e a ligar aos serviços.</p>
     </div>
 
-    <script type="module" src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
-    <script type="module" src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
-    <script type="module" src="firebaseClientInstance.js"></script>
+    <!-- Importa o SDK do Supabase Client (para base de dados e autenticação) -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"></script>
+    <!-- Carrega o script de inicialização do Supabase. ESSENCIAL! -->
+    <script type="module" src="supabaseClientInstance.js"></script>
 
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"></script> 
-    <script type="module" src="supabaseClientInstance.js"></script> <script type="module">
+    <script type="module">
         // Referências aos elementos do DOM
         const appContainer = document.getElementById('app-container');
 
-        // Função para exibir mensagens no console e na UI
+        // Função para exibir mensagens na UI (simples, pode ser um modal global)
         function displayMessage(message, type = 'info') {
             console.log(`[App Message - ${type.toUpperCase()}] ${message}`);
             // Para uma aplicação real, você usaria um modal ou toast aqui
-            // Por simplicidade, vamos atualizar o conteúdo do container
-            appContainer.innerHTML = `
-                <h1 class="text-3xl font-bold ${type === 'error' ? 'text-red-600' : 'text-blue-600'} mb-4">${type === 'error' ? 'Erro!' : 'Informação'}</h1>
-                <p class="text-gray-700 mb-4">${message}</p>
-                <button onclick="window.location.reload()" class="btn-primary">Recarregar</button>
-            `;
+            // Por simplicidade, vamos atualizar o conteúdo do container para erros críticos
+            if (type === 'error') {
+                appContainer.innerHTML = `
+                    <h1 class="text-3xl font-bold text-red-600 mb-4">Erro!</h1>
+                    <p class="text-gray-700 mb-4">${message}</p>
+                    <button onclick="window.location.reload()" class="btn-primary">Recarregar</button>
+                `;
+            }
         }
 
         // Função principal para inicializar a aplicação
         async function initApp() {
-            let firebaseAuth;
             let supabase;
 
-            // --- 1. Aguardar e obter a instância do Firebase Auth ---
-            const maxFirebaseTries = 20; // Tentar por até 2 segundos
-            let currentFirebaseTry = 0;
-            const firebaseIntervalId = setInterval(() => {
-                if (window.globalFirebaseAuth) {
-                    firebaseAuth = window.globalFirebaseAuth;
-                    console.log("[App] Cliente Firebase Auth obtido.");
-                    clearInterval(firebaseIntervalId);
-                    
-                    // --- 2. Aguardar e obter a instância do Supabase Client ---
-                    // Agora, espera pela promessa global do Supabase Client
-                    if (window.supabaseClientReadyPromise) {
-                        window.supabaseClientReadyPromise
-                            .then(client => {
-                                supabase = client;
-                                console.log("[App] Cliente Supabase obtido via promise.");
-                                // --- 3. Iniciar a verificação de autenticação e carregar dados ---
-                                checkAuthAndLoadData(firebaseAuth, supabase);
-                            })
-                            .catch(error => {
-                                console.error("[App] Erro ao obter cliente Supabase via promise:", error);
-                                displayMessage("Erro crítico: Não foi possível ligar ao serviço de base de dados. Por favor, recarregue a página.", "error");
-                            });
-                    } else {
-                        console.error("[App] supabaseClientReadyPromise não disponível. Verifique a ordem de carregamento ou o ficheiro supabaseClientInstance.js.");
-                        displayMessage("Erro crítico: Falha na inicialização do serviço de base de dados. Recarregue.", "error");
-                    }
-
-                } else if (currentFirebaseTry >= maxFirebaseTries) {
-                    console.error("[App] Falha ao inicializar o cliente Firebase Auth.");
-                    displayMessage("Erro crítico: Não foi possível ligar ao serviço de autenticação. Por favor, recarregue a página.", "error");
-                    clearInterval(firebaseIntervalId);
+            // --- 1. Aguardar e obter a instância do Supabase Client ---
+            if (window.supabaseClientReadyPromise) {
+                try {
+                    supabase = await window.supabaseClientReadyPromise;
+                    console.log("[App] Cliente Supabase obtido.");
+                } catch (error) {
+                    console.error("[App] Erro ao obter cliente Supabase via promise:", error);
+                    displayMessage("Erro crítico: Não foi possível ligar ao serviço Supabase. Por favor, recarregue a página.", "error");
+                    return; // Interrompe se o Supabase não estiver pronto
                 }
-                currentFirebaseTry++;
-            }, 100); // Tenta a cada 100ms
-        }
+            } else {
+                console.error("[App] supabaseClientReadyPromise não disponível. Verifique a ordem de carregamento ou o ficheiro supabaseClientInstance.js.");
+                displayMessage("Erro crítico: Falha na inicialização do serviço Supabase. Recarregue.", "error");
+                return; // Interrompe se a promessa não estiver disponível
+            }
 
-        // Função para verificar a autenticação Firebase e carregar dados do Supabase
-        async function checkAuthAndLoadData(firebaseAuth, supabase) {
-            // Listener de estado de autenticação do Firebase
-            firebaseAuth.onAuthStateChanged(async (user) => {
+            // --- 2. Iniciar a verificação de autenticação do Supabase ---
+            // Listener de estado de autenticação do Supabase
+            supabase.auth.onAuthStateChanged(async (user) => {
                 if (user) {
-                    // Utilizador autenticado via Firebase
-                    console.log("[App] Utilizador autenticado Firebase UID:", user.uid);
+                    // Utilizador autenticado via Supabase
+                    console.log("[App] Utilizador Supabase autenticado ID:", user.id);
                     
-                    // Tentar obter dados do perfil do Supabase usando o UID do Firebase
+                    // Tentar obter dados do perfil do Supabase usando o user.id
                     try {
                         const { data: profile, error } = await supabase
                             .from('profiles')
                             .select('*')
-                            .eq('id', user.uid) // O ID do perfil Supabase deve ser o UID do Firebase
+                            .eq('id', user.id) // O ID do perfil Supabase deve ser o ID do utilizador Supabase Auth
                             .single();
 
-                        if (error && error.code !== 'PGRST116') { // PGRST116 é "no rows found" (significa que não há perfil, não é um erro de query)
+                        if (error && error.code !== 'PGRST116') { // PGRST116 é "no rows found"
                             console.error("Erro ao carregar perfil do Supabase:", error);
                             displayMessage("Erro ao carregar os seus dados de perfil. Tente novamente.", "error");
-                            renderDashboard(user, null); // Ainda assim, exibe o dashboard, mas com aviso
+                            renderDashboard(user, null, supabase); // Exibe o dashboard, mas com aviso
                         } else if (!profile) {
-                            // Se o perfil não existe no Supabase, cria um novo
-                            console.log("[App] Perfil Supabase não encontrado, a criar novo...");
-                            const { data: newProfile, error: createError } = await supabase
-                                .from('profiles')
-                                .insert([{ 
-                                    id: user.uid, 
-                                    email: user.email, 
-                                    full_name: user.displayName || user.email.split('@')[0], // Nome padrão
-                                    avatar_url: user.photoURL || 'https://i.ibb.co/Vt2W1d1/user-profile-default-image.png'
-                                }])
-                                .select('*')
-                                .single();
-
-                            if (createError) {
-                                console.error("Erro ao criar perfil no Supabase:", createError);
-                                displayMessage("Erro ao criar o seu perfil inicial. Por favor, contacte o suporte.", "error");
-                                renderDashboard(user, null); // Exibe o dashboard sem perfil completo
-                            } else {
-                                console.log("[App] Perfil Supabase criado com sucesso.");
-                                renderDashboard(user, newProfile);
-                            }
+                            // Se o perfil não existe na tabela 'profiles' (mas o utilizador está autenticado em auth.users)
+                            console.log("[App] Perfil Supabase não encontrado na tabela 'profiles'.");
+                            displayMessage("O seu perfil não foi encontrado. Por favor, contacte o suporte ou tente novamente.", "error");
+                            // Redirecionar para uma página de criação de perfil ou forçar logout
+                            renderDashboard(user, null, supabase); // Exibe o dashboard sem perfil completo
                         } else {
                             // Perfil encontrado e carregado com sucesso
                             console.log("[App] Perfil Supabase carregado:", profile);
-                            renderDashboard(user, profile);
+                            renderDashboard(user, profile, supabase);
                         }
                     } catch (supabaseError) {
-                        console.error("Erro inesperado na operação do Supabase:", supabaseError);
+                        console.error("Erro inesperado na operação do Supabase (perfil):", supabaseError);
                         displayMessage("Ocorreu um erro inesperado ao aceder aos seus dados. Recarregue a página.", "error");
-                        renderDashboard(user, null); // Exibe o dashboard sem perfil completo
+                        renderDashboard(user, null, supabase); // Exibe o dashboard sem perfil completo
                     }
 
                 } else {
-                    // Utilizador NÃO autenticado via Firebase
+                    // Utilizador NÃO autenticado via Supabase
                     console.log("[App] Utilizador não autenticado. Redirecionando para a página de autenticação.");
-                    // Redireciona para a página de autenticação (que você criará como auth.html)
+                    // Redireciona para a página de autenticação
                     window.location.href = 'auth.html'; 
                 }
             });
         }
 
         // Função para renderizar o dashboard (conteúdo principal da aplicação)
-        function renderDashboard(firebaseUser, supabaseProfile) {
-            const userName = supabaseProfile?.full_name || firebaseUser.displayName || firebaseUser.email;
-            const userEmail = firebaseUser.email;
-            const userUid = firebaseUser.uid;
-            const userAvatar = supabaseProfile?.avatar_url || firebaseUser.photoURL || 'https://i.ibb.co/Vt2W1d1/user-profile-default-image.png';
+        function renderDashboard(supabaseUser, supabaseProfile, supabaseClient) {
+            const userName = supabaseProfile?.full_name || supabaseUser.email.split('@')[0];
+            const userEmail = supabaseUser.email;
+            const userUid = supabaseUser.id; // ID do utilizador Supabase Auth
+            const userAvatar = supabaseProfile?.avatar_url || 'https://i.ibb.co/Vt2W1d1/user-profile-default-image.png';
 
             appContainer.innerHTML = `
                 <h1 class="text-3xl font-bold text-blue-600 mb-4">Bem-vindo, ${userName}!</h1>
                 <img src="${userAvatar}" alt="Avatar do utilizador" class="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-blue-300 shadow-md">
                 <p class="text-gray-700 mb-2"><strong>Email:</strong> ${userEmail}</p>
-                <p class="text-gray-700 mb-4"><strong>ID de Utilizador (Firebase):</strong> ${userUid}</p>
+                <p class="text-gray-700 mb-4"><strong>ID de Utilizador (Supabase):</strong> ${userUid}</p>
                 
                 <div class="space-y-3">
                     <a href="conexao-eclesia-feed.html" class="block w-full btn-primary">Ir para o Feed de Publicações</a>
@@ -202,7 +167,7 @@
             // Adicionar listener ao botão de logout
             document.getElementById('logout-btn').addEventListener('click', async () => {
                 try {
-                    await window.globalFirebaseAuth.signOut();
+                    await supabaseClient.auth.signOut(); // Usa o cliente Supabase para terminar a sessão
                     displayMessage("Sessão terminada com sucesso!", "success");
                     // onAuthStateChanged irá redirecionar para auth.html
                 } catch (error) {
