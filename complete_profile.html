@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conexão Eclesia - Completar Perfil</title>
+    <!-- Incluindo Tailwind CSS para estilização (via CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Incluindo a fonte Inter do Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            text-size-adjust: none;
+            -webkit-text-size-adjust: none;
+            background: linear-gradient(135deg, #a7b7eb 0%, #b3c2f0 100%); /* Fundo suave */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .card {
+            background-color: white;
+            border-radius: 1.25rem; /* rounded-2xl */
+            box-shadow: 0 4px 24px 0 rgba(0,0,0,0.1), 0 1.5px 4px 0 rgba(0,0,0,0.04); /* modern-shadow */
+            padding: 2rem;
+            text-align: center;
+            max-width: 600px; /* Um pouco mais largo para o formulário */
+            width: 90%;
+        }
+        .btn-primary {
+            background-color: #2563eb; /* blue-600 */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem; /* rounded-lg */
+            font-weight: 700;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .btn-primary:hover {
+            background-color: #1d4ed8; /* blue-700 */
+        }
+        .btn-green {
+            background-color: #22c55e; /* green-500 */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .btn-green:hover {
+            background-color: #16a34a; /* green-600 */
+        }
+        .btn-danger {
+            background-color: #dc2626; /* red-600 */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .btn-danger:hover {
+            background-color: #b91c1c; /* red-700 */
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(0.5) sepia(1) saturate(5) hue-rotate(175deg) brightness(0.8); /* Cor do ícone do calendário */
+        }
+        input[type="date"] {
+            appearance: none; /* Remove o estilo padrão do navegador */
+            -webkit-appearance: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <!-- Importa React e ReactDOM a partir de um CDN (unpkg.com) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Importa Babel para transpilador JSX diretamente no navegador -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Importa o SDK do Supabase Client (para base de dados e autenticação) -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"></script>
+    <!-- Carrega o script de inicialização do Supabase. ESSENCIAL! -->
+    <script type="module" src="supabaseClientInstance.js"></script>
+
+    <script type="text/babel">
+        // Componente Modal: Exibe mensagens de sucesso, erro ou informação para o utilizador.
+        // WCAG: Adicionado role="dialog", aria-modal="true" e aria-labelledby para acessibilidade.
+        // WCAG: Adicionado controlo da tecla ESC para fechar.
+        function Modal({ isOpen, message, type, onClose }) {
+          // Hooks chamados incondicionalmente no topo do componente
+          const modalRef = React.useRef(null);
+          const previousActiveElement = React.useRef(null);
+          const modalTitleId = React.useId(); // Gera um ID único para o título do modal
+
+          React.useEffect(() => {
+            if (isOpen) {
+              previousActiveElement.current = document.activeElement; // Guarda o elemento focado antes de abrir o modal
+              modalRef.current?.focus(); // Move o foco para o modal
+              const handleKeyDown = (event) => {
+                if (event.key === 'Escape') {
+                  onClose();
+                }
+              };
+              document.addEventListener('keydown', handleKeyDown);
+              return () => {
+                document.removeEventListener('keydown', handleKeyDown);
+                // Restaura o foco para o elemento original quando o modal fecha
+                if (previousActiveElement.current) {
+                  previousActiveElement.current.focus();
+                }
+              };
+            }
+          }, [isOpen, onClose]);
+
+          if (!isOpen) return null;
+
+          const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+          const headerText = type === 'success' ? 'Sucesso!' : 'Erro!';
+
+          return (
+            <div 
+              className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={modalTitleId}
+              tabIndex="-1" // Permite que o modal seja focado
+              ref={modalRef}
+            >
+              <div className="bg-white rounded-lg shadow-xl overflow-hidden max-w-sm w-full transform transition-all duration-300 scale-100">
+                <div className={`${bgColor} text-white px-6 py-4 flex justify-between items-center rounded-t-lg`}>
+                  <h3 id={modalTitleId} className="text-xl font-bold font-inter">{headerText}</h3>
+                  <button
+                    onClick={onClose}
+                    className="text-white hover:text-gray-200 focus:outline-none text-2xl font-bold"
+                    aria-label="Fechar modal de mensagem"
+                  >
+                    &times;
+                  </button>
+                </div>
+                <div className="p-6">
+                  <p className="text-gray-700 text-lg mb-4 font-inter">{message}</p>
+                  <div className="flex justify-end">
+                    <button
+                      onClick={onClose}
+                      className={`py-2 px-6 rounded-lg font-bold text-white transition duration-300 shadow-md ${bgColor} hover:${bgColor.replace('500', '600')} focus:outline-none focus:ring-2 focus:ring-opacity-75`}
+                      aria-label="Entendido, fechar mensagem"
+                    >
+                      OK
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        // Componente ProfileCompletionForm: Formulário para completar/atualizar o perfil do utilizador
+        function ProfileCompletionForm({ onShowModal, supabase, onProfileCompleted }) {
+          const [user, setUser] = React.useState(null);
+          const [profile, setProfile] = React.useState(null); // Armazena o perfil existente
+          const [fullName, setFullName] = React.useState('');
+          const [dateOfBirth, setDateOfBirth] = React.useState('');
+          const [phoneNumber, setPhoneNumber] = React.useState('');
+          const [roleInChurch, setRoleInChurch] = React.useState('');
+          const [churchName, setChurchName] = React.useState(''); 
+          const [isLoading, setIsLoading] = React.useState(true); // Começa a carregar
+          const [isSaving, setIsSaving] = React.useState(false); // Estado para guardar o perfil
+          const [roleDescriptionSuggestion, setRoleDescriptionSuggestion] = React.useState(''); // Estado para a sugestão de descrição do cargo
+          const [avatarFile, setAvatarFile] = React.useState(null); // Estado para o ficheiro do avatar
+          const [avatarPreviewUrl, setAvatarPreviewUrl] = React.useState('https://i.ibb.co/Vt2W1d1/user-profile-default-image.png'); // URL de pré-visualização do avatar
+
+          // Efeito para carregar dados do utilizador e perfil existente
+          React.useEffect(() => {
+            const loadUserData = async () => {
+              if (!supabase) {
+                onShowModal('Serviço de base de dados não disponível. Recarregue a página.', 'error');
+                setIsLoading(false);
+                return;
+              }
+
+              try {
+                const { data: { user: authUser } } = await supabase.auth.getUser();
+                if (!authUser) {
+                  console.log("[ProfileCompletion] Utilizador não autenticado, redirecionando para auth.html.");
+                  window.location.href = 'auth.html'; // Redireciona se não estiver autenticado
+                  return;
+                }
+                setUser(authUser); // Guarda o objeto de utilizador autenticado
+
+                // Tenta buscar o perfil existente na tabela 'profiles'
+                const { data: existingProfile, error } = await supabase
+                  .from('profiles')
+                  .select('*')
+                  .eq('id', authUser.id)
+                  .single();
+
+                if (error && error.code !== 'PGRST116') { // PGRST116 é "no rows found" (não é um erro real, significa que o perfil não existe)
+                  console.error("[ProfileCompletion] Erro ao carregar perfil existente:", error);
+                  onShowModal(`Erro ao carregar o seu perfil: ${error.message || 'Erro desconhecido'}.`, 'error');
+                  setProfile(null); // Garante que o perfil é nulo em caso de erro
+                } else if (existingProfile) {
+                  // Se o perfil existe, preenche os campos com os dados existentes
+                  setProfile(existingProfile);
+                  setFullName(existingProfile.full_name || '');
+                  setDateOfBirth(existingProfile.date_of_birth || '');
+                  setPhoneNumber(existingProfile.phone_number || '');
+                  setRoleInChurch(existingProfile.role_in_church || '');
+                  setChurchName(existingProfile.church_name || '');
+                  setAvatarPreviewUrl(existingProfile.avatar_url || 'https://i.ibb.co/Vt2W1d1/user-profile-default-image.png');
+                } else {
+                  // Perfil não existe, preenche com dados básicos do utilizador autenticado
+                  setFullName(authUser.user_metadata.full_name || authUser.email.split('@')[0]);
+                  setPhoneNumber(authUser.user_metadata.phone_number || '');
+                  setDateOfBirth(authUser.user_metadata.date_of_birth || '');
+                  setRoleInChurch(authUser.user_metadata.role_in_church || '');
+                  setChurchName(authUser.user_metadata.church_name || '');
+                  setAvatarPreviewUrl(authUser.user_metadata.avatar_url || 'https://i.ibb.co/Vt2W1d1/user-profile-default-image.png');
+                  setProfile(null); // Indica que é um novo perfil a ser inserido
+                }
+              } catch (err) {
+                console.error("[ProfileCompletion] Erro inesperado ao carregar dados do utilizador:", err);
+                onShowModal('Ocorreu um erro inesperado ao carregar os seus dados. Recarregue a página.', 'error');
+              } finally {
+                setIsLoading(false); // Termina o carregamento inicial
+              }
+            };
+
+            // Inicia o carregamento de dados apenas quando o Supabase estiver disponível
+            if (supabase) {
+                loadUserData();
+            }
+          }, [supabase]); // Depende do cliente Supabase para carregar os dados
+
+          // Lida com a seleção de ficheiro de avatar
+          const handleAvatarFileChange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+              setAvatarFile(file);
+              setAvatarPreviewUrl(URL.createObjectURL(file)); // Cria URL de pré-visualização
+            } else {
+              setAvatarFile(null);
+              setAvatarPreviewUrl('https://i.ibb.co/Vt2W1d1/user-profile-default-image.png'); // Volta para o padrão
+            }
+          };
+
+          const handleSubmit = async (e) => {
+            e.preventDefault();
+            setIsSaving(true); // Ativa o estado de guardar
+
+            if (!user || !supabase) {
+              onShowModal('Erro: Utilizador ou serviço Supabase não disponível.', 'error');
+              setIsSaving(false);
+              return;
+            }
+
+            let finalAvatarUrl = avatarPreviewUrl;
+            // Se um novo ficheiro de avatar foi selecionado, faz o upload via Edge Function
+            if (avatarFile) {
+                onShowModal('A carregar avatar...', 'info');
+                try {
+                    // Prepara o FormData para a Edge Function
+                    const formData = new FormData();
+                    formData.append('file', avatarFile);
+                    formData.append('userId', user.id); // Passa o ID do utilizador para a Edge Function
+
+                    // Chama a Edge Function 'upload-avatar'
+                    const response = await fetch('/functions/v1/upload-avatar', {
+                        method: 'POST',
+                        body: formData, // FormData é enviado diretamente
+                        // Não defina Content-Type: 'multipart/form-data' aqui, o fetch faz isso automaticamente com FormData
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || `Erro HTTP: ${response.status} ${response.statusText}`);
+                    }
+
+                    const result = await response.json();
+                    finalAvatarUrl = result.publicUrl; // Obtém a URL pública do avatar carregado
+                    onShowModal('Avatar carregado com sucesso!', 'success');
+
+                } catch (uploadError) {
+                    console.error("Erro ao carregar avatar:", uploadError);
+                    onShowModal(`Erro ao carregar avatar: ${uploadError.message || 'Erro desconhecido'}.`, 'error');
+                    setIsSaving(false);
+                    return; // Interrompe se o upload falhar
+                }
+            }
+
+            const profileData = {
+              id: user.id, // O ID do utilizador Supabase Auth
+              email: user.email, // O email do utilizador Supabase Auth
+              full_name: fullName,
+              phone_number: phoneNumber,
+              date_of_birth: dateOfBirth,
+              role_in_church: roleInChurch,
+              church_name: churchName,
+              avatar_url: finalAvatarUrl, // Usa a URL final do avatar
+            };
+
+            try {
+              let error;
+              if (profile) {
+                // Se o perfil já existe, faz UPDATE
+                const { error: updateError } = await supabase
+                  .from('profiles')
+                  .update(profileData)
+                  .eq('id', user.id);
+                error = updateError;
+              } else {
+                // Se o perfil não existe, faz INSERT
+                // NOTA: Se já tiver um trigger de Auth que cria o perfil, este INSERT será redundante e pode causar erro.
+                // A melhor prática é que o trigger crie o perfil e o frontend apenas o ATUALIZE.
+                // Se não usar trigger, este INSERT é necessário para o primeiro registo.
+                const { error: insertError } = await supabase
+                  .from('profiles')
+                  .insert(profileData);
+                error = insertError;
+              }
+
+              if (error) {
+                console.error('Erro ao guardar perfil:', error);
+                let errorMessage = `Erro ao guardar o seu perfil: ${error.message || 'Erro desconhecido'}.`;
+                if (error.code === '23505') { // Unique violation (se tentar inserir um ID já existente sem UPDATE)
+                    errorMessage = 'O seu perfil já existe. Tente atualizar.';
+                } else if (error.code === '42501') { // RLS violation
+                    errorMessage = 'Permissão negada para guardar perfil. Verifique as políticas RLS.';
+                } else if (error.message.includes('Foreign key violation')) { // Se church_name fosse FK e inválido
+                    errorMessage = 'Nome da igreja inválido ou não registado.';
+                }
+                onShowModal(errorMessage, 'error');
+              } else {
+                onShowModal('Perfil guardado com sucesso!', 'success');
+                onProfileCompleted(); // Redireciona para o dashboard
+              }
+            } catch (err) {
+              console.error("Erro inesperado ao guardar perfil:", err);
+              onShowModal('Ocorreu um erro inesperado ao guardar o perfil. Verifique a sua ligação.', 'error');
+            } finally {
+              setIsSaving(false); // Desativa o estado de guardar
+            }
+          };
+
+          // NOVO: Função para gerar sugestão de descrição de cargo com Gemini (simulado)
+          const generateRoleDescription = async () => {
+              if (!roleInChurch.trim()) {
+                  setRoleDescriptionSuggestion('Por favor, insira um cargo para gerar uma descrição.');
+                  return;
+              }
+              setRoleDescriptionSuggestion('A gerar sugestão com ✨Gemini...');
+              try {
+                  // Simulação da chamada à API Gemini
+                  // Em um ambiente real, você faria um fetch para seu backend que chamaria a API Gemini
+                  // const apiKey = ""; // A chave API real seria usada aqui em um ambiente de produção
+                  // const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                  
+                  const prompt = `Gere uma breve e profissional descrição para o cargo "${roleInChurch}" numa comunidade cristã. Foco em responsabilidades e impacto. Máximo 30 palavras.`;
+                  const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
+
+                  // Simula um atraso de rede
+                  await new Promise(resolve => setTimeout(resolve, 1500));
+
+                  // Simulação de resposta do LLM
+                  const simulatedResponse = {
+                      candidates: [{
+                          content: {
+                              parts: [{
+                                  text: `Como ${roleInChurch}, sou responsável por [responsabilidades simuladas] e por fomentar [impacto simulado] na nossa comunidade de fé.`
+                              }]
+                          }
+                      }]
+                  };
+                  const result = simulatedResponse; // Usando a resposta simulada
+                  
+                  if (result.candidates && result.candidates.length > 0 &&
+                      result.candidates[0].content && result.candidates[0].content.parts &&
+                      result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    setRoleDescriptionSuggestion(text);
+                  } else {
+                    setRoleDescriptionSuggestion('Não foi possível gerar uma descrição. Tente novamente.');
+                  }
+              } catch (error) {
+                  console.error("Erro ao gerar descrição com Gemini (simulado):", error);
+                  setRoleDescriptionSuggestion('Erro ao comunicar com o serviço de IA. Verifique a sua ligação.');
+              }
+          };
+
+          if (isLoading) {
+            return (
+              <div className="card">
+                <h1 class="text-3xl font-bold text-gray-800 mb-4">A carregar perfil...</h1>
+                <p class="text-gray-600">A obter os seus dados.</p>
+              </div>
+            );
+          }
+
+          return (
+            <div className="card">
+              <h1 className="text-3xl font-extrabold text-gray-800 mb-2 font-inter">Completar Perfil</h1>
+              <p className="text-gray-600 text-lg mb-6">Por favor, preencha os seus dados para continuar.</p>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Secção de Avatar */}
+                <div className="text-center mb-6">
+                    <label htmlFor="avatarUpload" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
+                        Foto de Perfil (Avatar)
+                    </label>
+                    <div className="flex items-center justify-center mb-4">
+                        <img 
+                            src={avatarPreviewUrl} 
+                            alt="Pré-visualização do Avatar" 
+                            className="w-24 h-24 rounded-full object-cover border-4 border-blue-300 shadow-md"
+                        />
+                    </div>
+                    <input
+                        type="file"
+                        id="avatarUpload"
+                        accept="image/*"
+                        className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                        onChange={handleAvatarFileChange}
+                        aria-label="Carregar nova imagem de perfil"
+                        disabled={isSaving}
+                    />
+                </div>
+
+                <div className="text-left">
+                  <label htmlFor="fullName" className="block text-gray-700 text-sm font-semibold mb-1 font-inter">Nome Completo</label>
+                  <input
+                    type="text"
+                    id="fullName"
+                    className="shadow-sm border rounded-lg w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 font-inter"
+                    placeholder="O seu nome completo"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                    aria-label="Insira o seu nome completo"
+                    disabled={isSaving}
+                  />
+                </div>
+
+                <div className="text-left">
+                  <label htmlFor="dateOfBirth" className="block text-gray-700 text-sm font-semibold mb-1 font-inter">Data de Nascimento</label>
+                  <input
+                    type="date"
+                    id="dateOfBirth"
+                    className="shadow-sm border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 font-inter"
+                    value={dateOfBirth}
+                    onChange={(e) => setDateOfBirth(e.target.value)}
+                    required
+                    aria-label="Insira a sua data de nascimento"
+                    disabled={isSaving}
+                  />
+                </div>
+
+                <div className="text-left">
+                  <label htmlFor="phoneNumber" className="block text-gray-700 text-sm font-semibold mb-1 font-inter">Número de Telefone</label>
+                  <input
+                    type="tel"
+                    id="phoneNumber"
+                    className="shadow-sm appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 font-inter"
+                    placeholder="(XX) XXXX-XXXX"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    required
+                    aria-label="Insira o seu número de telefone"
+                    disabled={isSaving}
+                  />
+                </div>
+
+                <div className="text-left">
+                  <label htmlFor="roleInChurch" className="block text-sm font-medium text-gray-700">Cargo/Função na Igreja (Opcional)</label>
+                  <input
+                    type="text"
+                    id="roleInChurch"
+                    className="shadow-sm appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 font-inter"
+                    placeholder="Ex: Pastor, Membro, Voluntário"
+                    value={roleInChurch}
+                    onChange={(e) => setRoleInChurch(e.target.value)}
+                    aria-label="Insira o seu cargo ou função na igreja"
+                    aria-describedby="role-description-suggestion" /* WCAG: Liga o input à sugestão */
+                    disabled={isSaving}
+                  />
+                  {/* Botão para gerar sugestão de descrição de cargo com Gemini */}
+                  <button
+                    type="button"
+                    onClick={generateRoleDescription}
+                    className="mt-2 w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 shadow-md font-inter"
+                    aria-label="Gerar sugestão de descrição de cargo com Gemini"
+                    disabled={isSaving || !roleInChurch.trim()}
+                  >
+                    Gerar Descrição ✨
+                  </button>
+                  {roleDescriptionSuggestion && (
+                      <p 
+                          id="role-description-suggestion" /* WCAG: ID para aria-describedby */
+                          className="text-sm mt-2 p-2 rounded-lg bg-purple-50 text-white border border-purple-200"
+                          aria-live="polite" /* WCAG: Anuncia as mudanças a leitores de ecrã */
+                      >
+                          {roleDescriptionSuggestion}
+                      </p>
+                  )}
+                </div>
+
+                <div className="mb-6 text-left">
+                  <label htmlFor="churchName" className="block text-gray-700 text-sm font-semibold mb-1 font-inter">
+                    Nome da Igreja/Comunidade (Opcional)
+                  </label>
+                  <input
+                    type="text"
+                    id="churchName"
+                    className="shadow-sm appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 font-inter"
+                    placeholder="Nome da sua igreja"
+                    value={churchName}
+                    onChange={(e) => setChurchName(e.target.value)}
+                    aria-label="Insira o nome da sua igreja ou comunidade"
+                    disabled={isSaving}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full btn-green py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 transform hover:scale-100 active:scale-95 shadow-md font-inter"
+                  aria-label="Guardar informações do perfil"
+                  disabled={isSaving}
+                >
+                  {isSaving ? 'A guardar...' : 'Guardar Perfil'}
+                </button>
+              </form>
+            </div>
+          );
+        }
+
+        // Componente principal da aplicação React
+        function App() {
+          const [isModalOpen, setIsModalOpen] = React.useState(false); // Controla a visibilidade do modal de mensagens
+          const [modalMessage, setModalMessage] = React.useState(''); // Mensagem a ser exibida no modal
+          const [modalType, setModalType] = React.useState('info'); // Tipo de modal (success, error, info)
+          
+          const [isSupabaseReady, setIsSupabaseReady] = React.useState(false); // Indica se o Supabase está pronto
+          const [supabase, setSupabase] = React.useState(null); // Instância do Supabase Client
+
+          // Efeito para inicializar ou aguardar o Supabase Client
+          React.useEffect(() => {
+            if (window.supabaseClientReadyPromise) {
+                window.supabaseClientReadyPromise
+                    .then(client => {
+                        setSupabase(client);
+                        setIsSupabaseReady(true);
+                        console.log("[App DB] Cliente Supabase pronto.");
+                    })
+                    .catch(error => {
+                        console.error("[App DB] Erro ao obter cliente Supabase via promise:", error);
+                        showModal("Erro crítico: Não foi possível ligar ao serviço de base de dados. Por favor, recarregue a página.", "error");
+                        setIsSupabaseReady(false);
+                    });
+            } else {
+                console.warn("[App DB] supabaseClientReadyPromise não disponível. A aguardar...");
+                const maxTries = 20;
+                let currentTry = 0;
+                const intervalId = setInterval(() => {
+                    if (window.globalSupabaseClient) {
+                        setSupabase(window.globalSupabaseClient);
+                        setIsSupabaseReady(true);
+                        console.log("[App DB] Cliente Supabase inicializado após atraso (fallback).");
+                        clearInterval(intervalId);
+                    } else if (currentTry >= maxTries) {
+                        console.error("[App DB] Falha ao inicializar o cliente Supabase após várias tentativas (fallback). Verifique 'supabaseClientInstance.js'.");
+                        showModal("Erro crítico: Não foi possível ligar ao serviço de base de dados. Por favor, recarregue a página.", "error");
+                        clearInterval(intervalId);
+                    }
+                    currentTry++;
+                }, 100);
+                return () => clearInterval(intervalId);
+            }
+          }, []);
+
+          // Funções para controlar o modal de mensagens
+          const showModal = (message, type) => {
+            setModalMessage(message);
+            setModalType(type);
+            setIsModalOpen(true);
+          };
+
+          const closeModal = () => {
+            setIsModalOpen(false);
+            setModalMessage('');
+            setModalType('info');
+          };
+
+          // Lida com a conclusão do perfil e redireciona para o dashboard (simulado)
+          const handleProfileCompleted = () => {
+            console.log("Simulação: Perfil completado. Redirecionando para index.html.");
+            window.location.href = 'index.html'; 
+          };
+
+          // Renderiza o formulário de conclusão de perfil imediatamente
+          return (
+            <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center p-4">
+              <div className="w-full max-w-md">
+                <ProfileCompletionForm 
+                  onShowModal={showModal} 
+                  supabase={supabase} /* Passa a instância do Supabase Client */
+                  onProfileCompleted={handleProfileCompleted} 
+                />
+                <Modal isOpen={isModalOpen} message={modalMessage} type={modalType} onClose={closeModal} />
+              </div>
+            </div>
+          );
+        }
+
+        // Renderiza o componente App no elemento 'root' do DOM
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
