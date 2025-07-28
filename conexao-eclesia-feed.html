@@ -90,27 +90,63 @@
     <!-- Importa React e ReactDOM a partir de um CDN (unpkg.com) -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Importa Babel para transpilar JSX diretamente no navegador -->
+    <!-- Importa Babel para transpilador JSX diretamente no navegador -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Importa o SDK do Supabase Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Carrega o script verificador de instância Supabase. ESSENCIAL! -->
-    <!-- Este ficheiro deve inicializar window.globalSupabaseClient com as suas credenciais. -->
-    <script src="supabaseClientInstance.js"></script>
+    
+    <!-- Importa o SDK do Supabase Client (para base de dados e autenticação) -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"></script>
+    <!-- Carrega o script de inicialização do Supabase. ESSENCIAL! -->
+    <script type="module" src="supabaseClientInstance.js"></script>
+
+    <!-- REMOVIDO: Bloco de script que importava e expunha onAuthStateChanged globalmente -->
 
     <script type="text/babel">
         // Componente Modal: Exibe mensagens de sucesso, erro ou informação para o utilizador.
+        // WCAG: Adicionado role="dialog", aria-modal="true" e aria-labelledby para acessibilidade.
+        // WCAG: Adicionado controlo da tecla ESC para fechar.
         function Modal({ isOpen, message, type, onClose }) {
-          if (!isOpen) return null; // Não renderiza se o modal não estiver aberto
+          // Hooks chamados incondicionalmente no topo do componente
+          const modalRef = React.useRef(null);
+          const previousActiveElement = React.useRef(null);
+          const modalTitleId = React.useId(); // Gera um ID único para o título do modal
+
+          React.useEffect(() => {
+            if (isOpen) {
+              previousActiveElement.current = document.activeElement; // Guarda o elemento focado antes de abrir o modal
+              modalRef.current?.focus(); // Move o foco para o modal
+              const handleKeyDown = (event) => {
+                if (event.key === 'Escape') {
+                  onClose();
+                }
+              };
+              document.addEventListener('keydown', handleKeyDown);
+              return () => {
+                document.removeEventListener('keydown', handleKeyDown);
+                // Restaura o foco para o elemento original quando o modal fecha
+                if (previousActiveElement.current) {
+                  previousActiveElement.current.focus();
+                }
+              };
+            }
+          }, [isOpen, onClose]);
+
+          if (!isOpen) return null;
 
           const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
           const headerText = type === 'success' ? 'Sucesso!' : 'Erro!';
 
           return (
-            <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
+            <div 
+              className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={modalTitleId}
+              tabIndex="-1" // Permite que o modal seja focado
+              ref={modalRef}
+            >
               <div className="bg-white rounded-lg shadow-xl overflow-hidden max-w-sm w-full transform transition-all duration-300 scale-100">
                 <div className={`${bgColor} text-white px-6 py-4 flex justify-between items-center rounded-t-lg`}>
-                  <h3 className="text-xl font-bold font-inter">{headerText}</h3>
+                  <h3 id={modalTitleId} className="text-xl font-bold font-inter">{headerText}</h3>
                   <button
                     onClick={onClose}
                     className="text-white hover:text-gray-200 focus:outline-none text-2xl font-bold"
@@ -137,7 +173,7 @@
         }
 
         // Componente CreatePostModal: Formulário para criar novas publicações
-        function CreatePostModal({ isOpen, onClose, onSavePost, onShowMessage, supabase }) {
+        function CreatePostModal({ isOpen, onClose, onSavePost, onShowMessage, supabase, currentSupabaseUser }) {
           const [title, setTitle] = React.useState('');
           const [content, setContent] = React.useState('');
           const [image, setImage] = React.useState(''); // URL da imagem (se for inserida manualmente)
@@ -148,26 +184,26 @@
           const handleImageUpload = async (file) => {
             if (!file) return null;
             try {
-              const fileExt = file.name.split('.').pop(); // Pega a extensão do ficheiro
-              // Gera um nome de ficheiro único para evitar colisões
-              const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
-              
-              // Faz o upload do ficheiro para o bucket 'post-images'
-              const { data, error } = await supabase.storage.from('post-images').upload(fileName, file, {
-                cacheControl: '3600', // Cache por 1 hora
-                upsert: false // Não sobrescreve se o ficheiro já existir
+              // Chama a Edge Function 'upload-post-image' para fazer o upload seguro
+              const formData = new FormData();
+              formData.append('file', file);
+              // Opcional: pode passar o ID do utilizador para a Edge Function para organizar uploads por utilizador
+              // formData.append('userId', currentSupabaseUser.id); 
+
+              const response = await fetch('/functions/v1/upload-post-image', { // Assumindo o nome da Edge Function
+                  method: 'POST',
+                  body: formData,
               });
 
-              if (error) {
-                onShowMessage('Erro ao fazer upload da imagem: ' + error.message, 'error');
-                return null;
+              if (!response.ok) {
+                  const errorData = await response.json();
+                  throw new Error(errorData.error || `Erro HTTP: ${response.status} ${response.statusText}`);
               }
-              
-              // Obtém a URL pública do ficheiro recém-carregado
-              const { data: publicUrlData } = supabase.storage.from('post-images').getPublicUrl(fileName);
-              return publicUrlData.publicUrl;
+
+              const result = await response.json();
+              return result.publicUrl; // A Edge Function deve retornar a URL pública
             } catch (err) {
-              onShowMessage('Erro inesperado ao fazer upload da imagem.', 'error');
+              onShowMessage('Erro inesperado ao fazer upload da imagem: ' + err.message, 'error');
               return null;
             }
           };
@@ -182,7 +218,7 @@
             setIsLoading(true); // Ativa o estado de carregamento
 
             let imageUrl = image; // Começa com a URL manual, se houver
-            if (imageFile) { // Se um ficheiro foi selecionado, faz o upload primeiro
+            if (imageFile) { // Se um ficheiro foi selecionado, faz o upload via Edge Function
               imageUrl = await handleImageUpload(imageFile);
               if (!imageUrl) { // Se o upload falhar, para a execução
                 setIsLoading(false);
@@ -190,15 +226,14 @@
               }
             }
 
-            try {
-              // Obtém o utilizador autenticado para associar a publicação
-              const { data: { user } } = await supabase.auth.getUser();
-              if (!user) {
-                onShowMessage('Precisa de estar autenticado para criar uma publicação.', 'error');
-                setIsLoading(false);
-                return;
-              }
+            // Verifica se o utilizador Supabase está disponível
+            if (!currentSupabaseUser || !currentSupabaseUser.id) {
+              onShowMessage('Precisa de estar autenticado para criar uma publicação.', 'error');
+              setIsLoading(false);
+              return;
+            }
 
+            try {
               // Insere os dados da publicação na tabela 'posts' do Supabase
               const { data, error } = await supabase
                 .from('posts')
@@ -207,7 +242,7 @@
                     title,
                     content,
                     image_url: imageUrl || null, // Salva a URL da imagem (ou null se não houver)
-                    author_id: user.id, // ID do autor autenticado
+                    author_id: currentSupabaseUser.id, // ID do utilizador Supabase como autor
                     is_published: true // Define como publicado
                   }
                 ])
@@ -292,11 +327,12 @@
                       <label className="block text-gray-700 text-sm font-semibold mb-2 font-inter">Foto da Publicação</label>
                       <input
                         type="file"
+                        id="postImageFile" /* ID único */
                         accept="image/*"
                         className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
                         onChange={handleFileChange}
-                        disabled={isLoading}
                         aria-label="Selecione uma imagem para a publicação"
+                        disabled={isLoading}
                       />
                       {imageFile && (
                         <div className="mt-2 flex items-center space-x-2">
@@ -306,10 +342,10 @@
                       )}
                     </div>
                     <div className="mb-6">
-                      <label htmlFor="postImage" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">URL da Imagem (Opcional)</label>
+                      <label htmlFor="postImageUrl" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">URL da Imagem (Opcional)</label>
                       <input
                         type="url"
-                        id="postImage"
+                        id="postImageUrl" /* ID único */
                         className="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition duration-200 font-inter"
                         placeholder="https://exemplo.com/imagem.jpg"
                         value={image}
@@ -422,7 +458,6 @@
                         </div>
                         {/* Título da publicação */}
                         <h2 className="post-title text-2xl font-bold text-orange-700 mb-2 font-inter">{post.title}</h2>
-                        {/* Imagem da publicação, se houver */}
                         {post.image && (
                             <img
                                 src={post.image}
@@ -474,7 +509,7 @@
         }
 
         // Componente FeedScreen: Gere a exibição do feed principal
-        function FeedScreen({ onShowModal, onLogout, supabase }) {
+        function FeedScreen({ onShowModal, onLogout, supabase, currentSupabaseUser }) {
           const [posts, setPosts] = React.useState([]);
           const [isCreatePostModalOpen, setIsCreatePostModalOpen] = React.useState(false);
           const [isLoadingPosts, setIsLoadingPosts] = React.useState(true);
@@ -487,17 +522,15 @@
           const fetchPosts = async () => {
             setIsLoadingPosts(true); // Ativa o estado de carregamento de publicações
             try {
-              // Obtém o utilizador autenticado para verificar se ele curtiu as publicações
-              const { data: { user } } = await supabase.auth.getUser();
-              const userId = user ? user.id : null;
-              setCurrentUserId(userId); // Armazena o ID do utilizador no estado
-
+              // Usa o ID do utilizador Supabase para verificar curtidas e perfis
+              const supabaseUserId = currentSupabaseUser ? currentSupabaseUser.id : null;
+              
               // Busca publicações, perfis de autor e informações de curtidas
               const { data, error } = await supabase
                 .from('posts')
                 .select(`
                   *,
-                  profiles (full_name),
+                  profiles (full_name, avatar_url), /* Busca o nome completo e avatar do perfil */
                   likes(user_id) /* Busca os user_ids de quem curtiu para esta publicação */
                 `)
                 .order('created_at', { ascending: false }); // Ordena pelas mais recentes
@@ -511,12 +544,15 @@
                 const formattedPosts = data.map(post => {
                     const likesForThisPost = post.likes || [];
                     const likesCount = likesForThisPost.length;
-                    // Verifica se o utilizador atual curtiu esta publicação
-                    const isLikedByCurrentUser = userId ? likesForThisPost.some(like => like.user_id === userId) : false;
+                    // Verifica se o utilizador Supabase atual curtiu esta publicação
+                    const isLikedByCurrentUser = supabaseUserId ? likesForThisPost.some(like => like.user_id === supabaseUserId) : false;
 
                     return {
                         id: post.id,
+                        // Usa o full_name do perfil Supabase, ou um placeholder
                         author: post.profiles ? post.profiles.full_name : 'Autor Desconhecido',
+                        // Assume que o avatar_url está no perfil do Supabase
+                        authorAvatar: post.profiles?.avatar_url || 'https://i.ibb.co/Vt2W1d1/user-profile-default-image.png', 
                         church: post.church_id ? 'Nome da Igreja Aqui (buscar)' : '', // Placeholder para futura integração com igrejas
                         date: new Date(post.created_at).toLocaleDateString('pt-BR'), // Formata a data
                         title: post.title,
@@ -539,7 +575,7 @@
 
           // Função para curtir/descurtir uma publicação no Supabase
           const handleToggleLike = async (postId, shouldLike) => {
-              if (!currentUserId) {
+              if (!currentSupabaseUser || !currentSupabaseUser.id) {
                   onShowModal('Precisa de estar autenticado para curtir publicações!', 'info');
                   return;
               }
@@ -549,7 +585,7 @@
                       // Se deve curtir, insere um novo registo na tabela 'likes'
                       const { error } = await supabase
                           .from('likes')
-                          .insert([{ post_id: postId, user_id: currentUserId }]);
+                          .insert([{ post_id: postId, user_id: currentSupabaseUser.id }]); // Usa o ID do utilizador Supabase
 
                       if (error) {
                           if (error.code === '23505') { // Código de erro para violação de unique constraint (utilizador já curtiu)
@@ -562,8 +598,7 @@
                               throw error; // Lança outros erros
                           }
                       } else {
-                          // Sucesso ao curtir, atualiza o estado local (já feito na otimização de UI no PostCard)
-                          // setPosts(prevPosts => prevPosts.map(p => p.id === postId ? { ...p, isLikedByCurrentUser: true, likesCount: p.likesCount + 1 } : p));
+                          // Sucesso ao curtir, a UI já foi otimizada para refletir a mudança
                       }
                   } else {
                       // Se deve descurtir, elimina o registo correspondente na tabela 'likes'
@@ -571,13 +606,12 @@
                           .from('likes')
                           .delete()
                           .eq('post_id', postId)
-                          .eq('user_id', currentUserId);
+                          .eq('user_id', currentSupabaseUser.id); // Usa o ID do utilizador Supabase
 
                       if (error) {
                           throw error;
                       } else {
-                          // Sucesso ao descurtir, atualiza o estado local (já feito na otimização de UI no PostCard)
-                          // setPosts(prevPosts => prevPosts.map(p => p.id === postId ? { ...p, isLikedByCurrentUser: false, likesCount: p.likesCount - 1 } : p));
+                          // Sucesso ao descurtir, a UI já foi otimizada para refletir a mudança
                       }
                   }
               } catch (error) {
@@ -613,23 +647,31 @@
 
             // Verifica se o utilizador autenticado tem permissões de administrador
             const checkAdmin = async () => {
+              if (!currentSupabaseUser || !currentSupabaseUser.id) {
+                setIsAdmin(false);
+                return;
+              }
               try {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (user) {
-                  const { data: profile } = await supabase
+                // Busca o perfil do utilizador no Supabase usando o ID do utilizador Supabase
+                const { data: profile, error } = await supabase
                     .from('profiles')
                     .select('admin') // Assumindo que a tabela 'profiles' tem uma coluna 'admin' booleana
-                    .eq('id', user.id)
+                    .eq('id', currentSupabaseUser.id) // O ID do perfil deve ser o ID do utilizador Supabase
                     .single(); // Busca apenas um perfil
-                  setIsAdmin(profile?.admin === true); // Define o estado de administrador
+                
+                if (error && error.code !== 'PGRST116') { // PGRST116 é "no rows found", que é ok se o perfil ainda não existe
+                    console.error("Erro ao verificar status de administrador no Supabase:", error);
+                    setIsAdmin(false);
+                } else {
+                    setIsAdmin(profile?.admin === true); // Define o estado de administrador
                 }
               } catch (e) {
-                console.error("Erro ao verificar status de administrador:", e);
+                console.error("Erro inesperado ao verificar status de administrador:", e);
                 setIsAdmin(false); // Em caso de erro, assume que não é administrador
               }
             };
             checkAdmin();
-          }, []); // Dependências vazias para executar apenas uma vez na montagem
+          }, [currentSupabaseUser, supabase]); // Depende do utilizador Supabase e do cliente Supabase
 
           // Lida com a criação de uma nova publicação (chamado pelo CreatePostModal)
           const handleNewPost = (newPost) => {
@@ -781,9 +823,9 @@
                         {/* Renderiza o componente PostCard para cada publicação */}
                         <PostCard
                             post={post}
-                            currentUserId={currentUserId}
+                            currentUserId={currentSupabaseUser ? currentSupabaseUser.id : null} /* Passa o ID do utilizador Supabase */
                             onToggleLike={handleToggleLike}
-                            onShowMessage={onShowModal}
+                            onShowModal={onShowModal}
                         />
 
                         {/* Lógica para exibir anúncios intercalados */}
@@ -801,8 +843,9 @@
                 isOpen={isCreatePostModalOpen}
                 onClose={() => setIsCreatePostModalOpen(false)}
                 onSavePost={handleNewPost}
-                onShowMessage={onShowModal}
                 supabase={supabase}
+                onShowMessage={onShowModal}
+                currentSupabaseUser={currentSupabaseUser} /* Passa o utilizador Supabase para o modal */
               />
             </div>
           );
@@ -813,82 +856,69 @@
           const [isModalOpen, setIsModalOpen] = React.useState(false); // Estado para controlar a visibilidade do modal de mensagens
           const [modalMessage, setModalMessage] = React.useState(''); // Mensagem a ser exibida no modal
           const [modalType, setModalType] = React.useState('info'); // Tipo de modal (success, error, info)
-          const [isAuthChecking, setIsAuthChecking] = React.useState(true); // Indica se a verificação de autenticação está em andamento
-          const [isSupabaseClientReady, setIsSupabaseClientReady] = React.useState(false); // Indica se o cliente Supabase está pronto
+          
+          const [isSupabaseReady, setIsSupabaseReady] = React.useState(false); // Indica se o Supabase está pronto
+          const [supabase, setSupabase] = React.useState(null); // Instância do Supabase Client
+          const [currentSupabaseUser, setCurrentSupabaseUser] = React.useState(undefined); // Armazena o objeto de utilizador Supabase (undefined = a verificar, null = não autenticado, objeto = autenticado)
 
-          // Acede a instância global do Supabase Client (deve ser inicializada em supabaseClientInstance.js)
-          const supabase = window.globalSupabaseClient;
 
-          // Efeito para verificar e aguardar a inicialização do Supabase Client
+          // Efeito para inicializar ou aguardar o Supabase Client
           React.useEffect(() => {
-            if (window.globalSupabaseClient) {
-                setIsSupabaseClientReady(true);
-                console.log("[App] Cliente Supabase já está pronto.");
+            if (window.supabaseClientReadyPromise) {
+                window.supabaseClientReadyPromise
+                    .then(client => {
+                        setSupabase(client);
+                        setIsSupabaseReady(true);
+                        console.log("[App DB] Cliente Supabase pronto.");
+
+                        // Listener de autenticação do Supabase para gerir o estado do utilizador
+                        // CORRIGIDO: Usar onAuthStateChanged importado diretamente
+                        window.supabaseOnAuthStateChanged(client.auth, user => { // CORRIGIDO: Chamar através de window.supabaseOnAuthStateChanged
+                            setCurrentSupabaseUser(user); // Define o utilizador Supabase
+                            // Se o utilizador não estiver autenticado, redireciona para a página de autenticação
+                            if (!user) {
+                                console.log("[App Auth] Utilizador Supabase não autenticado. Redirecionando para auth.html.");
+                                window.location.href = 'auth.html'; 
+                            } else {
+                                console.log("[App Auth] Utilizador Supabase autenticado:", user.id);
+                            }
+                        });
+                    })
+                    .catch(error => {
+                        console.error("[App DB] Erro ao obter cliente Supabase via promise:", error);
+                        showModal("Erro crítico: Não foi possível ligar ao serviço de base de dados. Por favor, recarregue a página.", "error");
+                        setIsSupabaseReady(false);
+                    });
             } else {
-                console.warn("[App] Cliente Supabase não está pronto na renderização inicial da App. A aguardar...");
-                // Configura um intervalo para tentar obter o cliente Supabase até um número máximo de vezes
-                const maxTries = 20; // Tentar por até 20 * 100ms = 2 segundos
+                console.warn("[App DB] supabaseClientReadyPromise não disponível. A aguardar...");
+                const maxTries = 20;
                 let currentTry = 0;
                 const intervalId = setInterval(() => {
                     if (window.globalSupabaseClient) {
-                        setIsSupabaseClientReady(true);
-                        console.log("[App] Cliente Supabase inicializado globalmente após atraso/tentativa.");
-                        clearInterval(intervalId); // Limpa o intervalo quando o cliente está pronto
+                        setSupabase(window.globalSupabaseClient);
+                        setIsSupabaseReady(true);
+                        console.log("[App DB] Cliente Supabase inicializado após atraso (fallback).");
+                        clearInterval(intervalId);
+                        // Inicia o listener de autenticação após a inicialização bem-sucedida
+                        window.supabaseOnAuthStateChanged(window.globalSupabaseClient.auth, user => { // CORRIGIDO: Usar a instância global
+                            setCurrentSupabaseUser(user);
+                            if (!user) {
+                                console.log("[App Auth] Utilizador Supabase não autenticado (após retry). Redirecionando para auth.html.");
+                                window.location.href = 'auth.html';
+                            } else {
+                                console.log("[App Auth] Utilizador Supabase autenticado (após retry):", user.id);
+                            }
+                        });
                     } else if (currentTry >= maxTries) {
-                        console.error("[App] Falha ao inicializar o cliente Supabase após várias tentativas. Verifique 'supabaseClientInstance.js' e variáveis.");
-                        // Exibe um modal de erro crítico se o Supabase não puder ser inicializado
-                        setModalMessage("Erro crítico: Não foi possível ligar ao serviço. Por favor, recarregue a página.", "error");
-                        setIsModalOpen(true);
-                        clearInterval(intervalId); // Limpa o intervalo
+                        console.error("[App DB] Falha ao inicializar o cliente Supabase após várias tentativas (fallback). Verifique 'supabaseClientInstance.js'.");
+                        showModal("Erro crítico: Não foi possível ligar ao serviço de base de dados. Por favor, recarregue a página.", "error");
+                        clearInterval(intervalId);
                     }
                     currentTry++;
-                }, 100); // Tenta a cada 100ms
-
-                return () => clearInterval(intervalId); // Cleanup: limpa o intervalo se o componente for desmontado
+                }, 100);
+                return () => clearInterval(intervalId);
             }
-          }, []); // Dependências vazias para executar apenas uma vez na montagem do componente
-
-          // Efeito para verificar a sessão do utilizador após o Supabase estar pronto
-          React.useEffect(() => {
-            if (isSupabaseClientReady && window.globalSupabaseClient) {
-                const checkUserSession = async () => {
-                    try {
-                        const { data: { session } } = await window.globalSupabaseClient.auth.getSession();
-                        if (!session) {
-                            // Se não há sessão, redireciona para a página de autenticação
-                            window.location.href = 'index.html';
-                        } else {
-                            // Se há sessão, o utilizador está autenticado
-                            setIsAuthChecking(false);
-                        }
-                    } catch (error) {
-                        console.error('Erro ao verificar sessão:', error);
-                        // Em caso de erro na verificação, redireciona para autenticação
-                        window.location.href = 'index.html';
-                    }
-                };
-                checkUserSession();
-
-                // Configura um listener em tempo real para mudanças no estado de autenticação
-                const { data: authListener } = window.globalSupabaseClient.auth.onAuthStateChange(
-                  (event, session) => {
-                    if (event === 'SIGNED_OUT' || !session) {
-                      // Se o utilizador terminar a sessão ou a sessão expirar, redireciona
-                      window.location.href = 'index.html';
-                    } else if (event === 'SIGNED_IN') {
-                      // Se o utilizador iniciar a sessão, desativa o estado de verificação
-                      setIsAuthChecking(false);
-                    }
-                  }
-                );
-                // Cleanup: Desinscreve o listener ao desmontar o componente
-                return () => {
-                  if (authListener && authListener.unsubscribe) {
-                      authListener.unsubscribe();
-                  }
-                };
-            }
-          }, [isSupabaseClientReady]); // Depende de isSupabaseClientReady para garantir que o cliente esteja pronto
+          }, []);
 
           // Funções para controlar o modal de mensagens
           const showModal = (message, type) => {
@@ -903,25 +933,25 @@
             setModalType('info');
           };
 
-          // Lida com a ação de terminar a sessão
+          // Lida com a ação de terminar a sessão (agora via Supabase)
           const handleLogout = async () => {
+            if (!supabase) {
+                onShowModal('Serviço de autenticação não disponível.', 'error');
+                return;
+            }
             try {
-              const { error } = await supabase.auth.signOut();
-              if (error) {
-                console.error('Erro ao terminar a sessão:', error);
-                showModal(`Erro ao terminar a sessão: ${error.message}`, 'error');
-              } else {
-                showModal('Sessão terminada com sucesso!', 'success');
-                window.location.href = 'index.html'; // Redireciona após terminar a sessão com sucesso
-              }
+              await supabase.auth.signOut(); // Termina a sessão do Supabase
+              onShowModal('Sessão terminada com sucesso!', 'success');
+              // O onAuthStateChanged irá lidar com o redirecionamento para auth.html
             } catch (error) {
               console.error('Erro inesperado ao terminar a sessão:', error);
-              showModal('Ocorreu um erro inesperado ao terminar a sessão.', 'error');
+              onShowModal('Ocorreu um erro inesperado ao terminar a sessão.', 'error');
             }
           };
 
-          // Condição de renderização principal: exibe "A carregar..." enquanto o Supabase não está pronto ou a autenticação está a ser verificada
-          if (!isSupabaseClientReady || isAuthChecking) {
+          // Condição de renderização principal: exibe "A carregar..." enquanto os serviços não estão prontos
+          // ou enquanto o utilizador Supabase não foi determinado (null ou um objeto de utilizador)
+          if (!isSupabaseReady || currentSupabaseUser === undefined) {
             return (
               <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
                 <div className="text-white text-2xl font-bold font-inter text-center">A carregar...</div>
@@ -929,13 +959,14 @@
             );
           }
 
-          // Se tudo estiver pronto, renderiza a tela principal do Feed
+          // Se tudo estiver pronto e o utilizador Supabase foi determinado (mesmo que seja null/desautenticado)
           return (
             <div className="min-h-screen flex flex-col md:flex-row items-stretch justify-center p-0">
               <FeedScreen
                 onShowModal={showModal}
                 onLogout={handleLogout}
                 supabase={supabase}
+                currentSupabaseUser={currentSupabaseUser} /* Passa o utilizador Supabase para o FeedScreen */
               />
               {/* Rodapé visível apenas em telas pequenas */}
               <div className="text-center text-white text-sm opacity-80 font-inter py-4 bg-gray-800 w-full md:hidden">
