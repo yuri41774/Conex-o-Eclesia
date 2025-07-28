@@ -66,7 +66,7 @@
             window.firebaseCreateUserWithEmailAndPassword = createUserWithEmailAndPassword;
             window.firebaseSendPasswordResetEmail = sendPasswordResetEmail;
             window.firebaseSignOut = signOut;
-            window.firebaseUpdateProfile = updateProfile;
+            window.firebaseUpdateProfile = updateProfile; // Expor updateProfile
             window.firebaseOnAuthStateChanged = onAuthStateChanged; // Expor onAuthStateChanged
         }
     </script>
@@ -291,8 +291,8 @@
           );
         }
 
-        // Componente LoginScreen: Formulário para iniciar sessão (agora com Firebase)
-        function LoginScreen({ onSwitchToRegister, onShowModal, onLoginSuccess, firebaseAuth, supabase }) { /* CORRIGIDO: Adicionado 'supabase' às props */
+        // Componente LoginScreen: Formulário para iniciar sessão (agora com Supabase Auth)
+        function LoginScreen({ onSwitchToRegister, onShowModal, onLoginSuccess, supabase }) {
           const [email, setEmail] = React.useState('');
           const [password, setPassword] = React.useState('');
           const [isLoading, setIsLoading] = React.useState(false);
@@ -303,41 +303,36 @@
             e.preventDefault();
             setIsLoading(true);
 
-            // Adicionado console.log para depuração
-            console.log("[LoginScreen] firebaseAuth:", firebaseAuth);
-
-            if (!firebaseAuth) {
+            if (!supabase) {
                 onShowModal('Serviço de autenticação não disponível. Recarregue a página.', 'error');
                 setIsLoading(false);
                 return;
             }
 
             try {
-                // Iniciar sessão com email e palavra-passe via Firebase Auth (usando a função global)
-                const userCredential = await window.firebaseSignInWithEmailAndPassword(firebaseAuth, email, password);
-                const user = userCredential.user; // O objeto de utilizador do Firebase
+                // Iniciar sessão com email e palavra-passe via Supabase Auth
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password,
+                });
 
-                if (user) {
+                if (error) {
+                    console.error('Erro de início de sessão Supabase:', error);
+                    let errorMessage = 'Ocorreu um erro inesperado ao iniciar sessão.';
+                    // Mensagens de erro específicas do Supabase Auth
+                    if (error.message === 'Invalid login credentials') {
+                        errorMessage = 'Email ou palavra-passe inválidos.';
+                    } else if (error.message.includes('Email not confirmed')) {
+                        errorMessage = 'Email não confirmado. Verifique a sua caixa de entrada.';
+                    }
+                    onShowModal(`Erro: ${errorMessage}`, 'error');
+                } else if (data.user) {
                     onShowModal('Sessão iniciada com sucesso!', 'success');
-                    onLoginSuccess(user); // Passa o utilizador Firebase para o sucesso
-                } else {
-                    // Esta parte geralmente não é alcançada com signInWithEmailAndPassword, pois erros são lançados
-                    onShowModal('Credenciais inválidas. Tente novamente.', 'error');
+                    onLoginSuccess(data.user); // Passa o utilizador Supabase para o sucesso
                 }
             } catch (error) {
-                console.error('Erro de início de sessão Firebase:', error);
-                let errorMessage = 'Ocorreu um erro inesperado ao iniciar sessão.';
-                // Mensagens de erro específicas do Firebase
-                if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-                    errorMessage = 'Email ou palavra-passe inválidos.';
-                } else if (error.code === 'auth/invalid-email') {
-                    errorMessage = 'Formato de email inválido.';
-                } else if (error.code === 'auth/user-disabled') {
-                    errorMessage = 'A sua conta foi desativada.';
-                } else if (error.code === 'auth/too-many-requests') {
-                    errorMessage = 'Demasiadas tentativas de início de sessão. Tente novamente mais tarde.';
-                }
-                onShowModal(`Erro: ${errorMessage}`, 'error');
+                console.error('Erro inesperado ao tentar iniciar sessão:', error);
+                onShowModal('Ocorreu um erro inesperado ao iniciar sessão. Verifique a sua ligação.', 'error');
             } finally {
                 setIsLoading(false);
             }
@@ -431,15 +426,15 @@
                 onSwitchToRegister={onSwitchToRegister} 
                 supabase={supabase} /* Passa o cliente Supabase para o modal da igreja */
               />
-              <ForgotPasswordModal isOpen={showForgotModal} onClose={() => setShowForgotModal(false)} onShowMessage={onShowModal} firebaseAuth={firebaseAuth} />
+              <ForgotPasswordModal isOpen={showForgotModal} onClose={() => setShowForgotModal(false)} onShowMessage={onShowModal} supabase={supabase} /> {/* Passa supabase */}
             </div>
           );
         }
 
-        // Modal para recuperação de palavra-passe (agora com Firebase)
+        // Modal para recuperação de palavra-passe (agora com Supabase)
         // WCAG: Adicionado role="dialog", aria-modal="true" e aria-labelledby.
         // WCAG: Adicionado controlo da tecla ESC para fechar.
-        function ForgotPasswordModal({ isOpen, onClose, onShowMessage, firebaseAuth }) {
+        function ForgotPasswordModal({ isOpen, onClose, onShowMessage, supabase }) { /* REMOVIDO: firebaseAuth */
           // Hooks chamados incondicionalmente no topo do componente
           const [email, setEmail] = React.useState('');
           const [isLoading, setIsLoading] = React.useState(false);
@@ -463,28 +458,34 @@
             e.preventDefault();
             setIsLoading(true);
 
-            if (!firebaseAuth) {
+            if (!supabase) {
                 onShowMessage('Serviço de autenticação não disponível. Recarregue a página.', 'error');
                 setIsLoading(false);
                 return;
             }
 
             try {
-              // Envia email de redefinição de palavra-passe via Firebase Auth (usando a função global)
-              await window.firebaseSendPasswordResetEmail(firebaseAuth, email);
-              onShowMessage('Se o email estiver registado, receberá instruções para redefinir a palavra-passe.', 'success');
-              onClose();
-            } catch (error) {
-              console.error('Erro ao solicitar redefinição Firebase:', error);
-              let errorMessage = 'Ocorreu um erro inesperado ao solicitar a redefinição.';
-              if (error.code === 'auth/user-not-found') {
-                  errorMessage = 'Utilizador não encontrado com este email.';
-              } else if (error.code === 'auth/invalid-email') {
-                  errorMessage = 'Formato de email inválido.';
-              } else if (error.code === 'auth/too-many-requests') {
-                  errorMessage = 'Demasiadas tentativas de redefinição. Tente novamente mais tarde.';
+              // Envia email de redefinição de palavra-passe via Supabase Auth
+              const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: window.location.origin + '/auth.html', // Redireciona de volta para esta página
+              });
+
+              if (error) {
+                console.error('Erro ao solicitar redefinição Supabase:', error);
+                let errorMessage = 'Ocorreu um erro inesperado ao solicitar a redefinição.';
+                if (error.message.includes('User not found')) {
+                    errorMessage = 'Utilizador não encontrado com este email.';
+                } else if (error.message.includes('Rate limit exceeded')) {
+                    errorMessage = 'Demasiadas tentativas. Tente novamente mais tarde.';
+                }
+                onShowMessage(`Erro: ${errorMessage}`, 'error');
+              } else {
+                onShowMessage('Se o email estiver registado, receberá instruções para redefinir a palavra-passe.', 'success');
+                onClose();
               }
-              onShowMessage(`Erro: ${errorMessage}`, 'error');
+            } catch (error) {
+              console.error('Erro inesperado ao solicitar redefinição:', error);
+              onShowMessage('Ocorreu um erro inesperado ao solicitar a redefinição. Verifique a sua ligação.', 'error');
             } finally {
               setIsLoading(false);
             }
@@ -529,8 +530,8 @@
           );
         }
 
-        // Componente RegisterScreen: Formulário para registo de novo utilizador (agora com Firebase e Supabase)
-        function RegisterScreen({ onSwitchToLogin, onShowModal, onLoginSuccess, firebaseAuth, supabase }) {
+        // Componente RegisterScreen: Formulário para registo de novo utilizador (agora com Supabase)
+        function RegisterScreen({ onSwitchToLogin, onShowModal, onLoginSuccess, supabase }) { /* REMOVIDO: firebaseAuth */
           const [fullName, setFullName] = React.useState('');
           const [dateOfBirth, setDateOfBirth] = React.useState('');
           const [phoneNumber, setPhoneNumber] = React.useState('');
@@ -551,61 +552,59 @@
             }
             setIsLoading(true);
 
-            // Adicionado console.log para depuração
-            console.log("[RegisterScreen] firebaseAuth:", firebaseAuth);
-
-            if (!firebaseAuth || !supabase) {
-                onShowModal('Serviços de autenticação ou base de dados não disponíveis. Recarregue a página.', 'error');
+            if (!supabase) {
+                onShowModal('Serviço de base de dados não disponível. Recarregue a página.', 'error');
                 setIsLoading(false);
                 return;
             }
 
             try {
-                // 1. Criar utilizador no Firebase Auth (usando a função global)
-                const userCredential = await window.firebaseCreateUserWithEmailAndPassword(firebaseAuth, registerEmail, registerPassword);
-                const user = userCredential.user; // O objeto de utilizador do Firebase
-
-                // 2. Atualizar perfil Firebase (opcional, para displayName e photoURL)
-                try {
-                    // CORRIGIDO: Usar updateProfile diretamente na instância de auth
-                    await window.firebaseUpdateProfile(user, {
-                        displayName: fullName,
-                        // photoURL: 'URL_DO_AVATAR_PADRAO_OU_UPLOADED' // Se tiver upload de avatar aqui
-                    });
-                } catch (updateProfileError) {
-                    console.warn("Erro ao atualizar perfil Firebase (não crítico para o registo):", updateProfileError);
-                }
-
-                // --- NOVO PASSO CRÍTICO: Obter ID Token do Firebase e configurar Supabase ---
-                const idToken = await user.getIdToken();
-                await supabase.auth.setSession({ access_token: idToken });
-                console.log("[RegisterScreen] Supabase cliente configurado com ID Token do Firebase.");
-                // --- FIM DO NOVO PASSO ---
-
-                // 3. Criar perfil correspondente no Supabase
-                // O ID do perfil no Supabase será o UID do utilizador do Firebase
-                const { error: profileError } = await supabase
-                    .from('profiles')
-                    .insert([
-                        {
-                            id: user.uid, // UID do Firebase como ID do perfil Supabase
-                            email: user.email,
-                            full_name: fullName,
+                // 1. Criar utilizador no Supabase Auth
+                // Supabase.auth.signUp também cria um registo na tabela auth.users e, se configurado, o perfil.
+                const { data, error } = await supabase.auth.signUp({
+                    email: registerEmail,
+                    password: registerPassword,
+                    options: {
+                        // Estes dados serão armazenados em user_metadata no Supabase auth.users
+                        data: {
+                            full_name: fullName, 
                             phone_number: phoneNumber,
                             date_of_birth: dateOfBirth,
                             role_in_church: roleInChurch,
-                            // church_name: churchName, // Se 'church_name' for um campo de texto em profiles
-                            avatar_url: user.photoURL || 'https://i.ibb.co/Vt2W1d1/user-profile-default-image.png' // Avatar padrão
-                        }
-                    ]);
+                            // church_name: churchName // Manter se for um campo no user_metadata
+                        },
+                    },
+                });
 
-                if (profileError) {
-                    console.error('Erro ao criar perfil no Supabase:', profileError);
-                    // Se o perfil Supabase falhar criticamente, pode-se considerar apagar o utilizador Firebase
-                    // await user.delete(); // Descomente com cautela!
-                    onShowModal(`Registo de utilizador OK no Firebase, mas erro ao criar perfil no Supabase: ${profileError.message}. Por favor, contacte o suporte.`, 'error');
-                } else {
-                    onShowModal('Registo bem-sucedido! Pode agora iniciar sessão.', 'success');
+                if (error) {
+                    console.error('Erro de registo no Supabase Auth:', error);
+                    let errorMessage = 'Ocorreu um erro inesperado ao registar.';
+                    if (error.message.includes('User already registered')) {
+                        errorMessage = 'Este email já está registado. Tente iniciar sessão ou recuperar a palavra-passe.';
+                    } else if (error.message.includes('Password should be at least')) {
+                        errorMessage = `Palavra-passe é muito fraca: ${error.message}`;
+                    } else if (error.message.includes('Invalid email credentials')) {
+                        errorMessage = 'Formato de email inválido.';
+                    } else if (error.message.includes('Email rate limit exceeded')) {
+                        errorMessage = 'Demasiadas tentativas de registo. Tente novamente mais tarde.';
+                    } else if (error.message.includes('Confirmation required')) {
+                        // Se email confirmation está ativo
+                        errorMessage = 'Registo bem-sucedido! Por favor, verifique o seu email para confirmar a conta.';
+                        onShowModal(errorMessage, 'success');
+                        // O perfil pode ser criado por um trigger de auth no Supabase após a confirmação.
+                        setFullName(''); setDateOfBirth(''); setPhoneNumber(''); setRoleInChurch(''); setChurchName(''); setRegisterEmail(''); setRegisterPassword(''); setConfirmPassword(''); setPasswordAnalysis('');
+                        onSwitchToLogin();
+                        return; // Sair da função
+                    }
+                    onShowModal(`Erro: ${errorMessage}`, 'error');
+                } else if (data.user) {
+                    // Se o utilizador foi criado com sucesso no Supabase Auth
+                    // E-mail de confirmação é ativado por padrão no Supabase.
+                    // O perfil na tabela 'profiles' será criado por um TRIGGER ou Edge Function
+                    // no Supabase, que escuta eventos de autenticação (SIGNUP).
+                    // Não inserimos diretamente aqui para evitar violação de RLS se o user.id não for o auth.uid()
+                    
+                    onShowModal('Registo bem-sucedido! Por favor, verifique o seu e-mail para confirmar a conta e depois faça login.', 'success');
                     // Limpa o formulário
                     setFullName('');
                     setDateOfBirth('');
@@ -617,21 +616,12 @@
                     setConfirmPassword('');
                     setPasswordAnalysis(''); // Limpa a análise da palavra-passe
                     onSwitchToLogin(); // Volta para a tela de início de sessão
+                } else {
+                    onShowModal('Registo falhou. Por favor, tente novamente.', 'error');
                 }
             } catch (error) {
-                console.error('Erro inesperado ao tentar registar Firebase:', error);
-                let errorMessage = 'Ocorreu um erro inesperado ao registar.';
-                // Mensagens de erro específicas do Firebase
-                if (error.code === 'auth/email-already-in-use') {
-                    errorMessage = 'Este email já está registado. Tente iniciar sessão ou recuperar a palavra-passe.';
-                } else if (error.code === 'auth/weak-password') {
-                    errorMessage = 'A palavra-passe é muito fraca. Escolha uma palavra-passe mais forte.';
-                } else if (error.code === 'auth/invalid-email') {
-                    errorMessage = 'Formato de email inválido.';
-                } else if (error.code === 'auth/operation-not-allowed') {
-                    errorMessage = 'Registo com email/palavra-passe não está ativado no Firebase. Contacte o administrador.';
-                }
-                onShowModal(`Erro: ${errorMessage}`, 'error');
+                console.error('Erro inesperado ao tentar registar:', error);
+                onShowModal('Ocorreu um erro inesperado ao registar. Verifique a sua ligação.', 'error');
             } finally {
                 setIsLoading(false);
             }
@@ -742,7 +732,7 @@
                 </div>
 
                 <div className="mb-6">
-                  <label htmlFor="roleInChurch" className="block text-sm font-semibold mb-2 font-inter">
+                  <label htmlFor="roleInChurch" className="block text-gray-700 text-sm font-semibold mb-2 font-inter">
                     Cargo/Função na Igreja (Opcional)
                   </label>
                   <input
@@ -877,37 +867,8 @@
           const [modalMessage, setModalMessage] = React.useState(''); // Mensagem a ser exibida no modal
           const [modalType, setModalType] = React.useState('info'); // Tipo de modal (success, error, info)
           
-          const [isFirebaseReady, setIsFirebaseReady] = React.useState(false); // Indica se o Firebase está pronto
           const [isSupabaseReady, setIsSupabaseReady] = React.useState(false); // Indica se o Supabase está pronto
-          const [firebaseAuth, setFirebaseAuth] = React.useState(null); // Instância do Firebase Auth
           const [supabase, setSupabase] = React.useState(null); // Instância do Supabase Client
-
-          // Efeito para inicializar ou aguardar o Firebase Auth
-          React.useEffect(() => {
-            if (window.globalFirebaseAuth) {
-                setFirebaseAuth(window.globalFirebaseAuth);
-                setIsFirebaseReady(true);
-                console.log("[App Auth] Cliente Firebase Auth pronto.");
-            } else {
-                console.warn("[App Auth] Cliente Firebase Auth não disponível. A aguardar...");
-                const maxTries = 20; // Tentar por até 20 * 100ms = 2 segundos
-                let currentTry = 0;
-                const intervalId = setInterval(() => {
-                    if (window.globalFirebaseAuth) {
-                        setFirebaseAuth(window.globalFirebaseAuth);
-                        setIsFirebaseReady(true);
-                        console.log("[App Auth] Cliente Firebase Auth inicializado após atraso.");
-                        clearInterval(intervalId);
-                    } else if (currentTry >= maxTries) {
-                        console.error("[App Auth] Falha ao inicializar o cliente Firebase Auth após várias tentativas. Verifique 'firebaseClientInstance.js'.");
-                        showModal("Erro crítico: Não foi possível ligar ao serviço de autenticação. Por favor, recarregue a página.", "error");
-                        clearInterval(intervalId);
-                    }
-                    currentTry++;
-                }, 100);
-                return () => clearInterval(intervalId);
-            }
-          }, []);
 
           // Efeito para inicializar ou aguardar o Supabase Client
           React.useEffect(() => {
@@ -959,18 +920,18 @@
 
           // Lida com o sucesso do início de sessão ou registo
           const handleLoginSuccess = () => {
-            // Após o sucesso da autenticação Firebase, redireciona para o dashboard principal
+            // Após o sucesso da autenticação Supabase, redireciona para o dashboard principal
             console.log("Autenticação bem-sucedida. Redirecionando para index.html.");
             window.location.href = 'index.html'; 
           };
 
           // Renderização condicional da vista
-          if (!isFirebaseReady || !isSupabaseReady) {
+          if (!isSupabaseReady) {
             return (
               <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
                 <div className="text-white text-2xl font-bold font-inter text-center">
                   A carregar serviços...<br/>
-                  <span className="text-sm opacity-70">A ligar ao Firebase e Supabase.</span>
+                  <span className="text-sm opacity-70">A ligar ao Supabase.</span>
                 </div>
               </div>
             );
@@ -985,7 +946,6 @@
                     onSwitchToRegister={() => setCurrentView('register')} 
                     onShowModal={showModal} 
                     onLoginSuccess={handleLoginSuccess} 
-                    firebaseAuth={firebaseAuth} /* Passa a instância do Firebase Auth */
                     supabase={supabase} /* Passa a instância do Supabase Client */
                   />
                 ) : (
@@ -993,7 +953,6 @@
                     onSwitchToLogin={() => setCurrentView('login')} 
                     onShowModal={showModal} 
                     onLoginSuccess={handleLoginSuccess} 
-                    firebaseAuth={firebaseAuth} /* Passa a instância do Firebase Auth */
                     supabase={supabase} /* Passa a instância do Supabase Client */
                   />
                 )}
