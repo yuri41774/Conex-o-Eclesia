@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Conexão Eclesia - Autenticação</title>
+    <!-- Incluindo Tailwind CSS para estilização (via CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Incluindo a fonte Inter do Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         body {
@@ -36,11 +38,18 @@
 <body>
     <div id="root"></div>
 
+    <!-- Importa React e ReactDOM a partir de um CDN (unpkg.com) -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Importa Babel para transpilador JSX diretamente no navegador -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
+    <!-- REMOVIDO: Importações do Firebase SDK e firebaseClientInstance.js -->
+    <!-- REMOVIDO: Bloco de script que expunha funções modulares do Firebase Auth -->
+
+    <!-- Importa o SDK do Supabase Client (para base de dados e autenticação) -->
     <script type="module" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"></script>
+    <!-- Carrega o script de inicialização do Supabase. ESSENCIAL! -->
     <script type="module" src="supabaseClientInstance.js"></script>
 
     <script type="text/babel">
@@ -269,6 +278,46 @@
           const [isLoading, setIsLoading] = React.useState(false);
           const [isChurchModalOpen, setIsChurchModalOpen] = React.useState(false);
           const [showForgotModal, setShowForgotModal] = React.useState(false);
+          const [welcomeText, setWelcomeText] = React.useState('A carregar mensagem...'); // Estado para a mensagem de boas-vindas
+
+          // Efeito para gerar a mensagem de boas-vindas ao montar o componente
+          React.useEffect(() => {
+            const generateWelcomeMessage = async () => {
+                setWelcomeText('A gerar mensagem de boas-vindas com ✨Gemini...');
+                try {
+                    const apiKey = ""; // Deixe como "" para que o Canvas injete a chave automaticamente
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                    
+                    const prompt = `Gere uma breve e inspiradora mensagem de boas-vindas para uma aplicação social cristã, com foco em comunidade e fé. Seja conciso, com no máximo 20 palavras.`;
+                    const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
+
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Erro HTTP: ${response.status} ${response.statusText}`);
+                    }
+
+                    const result = await response.json();
+                    
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                      const text = result.candidates[0].content.parts[0].text;
+                      setWelcomeText(text);
+                    } else {
+                      setWelcomeText('Bem-vindo à nossa comunidade de fé!');
+                    }
+                } catch (error) {
+                    console.error("Erro ao gerar mensagem de boas-vindas com Gemini:", error);
+                    setWelcomeText('Bem-vindo à nossa comunidade de fé!'); // Fallback
+                }
+            };
+            generateWelcomeMessage();
+          }, []); // Executa apenas uma vez ao montar
 
           const handleLogin = async (e) => {
             e.preventDefault();
@@ -317,7 +366,7 @@
             <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md mx-auto transform transition-all duration-300 hover:scale-105">
               <div className="text-center mb-8">
                 <h1 className="text-4xl font-extrabold text-gray-800 mb-2 font-inter">Conexão Eclesia</h1>
-                <p className="text-gray-600 text-lg">Inicie sessão para continuar</p>
+                <p className="text-gray-600 text-lg font-inter mb-4" aria-live="polite">{welcomeText}</p> {/* Mensagem de boas-vindas Gemini */}
               </div>
 
               <form onSubmit={handleLogin}>
