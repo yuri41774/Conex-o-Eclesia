@@ -81,7 +81,7 @@
     <!-- Cabeçalho Fixo (Inicialmente oculto ou com conteúdo de carregamento) -->
     <header id="main-header" style="display: none;">
         <div class="user-info-header">
-            <img id="header-avatar" src="https://i.ibb.co/Vt2W1d1/user-profile-default-image.png" alt="Avatar do utilizador" class="user-avatar-header">
+            <img id="header-avatar" src="https://placehold.co/40x40/cccccc/ffffff?text=U" alt="Avatar do utilizador" class="user-avatar-header">
             <div>
                 <span id="header-username" class="font-bold text-gray-800 text-lg">A carregar...</span>
                 <p id="header-email" class="text-gray-600 text-sm"></p>
@@ -110,8 +110,8 @@
     <script type="module" src="supabaseClientInstance.js"></script>
 
     <script type="module">
-        // NOVO: Importa onAuthStateChanged diretamente para este âmbito
-        import { onAuthStateChanged } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+        // REMOVIDO: Importação direta de onAuthStateChanged aqui.
+        // onAuthStateChanged será acedido diretamente via supabase.auth.onAuthStateChanged
 
         // Referências aos elementos do DOM
         const appContainer = document.getElementById('app-container');
@@ -159,7 +159,8 @@
 
             // --- 2. Iniciar a verificação de autenticação do Supabase ---
             // Listener de estado de autenticação do Supabase
-            onAuthStateChanged(supabase.auth, async (event, session) => {
+            // CORRIGIDO: Chamar supabase.auth.onAuthStateChanged diretamente
+            supabase.auth.onAuthStateChanged(async (event, session) => {
                 const user = session?.user || null; 
 
                 if (user) {
@@ -209,7 +210,7 @@
             const userName = supabaseProfile?.full_name || supabaseUser.email.split('@')[0];
             const userEmail = supabaseUser.email;
             const userUid = supabaseUser.id; // ID do utilizador Supabase Auth
-            const userAvatar = supabaseProfile?.avatar_url || 'https://i.ibb.co/Vt2W1d1/user-profile-default-image.png';
+            const userAvatar = supabaseProfile?.avatar_url || 'https://placehold.co/40x40/cccccc/ffffff?text=U'; // CORRIGIDO: URL de placeholder mais fiável
 
             // Oculta a tela de carregamento
             appContainer.style.display = 'none'; 
